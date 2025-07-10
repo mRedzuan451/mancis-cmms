@@ -2197,6 +2197,50 @@
         `;
         }
 
+        function renderPartsRequestPage() {
+          const partRequests = state.cache.partRequests.filter(can.view);
+          return `
+            <div class="flex justify-between items-center mb-6">
+                <h1 class="text-3xl font-bold">Part Requests</h1>
+                <div class="space-x-2">
+                     <button id="printPurchaseListBtn" class="bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 px-4 rounded">
+                        <i class="fas fa-file-invoice mr-2"></i>Print Purchase List
+                    </button>
+                     <button id="storageRequestBtn" class="bg-teal-500 hover:bg-teal-600 text-white font-bold py-2 px-4 rounded">
+                        <i class="fas fa-warehouse mr-2"></i>Request from Storage
+                    </button>
+                    <button id="newPartRequestBtn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded">
+                        <i class="fas fa-plus mr-2"></i>New Purchase Request
+                    </button>
+                    <button id="receivePartsBtn" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded">
+                        <i class="fas fa-box-open mr-2"></i>Receive Parts
+                    </button>
+                    <button id="restockPartsBtn" class="bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded">
+                        <i class="fas fa-dolly-flatbed mr-2"></i>Restock Parts
+                    </button>
+                </div>
+            </div>
+            <div class="bg-white p-4 rounded-lg shadow">
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead><tr class="border-b">
+                            <th class="p-2 text-left">Part Name</th>
+                            <th class="p-2 text-left">Part Number</th>
+                            <th class="p-2 text-left">Maker</th>
+                            <th class="p-2 text-left">Quantity</th>
+                            <th class="p-2 text-left">Purpose</th>
+                            <th class="p-2 text-left">Status</th>
+                            <th class="p-2 text-left">Actions</th>
+                        </tr></thead>
+                        <tbody>
+                            ${generateTableRows("partRequests", partRequests)}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        `;
+        }
+
 
         function generateTableRows(type, data) {
           if (!data || data.length === 0) {
