@@ -1186,6 +1186,12 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ username, password })
             }),
+            createUser: (data) => api.request('create_user.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            }),
+            deleteUser: (id) => api.request(`delete_user.php?id=${id}`, { method: 'POST' }),
 
             // ASSET operations
             createAsset: (data) => api.request('create_asset.php', {
@@ -1682,6 +1688,31 @@
         `;
         }
 
+        function renderUserManagementPage() {
+          const users = state.cache.users; // Admin can see all users
+          return `
+            <div class="flex justify-between items-center mb-6">
+                <h1 class="text-3xl font-bold">User Management</h1>
+            </div>
+            <div class="bg-white p-4 rounded-lg shadow">
+                <div class="overflow-x-auto">
+                    <table class="w-full" id="userTable">
+                        <thead><tr class="border-b">
+                            <th class="p-2 text-left">Full Name</th>
+                            <th class="p-2 text-left">Username</th>
+                            <th class="p-2 text-left">Role</th>
+                            <th class="p-2 text-left">Department</th>
+                            <th class="p-2 text-left">Actions</th>
+                        </tr></thead>
+                        <tbody>
+                            ${generateTableRows("users", users)}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        `;
+        }
+
         function generateTableRows(type, data) {
           if (!data || data.length === 0) {
             return `<tr><td colspan="10" class="text-center p-4 text-gray-500">No data available.</td></tr>`;
@@ -1845,6 +1876,28 @@
                     </tr>`;
                 })
                 .join("");
+            case "users":
+              return data
+                .map((user) => {
+                    const department = getUserDepartment(user);
+                    return `
+                    <tr class="border-b hover:bg-gray-50">
+                        <td class="p-2">${user.fullName}</td>
+                        <td class="p-2">${user.username}</td>
+                        <td class="p-2">${user.role}</td>
+                        <td class="p-2">${department}</td>
+                        <td class="p-2">
+                            ${
+                                // Prevent deleting the current user or the primary admin (ID 1)
+                                user.id !== state.currentUser.id && user.id !== 1
+                                ? `<button class="delete-user-btn text-red-500 hover:text-red-700" data-id="${user.id}"><i class="fas fa-trash"></i></button>`
+                                : ""
+                            }
+                        </td>
+                    </tr>
+                `;
+                })
+                .join("");
             default:
                 return '';
           }
@@ -1921,6 +1974,9 @@
             case "workOrders":
               content = renderWorkOrdersPage();
               break;
+            case "userManagement":
+              content = renderUserManagementPage();
+              break;
             default:
               content = renderDashboard();
           }
@@ -1995,6 +2051,56 @@
               state.cache[key] = Array.isArray(state.cache[key]) ? [] : {};
           });
           await render();
+        }
+
+        async function handleRegistration(e) {
+            e.preventDefault();
+            const regError = document.getElementById("regError");
+            regError.textContent = '';
+
+            const userData = {
+                fullName: document.getElementById("regFullName").value,
+                employeeId: document.getElementById("regEmployeeId").value,
+                username: document.getElementById("regUsername").value,
+                password: document.getElementById("regPassword").value,
+                divisionId: parseInt(document.getElementById("regDivision").value),
+                departmentId: parseInt(document.getElementById("regDepartment").value),
+                role: "Clerk", // New users default to Clerk role
+            };
+
+            try {
+                await api.createUser(userData);
+                await logActivity("User Registered", `New user created: ${userData.fullName}`);
+                
+                document.getElementById("registrationModal").style.display = "none";
+                document.getElementById("registrationForm").reset();
+                showTemporaryMessage("Account created successfully! You can now log in.");
+                
+                // If an admin is creating the user, refresh the user list
+                if (state.currentUser && state.currentUser.role === 'Admin') {
+                    state.cache.users = await api.getUsers();
+                    await renderMainContent();
+                }
+
+            } catch (error) {
+                regError.textContent = error.message;
+            }
+        }
+
+        async function deleteUser(userId) {
+            if (confirm("Are you sure you want to delete this user? This action cannot be undone.")) {
+                try {
+                    const userToDelete = state.cache.users.find(u => u.id === userId);
+                    await api.deleteUser(userId);
+                    await logActivity("User Deleted", `Deleted user: ${userToDelete.fullName} (${userToDelete.username})`);
+
+                    state.cache.users = await api.getUsers();
+                    await renderMainContent();
+                    showTemporaryMessage('User deleted successfully.');
+                } catch (error) {
+                    showTemporaryMessage(error.message, true);
+                }
+            }
         }
 
         async function handleAssetFormSubmit(e) {
@@ -2183,6 +2289,15 @@
         function attachGlobalEventListeners() {
           document.getElementById("loginForm").addEventListener("submit", handleLogin);
           document.getElementById("logoutBtn").addEventListener("click", handleLogout);
+          document.getElementById("registrationForm").addEventListener("submit", handleRegistration);
+          
+          document.getElementById("createAccountBtn").addEventListener("click", () => {
+              populateLocationDropdowns(
+                document.getElementById("regDivision"),
+                document.getElementById("regDepartment")
+              );
+              document.getElementById("registrationModal").style.display = "flex";
+          });
           
           document.getElementById("sidebar").addEventListener("click", async (e) => {
             const navLink = e.target.closest(".nav-link");
@@ -2233,6 +2348,9 @@
           // Work Order buttons
           if (button.classList.contains("edit-wo-btn")) showWorkOrderModal(id);
           if (button.classList.contains("delete-wo-btn")) deleteWorkOrder(id);
+
+          // User Management buttons
+          if (button.classList.contains("delete-user-btn")) deleteUser(id);
         }
 
         function attachPageSpecificEventListeners(page) {
@@ -2245,6 +2363,9 @@
                     break;
                 case 'workOrders':
                     attachWorkOrdersPageEventListeners();
+                    break;
+                case 'userManagement':
+                    attachUserManagementEventListeners();
                     break;
             }
         }
@@ -2300,6 +2421,10 @@
               document.getElementById("workOrderTableBody").innerHTML =
                 generateTableRows("workOrders", filtered);
             });
+        }
+
+        function attachUserManagementEventListeners() {
+            // The main click handler already manages the delete button clicks
         }
         
         function showAssetModal(assetId = null) {
@@ -2469,6 +2594,28 @@
           row.appendChild(qtyInput);
           row.appendChild(removeBtn);
           container.appendChild(row);
+        }
+
+        function populateLocationDropdowns(divisionSelect, departmentSelect) {
+          const { divisions = [], departments = [] } = state.cache.locations || {};
+          divisionSelect.innerHTML =
+            `<option value="">Select Division</option>` +
+            divisions
+              .map((d) => `<option value="${d.id}">${d.name}</option>`)
+              .join("");
+          departmentSelect.innerHTML = `<option value="">Select Department</option>`;
+
+          divisionSelect.addEventListener("change", () => {
+            const selectedDivisionId = parseInt(divisionSelect.value);
+            const filteredDepartments = departments.filter(
+              (d) => d.divisionId === selectedDivisionId
+            );
+            departmentSelect.innerHTML =
+              `<option value="">Select Department</option>` +
+              filteredDepartments
+                .map((d) => `<option value="${d.id}">${d.name}</option>`)
+                .join("");
+          });
         }
 
         function populateLocationDropdown(selectElement, type = "all") {
