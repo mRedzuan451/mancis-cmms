@@ -1180,6 +1180,7 @@
             getPartRequests: () => api.request('get_part_requests.php'),
             getLocations: () => api.request('get_locations.php'),
             getLogs: () => api.request('get_logs.php'),
+            getReceivedParts: () => api.request('get_received_parts.php'),
             
             // AUTH operations
             login: (username, password) => api.request('login.php', {
@@ -1247,6 +1248,28 @@
                 body: JSON.stringify(data)
             }),
             deleteLocation: (data) => api.request('delete_location.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            }),
+
+            // PART REQUEST WORKFLOW operations
+            createPartRequest: (data) => api.request('create_part_request.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            }),
+            updatePartRequestStatus: (data) => api.request('update_part_request_status.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            }),
+            receiveParts: (data) => api.request('receive_parts.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            }),
+            restockParts: (data) => api.request('restock_parts.php', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data)
@@ -2469,7 +2492,7 @@
 
         async function loadInitialData() {
             try {
-                const [assets, parts, users, workOrders, partRequests, locations, logs] = await Promise.all([
+                const [assets, parts, users, workOrders, partRequests, locations, logs, receivedParts] = await Promise.all([
                     api.getAssets(),
                     api.getParts(),
                     api.getUsers(),
@@ -2477,6 +2500,7 @@
                     api.getPartRequests(),
                     api.getLocations(),
                     api.getLogs(),
+                    api.getReceivedParts(),
                 ]);
 
                 state.cache.assets = assets;
@@ -2486,6 +2510,7 @@
                 state.cache.partRequests = partRequests;
                 state.cache.locations = locations;
                 state.cache.logs = logs;
+                state.cache.receivedParts = receivedParts;
 
             } catch (error) {
                 showTemporaryMessage("Failed to load initial application data. Please try again.", true);
@@ -2788,6 +2813,92 @@
             }
         }
 
+        async function handlePartRequestFormSubmit(e) {
+            e.preventDefault();
+            const isNewPart = document.getElementById("requestNewPartCheckbox").checked;
+            const newRequest = {
+                quantity: parseInt(document.getElementById("requestQuantity").value),
+                purpose: document.getElementById("requestPurpose").value,
+                requesterId: state.currentUser.id,
+                requestDate: new Date().toISOString().slice(0, 19).replace('T', ' '),
+                status: "Requested",
+                partId: isNewPart ? null : parseInt(document.getElementById("requestPartId").value),
+                newPartName: isNewPart ? document.getElementById("newPartName").value : null,
+                newPartNumber: isNewPart ? document.getElementById("newPartNumber").value : null,
+                newPartMaker: isNewPart ? document.getElementById("newPartMaker").value : null,
+            };
+
+            try {
+                await api.createPartRequest(newRequest);
+                await logActivity("Part Request Submitted", `Requested ${newRequest.quantity} of ${isNewPart ? newRequest.newPartName : `part ID ${newRequest.partId}`}`);
+                state.cache.partRequests = await api.getPartRequests();
+                document.getElementById("partRequestModal").style.display = "none";
+                await renderMainContent();
+                showTemporaryMessage('Part request submitted.');
+            } catch (error) {
+                showTemporaryMessage('Failed to submit part request.', true);
+            }
+        }
+
+        async function handlePartRequestAction(requestId, newStatus) {
+            const request = state.cache.partRequests.find(pr => pr.id === requestId);
+            if (!request) return;
+
+            const payload = {
+                id: requestId,
+                status: newStatus,
+                approverId: state.currentUser.id,
+                originalStatus: request.status
+            };
+
+            try {
+                await api.updatePartRequestStatus(payload);
+                await logActivity(`Part Request ${newStatus}`, `Request ID: ${requestId}`);
+                state.cache.partRequests = await api.getPartRequests();
+                if (payload.originalStatus === 'Requested from Storage') {
+                    state.cache.parts = await api.getParts();
+                }
+                await renderMainContent();
+                showTemporaryMessage(`Request #${requestId} has been ${newStatus.toLowerCase()}.`);
+            } catch (error) {
+                showTemporaryMessage(`Failed to update request status: ${error.message}`, true);
+            }
+        }
+
+        async function handleReceivePartsFormSubmit(e) {
+            e.preventDefault();
+            const requestId = parseInt(document.getElementById("receiveRequestId").value);
+            try {
+                await api.receiveParts({ requestId, receiverId: state.currentUser.id });
+                await logActivity("Parts Received", `Marked parts for request #${requestId} as received.`);
+                state.cache.partRequests = await api.getPartRequests();
+                state.cache.receivedParts = await api.getReceivedParts();
+                document.getElementById("receivePartsModal").style.display = "none";
+                await renderMainContent();
+                showTemporaryMessage('Parts marked as received.');
+            } catch (error) {
+                showTemporaryMessage(`Failed to receive parts: ${error.message}`, true);
+            }
+        }
+
+        async function handleRestockPartsFormSubmit(e) {
+            e.preventDefault();
+            const receivedPartId = parseInt(document.getElementById("restockPartId").value);
+            const locationId = document.getElementById("restockLocationId").value;
+            try {
+                await api.restockParts({ receivedPartId, locationId });
+                await logActivity("Parts Restocked", `Restocked parts from received ID #${receivedPartId}`);
+                state.cache.parts = await api.getParts();
+                state.cache.partRequests = await api.getPartRequests();
+                state.cache.receivedParts = await api.getReceivedParts();
+                document.getElementById("restockPartsModal").style.display = "none";
+                await renderMainContent();
+                showTemporaryMessage('Parts restocked successfully.');
+            } catch (error) {
+                showTemporaryMessage(`Failed to restock parts: ${error.message}`, true);
+            }
+        }
+
         // =================================================================================
         //  PARTITION 7: INITIALIZATION & EVENT LISTENERS
         // =================================================================================
@@ -2863,6 +2974,10 @@
               deleteLocation(button.dataset.type, id);
           }
 
+          // Part Request buttons
+          if (button.classList.contains("approve-pr-btn")) handlePartRequestAction(id, 'Approved');
+          if (button.classList.contains("reject-pr-btn")) handlePartRequestAction(id, 'Rejected');
+
           // Calendar buttons
           if (button.id === "prevMonthBtn") {
               state.calendarDate.setMonth(state.calendarDate.getMonth() - 1);
@@ -2896,6 +3011,9 @@
                     break;
                 case 'locations':
                     attachLocationsPageEventListeners();
+                    break;
+                case 'partRequests':
+                    attachPartsRequestPageEventListeners();
                     break;
                 case 'workOrderCalendar':
                 case 'activityLog':
@@ -2969,6 +3087,17 @@
             document.getElementById('addCabinetForm')?.addEventListener('submit', (e) => handleLocationFormSubmit(e, 'cabinet'));
             document.getElementById('addShelfForm')?.addEventListener('submit', (e) => handleLocationFormSubmit(e, 'shelf'));
             document.getElementById('addBoxForm')?.addEventListener('submit', (e) => handleLocationFormSubmit(e, 'box'));
+        }
+
+        function attachPartsRequestPageEventListeners() {
+            document.getElementById("newPartRequestBtn")?.addEventListener("click", showPartRequestModal);
+            document.getElementById("storageRequestBtn")?.addEventListener("click", showStorageRequestModal);
+            document.getElementById("receivePartsBtn")?.addEventListener("click", showReceivePartsModal);
+            document.getElementById("restockPartsBtn")?.addEventListener("click", showRestockPartsModal);
+            document.getElementById("partRequestForm")?.addEventListener("submit", handlePartRequestFormSubmit);
+            document.getElementById("storageRequestForm")?.addEventListener("submit", handleStorageRequestFormSubmit);
+            document.getElementById("receivePartsForm")?.addEventListener("submit", handleReceivePartsFormSubmit);
+            document.getElementById("restockPartsForm")?.addEventListener("submit", handleRestockPartsFormSubmit);
         }
         
         function showAssetModal(assetId = null) {
