@@ -9,7 +9,6 @@
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
       rel="stylesheet"
     />
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
       /* Custom Styles for Modals and Calendar */
       .modal {
@@ -53,60 +52,6 @@
       .other-month {
         background-color: #f7fafc;
         color: #a0aec0;
-      }
-      /* --- Logo: Abstract Gear --- */
-      .logo-1 {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        font-family: 'Poppins', sans-serif; /* Apply the font */
-      }
-
-      .logo-1 .icon {
-        width: 40px; /* Adjusted for sidebar */
-        height: 40px;
-        position: relative;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-      }
-
-      /* The outer gear shape, created using clip-path */
-      .logo-1 .icon::before {
-        content: '';
-        position: absolute;
-        width: 100%;
-        height: 100%;
-        background: #3b82f6; /* blue-500 */
-        clip-path: polygon(50% 0%, 83% 12%, 100% 43%, 94% 78%, 68% 100%, 32% 100%, 6% 78%, 0% 43%, 17% 12%);
-        transition: transform 0.3s ease;
-      }
-
-      /* The inner circle of the gear */
-      .logo-1 .icon::after {
-        content: '';
-        position: absolute;
-        width: 40%;
-        height: 40%;
-        background: #ffffff; /* white */
-        border-radius: 50%;
-      }
-
-      /* Simple rotation animation on hover */
-      .logo-1:hover .icon::before {
-        transform: rotate(45deg);
-      }
-
-      .logo-1 .text {
-        font-size: 1.875rem; /* text-3xl, slightly smaller for sidebar */
-        font-weight: 700; /* font-bold */
-        line-height: 1;
-        color: #f9fafb; /* gray-50 for better contrast on dark bg */
-      }
-
-      .logo-1 .cis {
-        color: #3b82f6; /* blue-500 */
-        font-weight: 600; /* font-semibold */
       }
     </style>
   </head>
@@ -164,12 +109,7 @@
         class="bg-gray-800 text-white w-64 min-h-screen fixed flex flex-col"
       >
         <div class="p-4 border-b border-gray-700">
-          <div class="logo-1">
-            <div class="icon"></div>
-            <div class="text">
-              <span class="man">Man</span><span class="cis">CIS</span>
-            </div>
-          </div>
+          <h2 class="text-xl font-bold">ManCIS V3</h2>
         </div>
         <div id="userInfo" class="p-4 border-b border-gray-700">
           <p id="userFullName" class="font-semibold"></p>
@@ -2443,6 +2383,58 @@
                 `;
                 })
                 .join("");
+            case "partRequests":
+              const prStatusColors = {
+                Requested: "bg-blue-200 text-blue-800",
+                "Requested from Storage": "bg-cyan-200 text-cyan-800",
+                Approved: "bg-yellow-200 text-yellow-800",
+                Rejected: "bg-red-200 text-red-800",
+                Received: "bg-green-200 text-green-800",
+                Completed: "bg-gray-400 text-gray-800",
+              };
+              return data
+                .map((req) => {
+                  const part = req.partId
+                    ? state.cache.parts.find((p) => p.id === req.partId)
+                    : null;
+                  const partName = part
+                    ? part.name
+                    : `<span class="italic text-gray-500">${req.newPartName} (New)</span>`;
+                  const partNumber =
+                    req.newPartNumber || (part ? part.sku : "N/A");
+                  const maker = req.newPartMaker || (part ? part.maker : "N/A");
+                  const user = state.cache.users.find((u) => u.id === req.requesterId);
+                  const statusColorClass =
+                    prStatusColors[req.status] || "bg-gray-200 text-gray-800";
+                  return `
+                    <tr class="border-b hover:bg-gray-50">
+                        <td class="p-2">${partName}</td>
+                        <td class="p-2">${partNumber}</td>
+                        <td class="p-2">${maker}</td>
+                        <td class="p-2">${req.quantity}</td>
+                        <td class="p-2">${req.purpose}</td>
+                        <td class="p-2">
+                            <span class="px-2 py-1 text-xs font-semibold rounded-full ${statusColorClass}">
+                                ${req.status}
+                            </span>
+                        </td>
+                        <td class="p-2 space-x-2">
+                            ${
+                              (state.currentUser.role === "Admin" ||
+                                state.currentUser.role === "Manager") &&
+                              (req.status === "Requested" ||
+                                req.status === "Requested from Storage")
+                                ? `
+                                <button class="approve-pr-btn text-green-500 hover:text-green-700" data-id="${req.id}" title="Approve"><i class="fas fa-check"></i></button>
+                                <button class="reject-pr-btn text-red-500 hover:text-red-700" data-id="${req.id}" title="Reject"><i class="fas fa-times"></i></button>
+                            `
+                                : ""
+                            }
+                        </td>
+                    </tr>
+                `;
+                })
+                .join("");
             default:
                 return '';
           }
@@ -2530,6 +2522,9 @@
               break;
             case "activityLog":
               content = renderActivityLogPage();
+              break;
+            case "partRequests":
+              content = renderPartsRequestPage();
               break;
             default:
               content = renderDashboard();
