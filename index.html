@@ -1179,6 +1179,7 @@
             getWorkOrders: () => api.request('get_work_orders.php'),
             getPartRequests: () => api.request('get_part_requests.php'),
             getLocations: () => api.request('get_locations.php'),
+            getLogs: () => api.request('get_logs.php'),
             
             // AUTH operations
             login: (username, password) => api.request('login.php', {
@@ -1192,6 +1193,13 @@
                 body: JSON.stringify(data)
             }),
             deleteUser: (id) => api.request(`delete_user.php?id=${id}`, { method: 'POST' }),
+
+            // LOG operations
+            createLog: (data) => api.request('create_log.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            }),
 
             // ASSET operations
             createAsset: (data) => api.request('create_asset.php', {
@@ -1357,7 +1365,15 @@
         // =================================================================================
 
         async function logActivity(action, details = "") {
-            console.log(`LOG: [${state.currentUser ? state.currentUser.fullName : "System"}] ${action} - ${details}`);
+            try {
+                await api.createLog({
+                    user: state.currentUser ? state.currentUser.fullName : "System",
+                    action,
+                    details
+                });
+            } catch (error) {
+                console.error("Failed to write log to database:", error);
+            }
         }
 
         function getNextDate(days) {
@@ -2126,6 +2142,38 @@
         `;
         }
 
+        function renderActivityLogPage() {
+          const logs = state.cache.logs;
+          return `
+            <h1 class="text-3xl font-bold mb-6">Activity Log</h1>
+            <div class="bg-white p-4 rounded-lg shadow">
+                <ul class="space-y-4">
+                    ${logs
+                      .map(
+                        (log) => `
+                        <li class="border-b pb-2">
+                            <p class="font-semibold">${
+                              log.action
+                            } <span class="font-normal text-gray-600">by ${
+                          log.user
+                        }</span></p>
+                            <p class="text-sm text-gray-500">${new Date(
+                              log.timestamp
+                            ).toLocaleString()}</p>
+                            ${
+                              log.details
+                                ? `<p class="text-sm mt-1 text-gray-700">${log.details}</p>`
+                                : ""
+                            }
+                        </li>
+                    `
+                      )
+                      .join("")}
+                </ul>
+            </div>
+        `;
+        }
+
 
         function generateTableRows(type, data) {
           if (!data || data.length === 0) {
@@ -2397,6 +2445,9 @@
             case "locations":
               content = renderLocationsPage();
               break;
+            case "activityLog":
+              content = renderActivityLogPage();
+              break;
             default:
               content = renderDashboard();
           }
@@ -2418,13 +2469,14 @@
 
         async function loadInitialData() {
             try {
-                const [assets, parts, users, workOrders, partRequests, locations] = await Promise.all([
+                const [assets, parts, users, workOrders, partRequests, locations, logs] = await Promise.all([
                     api.getAssets(),
                     api.getParts(),
                     api.getUsers(),
                     api.getWorkOrders(),
                     api.getPartRequests(),
                     api.getLocations(),
+                    api.getLogs(),
                 ]);
 
                 state.cache.assets = assets;
@@ -2433,6 +2485,7 @@
                 state.cache.workOrders = workOrders;
                 state.cache.partRequests = partRequests;
                 state.cache.locations = locations;
+                state.cache.logs = logs;
 
             } catch (error) {
                 showTemporaryMessage("Failed to load initial application data. Please try again.", true);
@@ -2845,7 +2898,8 @@
                     attachLocationsPageEventListeners();
                     break;
                 case 'workOrderCalendar':
-                    // No specific listeners needed, handled by global main content click handler
+                case 'activityLog':
+                    // No specific listeners needed for these pages
                     break;
             }
         }
