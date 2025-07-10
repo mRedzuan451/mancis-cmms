@@ -1231,6 +1231,18 @@
                 body: JSON.stringify(data)
             }),
             deleteWorkOrder: (id) => api.request(`delete_work_order.php?id=${id}`, { method: 'POST' }),
+
+            // LOCATION operations
+            createLocation: (data) => api.request('create_location.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            }),
+            deleteLocation: (data) => api.request('delete_location.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            }),
         };
 
 
@@ -1320,7 +1332,7 @@
           },
           viewPage: (page) => {
             if (!state.currentUser) return false;
-            const adminOnlyPages = ["userManagement", "activityLog"];
+            const adminOnlyPages = ["userManagement", "activityLog", "locations"];
             if (adminOnlyPages.includes(page)) {
               return state.currentUser.role === "Admin";
             }
@@ -1713,6 +1725,408 @@
         `;
         }
 
+        function renderWorkOrderCalendar() {
+          const { calendarDate } = state;
+          const month = calendarDate.getMonth();
+          const year = calendarDate.getFullYear();
+
+          const firstDayOfMonth = new Date(year, month, 1).getDay();
+          const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+          const workOrders = state.cache.workOrders.filter(can.view);
+
+          let calendarHtml = `
+            <div class="flex justify-between items-center mb-6">
+                <h1 class="text-3xl font-bold">Work Order Calendar</h1>
+                <div class="flex items-center space-x-2">
+                    <button id="prevMonthBtn" class="px-3 py-1 bg-gray-200 rounded">&lt;</button>
+                    <h2 class="text-xl font-semibold">${calendarDate.toLocaleString(
+                      "default",
+                      { month: "long", year: "numeric" }
+                    )}</h2>
+                    <button id="nextMonthBtn" class="px-3 py-1 bg-gray-200 rounded">&gt;</button>
+                </div>
+            </div>
+            <div class="bg-white p-4 rounded-lg shadow">
+                <div class="calendar-grid">
+                    <div class="text-center font-bold p-2 calendar-day-header">Sun</div>
+                    <div class="text-center font-bold p-2 calendar-day-header">Mon</div>
+                    <div class="text-center font-bold p-2 calendar-day-header">Tue</div>
+                    <div class="text-center font-bold p-2 calendar-day-header">Wed</div>
+                    <div class="text-center font-bold p-2 calendar-day-header">Thu</div>
+                    <div class="text-center font-bold p-2 calendar-day-header">Fri</div>
+                    <div class="text-center font-bold p-2 calendar-day-header">Sat</div>
+        `;
+
+          for (let i = 0; i < firstDayOfMonth; i++) {
+            calendarHtml += `<div class="calendar-day other-month"></div>`;
+          }
+
+          const today = new Date();
+          for (let day = 1; day <= daysInMonth; day++) {
+            const currentDate = new Date(year, month, day);
+            const isToday = today.toDateString() === currentDate.toDateString();
+            const dateStr = currentDate.toISOString().split("T")[0];
+
+            const wosOnThisDay = workOrders.filter(
+              (wo) => wo.dueDate === dateStr
+            );
+            const hasEvents = wosOnThisDay.length > 0;
+
+            calendarHtml += `
+                <div class="calendar-day p-2 ${isToday ? "today" : ""} ${
+              hasEvents ? "cursor-pointer hover:bg-blue-100" : ""
+            }" ${hasEvents ? `data-date="${dateStr}"` : ""}>
+                    <div class="font-bold">${day}</div>
+                    <div class="mt-1 space-y-1 overflow-y-auto max-h-20 pointer-events-none">
+                    ${wosOnThisDay
+                      .map((wo) => {
+                        const priorityColor = {
+                          High: "bg-red-100",
+                          Medium: "bg-yellow-100",
+                          Low: "bg-blue-100",
+                        }[wo.priority];
+                        let statusDotColor = "bg-gray-400"; // Default
+                        if (wo.status === "Completed") {
+                          statusDotColor = "bg-green-500";
+                        } else if (wo.status === "Delay") {
+                          statusDotColor = "bg-red-500";
+                        } else if (
+                          ["Open", "In Progress", "On Hold"].includes(wo.status)
+                        ) {
+                          statusDotColor = "bg-yellow-500"; // Pending
+                        }
+                        return `<div class="text-xs p-1 rounded ${priorityColor} flex items-center" title="${wo.title} - Status: ${wo.status}">
+                                    <span class="inline-block w-2 h-2 ${statusDotColor} rounded-full mr-1.5 flex-shrink-0"></span>
+                                    <span class="truncate">${wo.title}</span>
+                                </div>`;
+                      })
+                      .join("")}
+                    </div>
+                </div>
+            `;
+          }
+
+          const lastDayOfMonth = new Date(year, month, daysInMonth).getDay();
+          for (let i = lastDayOfMonth; i < 6; i++) {
+            calendarHtml += `<div class="calendar-day other-month"></div>`;
+          }
+
+          calendarHtml += `</div></div>`;
+          return calendarHtml;
+        }
+
+        function renderLocationsPage() {
+          const {
+            divisions = [],
+            departments = [],
+            subLines = [],
+            productionLines = [],
+            cabinets = [],
+            shelves = [],
+            boxes = [],
+          } = state.cache.locations || {};
+          const isAdmin = state.currentUser.role === "Admin";
+
+          return `
+            <h1 class="text-3xl font-bold mb-6">Location Management</h1>
+            <div class="grid grid-cols-1 ${
+              isAdmin ? "md:grid-cols-3" : ""
+            } gap-6">
+                
+                ${
+                  isAdmin
+                    ? `
+                <div class="bg-white p-4 rounded-lg shadow space-y-6">
+                    <div>
+                        <h2 class="text-xl font-bold mb-4">Divisions</h2>
+                        <ul id="divisionList" class="space-y-2 mb-4 max-h-40 overflow-y-auto">
+                            ${
+                              divisions
+                                .map(
+                                  (d) => `
+                                <li class="flex justify-between items-center p-2 bg-gray-50 rounded">
+                                    <span>${d.name}</span>
+                                    <button class="delete-location-btn text-red-500 hover:text-red-700" data-id="${d.id}" data-type="division"><i class="fas fa-trash"></i></button>
+                                </li>`
+                                )
+                                .join("") ||
+                              '<li class="text-gray-500">No divisions found.</li>'
+                            }
+                        </ul>
+                        <form id="addDivisionForm" class="flex gap-2 border-t pt-4">
+                            <input type="text" id="newDivisionName" class="flex-grow px-2 py-1 border rounded" placeholder="New Division Name" required>
+                            <button type="submit" class="bg-blue-500 text-white px-3 py-1 rounded">+</button>
+                        </form>
+                    </div>
+
+                    <div>
+                        <h2 class="text-xl font-bold mb-4">Departments</h2>
+                        <ul id="departmentList" class="space-y-2 mb-4 max-h-40 overflow-y-auto">
+                            ${
+                              departments
+                                .map((d) => {
+                                  const division = divisions.find(
+                                    (div) => div.id === d.divisionId
+                                  );
+                                  return `
+                                <li class="flex justify-between items-center p-2 bg-gray-50 rounded">
+                                    <div>
+                                        <p>${d.name}</p>
+                                        <p class="text-xs text-gray-500">${
+                                          division
+                                            ? division.name
+                                            : "No Division"
+                                        }</p>
+                                    </div>
+                                    <button class="delete-location-btn text-red-500 hover:text-red-700" data-id="${
+                                      d.id
+                                    }" data-type="department"><i class="fas fa-trash"></i></button>
+                                </li>`;
+                                })
+                                .join("") ||
+                              '<li class="text-gray-500">No departments found.</li>'
+                            }
+                        </ul>
+                        <form id="addDepartmentForm" class="border-t pt-4">
+                            <select id="departmentDivisionSelect" class="w-full mb-2 px-2 py-1 border rounded" required>
+                                <option value="">Select Division</option>
+                                ${divisions
+                                  .map(
+                                    (d) =>
+                                      `<option value="${d.id}">${d.name}</option>`
+                                  )
+                                  .join("")}
+                            </select>
+                            <div class="flex gap-2">
+                                <input type="text" id="newDepartmentName" class="flex-grow px-2 py-1 border rounded" placeholder="New Department Name" required>
+                                <button type="submit" class="bg-blue-500 text-white px-3 py-1 rounded">+</button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <div>
+                        <h2 class="text-xl font-bold mb-4">Sub Lines</h2>
+                        <ul id="subLineList" class="space-y-2 mb-4 max-h-40 overflow-y-auto">
+                            ${
+                              subLines
+                                .map((sl) => {
+                                  const department = departments.find(
+                                    (d) => d.id === sl.departmentId
+                                  );
+                                  return `
+                                <li class="flex justify-between items-center p-2 bg-gray-50 rounded">
+                                    <div>
+                                        <p>${sl.name}</p>
+                                        <p class="text-xs text-gray-500">${
+                                          department
+                                            ? department.name
+                                            : "No Department"
+                                        }</p>
+                                    </div>
+                                    <button class="delete-location-btn text-red-500 hover:text-red-700" data-id="${
+                                      sl.id
+                                    }" data-type="subLine"><i class="fas fa-trash"></i></button>
+                                </li>`;
+                                })
+                                .join("") ||
+                              '<li class="text-gray-500">No sub lines found.</li>'
+                            }
+                        </ul>
+                        <form id="addSubLineForm" class="border-t pt-4">
+                            <select id="subLineDepartmentSelect" class="w-full mb-2 px-2 py-1 border rounded" required>
+                                <option value="">Select Department</option>
+                                ${departments
+                                  .map(
+                                    (d) =>
+                                      `<option value="${d.id}">${d.name}</option>`
+                                  )
+                                  .join("")}
+                            </select>
+                            <div class="flex gap-2">
+                                <input type="text" id="newSubLineName" class="flex-grow px-2 py-1 border rounded" placeholder="New Sub Line Name" required>
+                                <button type="submit" class="bg-blue-500 text-white px-3 py-1 rounded">+</button>
+                            </div>
+                        </form>
+                    </div>
+
+                </div>
+
+                <div class="bg-white p-4 rounded-lg shadow">
+                    <h2 class="text-xl font-bold mb-4">Production Lines</h2>
+                    <ul id="productionLineList" class="space-y-2 mb-4 max-h-60 overflow-y-auto">
+                        ${
+                          productionLines
+                            .map((pl) => {
+                              const subLine = subLines.find(
+                                (sl) => sl.id === pl.subLineId
+                              );
+                              return `
+                            <li class="flex justify-between items-center p-2 bg-gray-50 rounded">
+                                <div>
+                                    <p>${pl.name}</p>
+                                    <p class="text-xs text-gray-500">${
+                                      subLine ? subLine.name : "No Sub Line"
+                                    }</p>
+                                </div>
+                                <button class="delete-location-btn text-red-500 hover:text-red-700" data-id="${
+                                  pl.id
+                                }" data-type="productionLine"><i class="fas fa-trash"></i></button>
+                            </li>`;
+                            })
+                            .join("") ||
+                          '<li class="text-gray-500">No production lines found.</li>'
+                        }
+                    </ul>
+                    <form id="addProductionLineForm" class="border-t pt-4">
+                        <h3 class="font-semibold mb-2">Add New Production Line</h3>
+                        <select id="productionLineSubLineSelect" class="w-full mb-2 px-2 py-1 border rounded" required>
+                            <option value="">Select Sub Line</option>
+                            ${subLines
+                              .map(
+                                (sl) =>
+                                  `<option value="${sl.id}">${sl.name}</option>`
+                              )
+                              .join("")}
+                        </select>
+                        <div class="flex gap-2">
+                            <input type="text" id="newProductionLineName" class="flex-grow px-2 py-1 border rounded" placeholder="New Line Name" required>
+                            <button type="submit" class="bg-blue-500 text-white px-3 py-1 rounded">+</button>
+                        </div>
+                    </form>
+                </div>
+                `
+                    : ""
+                }
+
+                <div class="bg-white p-4 rounded-lg shadow space-y-4">
+                    <h2 class="text-xl font-bold mb-2">Storage Locations</h2>
+                     <div>
+                        <h3 class="font-semibold mb-2">Cabinets</h3>
+                         <ul id="cabinetList" class="space-y-2 mb-4 max-h-40 overflow-y-auto">
+                            ${
+                              cabinets
+                                .map((c) => {
+                                  const department = departments.find(
+                                    (d) => d.id === c.departmentId
+                                  );
+                                  return `<li class="flex justify-between items-center p-2 bg-gray-50 rounded">
+                                    <span>${
+                                      c.name
+                                    } <span class="text-xs text-gray-500">(${
+                                    department ? department.name : "N/A"
+                                  })</span></span>
+                                    <button class="delete-location-btn text-red-500 hover:text-red-700" data-id="${
+                                      c.id
+                                    }" data-type="cabinet"><i class="fas fa-trash"></i></button>
+                                </li>`;
+                                })
+                                .join("") ||
+                              '<li class="text-gray-500">No cabinets found.</li>'
+                            }
+                        </ul>
+                        <form id="addCabinetForm" class="border-t pt-2">
+                            <select id="cabinetDepartmentSelect" class="w-full mb-2 px-2 py-1 border rounded" required>
+                                <option value="">Select Department</option>
+                                ${departments
+                                  .map(
+                                    (d) =>
+                                      `<option value="${d.id}">${d.name}</option>`
+                                  )
+                                  .join("")}
+                            </select>
+                            <div class="flex gap-2">
+                                <input type="text" id="newCabinetName" class="flex-grow px-2 py-1 border rounded" placeholder="New Cabinet Name" required>
+                                <button type="submit" class="bg-blue-500 text-white px-3 py-1 rounded">+</button>
+                            </div>
+                        </form>
+                    </div>
+                     <div>
+                        <h3 class="font-semibold mb-2">Shelves</h3>
+                         <ul id="shelfList" class="space-y-2 mb-4 max-h-40 overflow-y-auto">
+                            ${
+                              shelves
+                                .map((s) => {
+                                  const cabinet = cabinets.find(
+                                    (c) => c.id === s.cabinetId
+                                  );
+                                  return `<li class="flex justify-between items-center p-2 bg-gray-50 rounded">
+                                    <span>${
+                                      s.name
+                                    } <span class="text-xs text-gray-500">(${
+                                    cabinet ? cabinet.name : "N/A"
+                                  })</span></span>
+                                    <button class="delete-location-btn text-red-500 hover:text-red-700" data-id="${
+                                      s.id
+                                    }" data-type="shelf"><i class="fas fa-trash"></i></button>
+                                </li>`;
+                                })
+                                .join("") ||
+                              '<li class="text-gray-500">No shelves found.</li>'
+                            }
+                        </ul>
+                        <form id="addShelfForm" class="border-t pt-2">
+                            <select id="shelfCabinetSelect" class="w-full mb-2 px-2 py-1 border rounded" required>
+                                <option value="">Select Cabinet</option>
+                                ${cabinets
+                                  .map(
+                                    (c) =>
+                                      `<option value="${c.id}">${c.name}</option>`
+                                  )
+                                  .join("")}
+                            </select>
+                            <div class="flex gap-2">
+                                <input type="text" id="newShelfName" class="flex-grow px-2 py-1 border rounded" placeholder="New Shelf Name" required>
+                                <button type="submit" class="bg-blue-500 text-white px-3 py-1 rounded">+</button>
+                            </div>
+                        </form>
+                    </div>
+                     <div>
+                        <h3 class="font-semibold mb-2">Boxes</h3>
+                         <ul id="boxList" class="space-y-2 mb-4 max-h-40 overflow-y-auto">
+                            ${
+                              boxes
+                                .map((b) => {
+                                  const shelf = shelves.find(
+                                    (s) => s.id === b.shelfId
+                                  );
+                                  return `<li class="flex justify-between items-center p-2 bg-gray-50 rounded">
+                                    <span>${
+                                      b.name
+                                    } <span class="text-xs text-gray-500">(${
+                                    shelf ? shelf.name : "N/A"
+                                  })</span></span>
+                                    <button class="delete-location-btn text-red-500 hover:text-red-700" data-id="${
+                                      b.id
+                                    }" data-type="box"><i class="fas fa-trash"></i></button>
+                                </li>`;
+                                })
+                                .join("") ||
+                              '<li class="text-gray-500">No boxes found.</li>'
+                            }
+                        </ul>
+                        <form id="addBoxForm" class="border-t pt-2">
+                            <select id="boxShelfSelect" class="w-full mb-2 px-2 py-1 border rounded" required>
+                                <option value="">Select Shelf</option>
+                                ${shelves
+                                  .map(
+                                    (s) =>
+                                      `<option value="${s.id}">${s.name}</option>`
+                                  )
+                                  .join("")}
+                            </select>
+                            <div class="flex gap-2">
+                                <input type="text" id="newBoxName" class="flex-grow px-2 py-1 border rounded" placeholder="New Box Name" required>
+                                <button type="submit" class="bg-blue-500 text-white px-3 py-1 rounded">+</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        `;
+        }
+
+
         function generateTableRows(type, data) {
           if (!data || data.length === 0) {
             return `<tr><td colspan="10" class="text-center p-4 text-gray-500">No data available.</td></tr>`;
@@ -1977,6 +2391,12 @@
             case "userManagement":
               content = renderUserManagementPage();
               break;
+            case "workOrderCalendar":
+              content = renderWorkOrderCalendar();
+              break;
+            case "locations":
+              content = renderLocationsPage();
+              break;
             default:
               content = renderDashboard();
           }
@@ -2076,7 +2496,6 @@
                 document.getElementById("registrationForm").reset();
                 showTemporaryMessage("Account created successfully! You can now log in.");
                 
-                // If an admin is creating the user, refresh the user list
                 if (state.currentUser && state.currentUser.role === 'Admin') {
                     state.cache.users = await api.getUsers();
                     await renderMainContent();
@@ -2282,6 +2701,40 @@
             }
         }
 
+        async function handleLocationFormSubmit(e, type) {
+            e.preventDefault();
+            const form = e.target;
+            const name = form.querySelector('input[type="text"]').value;
+            const parentSelect = form.querySelector('select');
+            const parentId = parentSelect ? parseInt(parentSelect.value) : null;
+            
+            const locationData = { type, name, parentId };
+
+            try {
+                await api.createLocation(locationData);
+                await logActivity("Location Added", `Added ${type}: ${name}`);
+                state.cache.locations = await api.getLocations();
+                await renderMainContent();
+                showTemporaryMessage('Location added successfully.');
+            } catch (error) {
+                showTemporaryMessage('Failed to add location.', true);
+            }
+        }
+
+        async function deleteLocation(type, id) {
+            if (confirm(`Are you sure you want to delete this ${type}? This may affect items assigned to it.`)) {
+                try {
+                    await api.deleteLocation({ type, id });
+                    await logActivity("Location Deleted", `Deleted ${type} with ID: ${id}`);
+                    state.cache.locations = await api.getLocations();
+                    await renderMainContent();
+                    showTemporaryMessage('Location deleted successfully.');
+                } catch (error) {
+                    showTemporaryMessage(error.message, true);
+                }
+            }
+        }
+
         // =================================================================================
         //  PARTITION 7: INITIALIZATION & EVENT LISTENERS
         // =================================================================================
@@ -2351,6 +2804,27 @@
 
           // User Management buttons
           if (button.classList.contains("delete-user-btn")) deleteUser(id);
+
+          // Location buttons
+          if (button.classList.contains("delete-location-btn")) {
+              deleteLocation(button.dataset.type, id);
+          }
+
+          // Calendar buttons
+          if (button.id === "prevMonthBtn") {
+              state.calendarDate.setMonth(state.calendarDate.getMonth() - 1);
+              renderMainContent();
+          }
+          if (button.id === "nextMonthBtn") {
+              state.calendarDate.setMonth(state.calendarDate.getMonth() + 1);
+              renderMainContent();
+          }
+          const dayEl = target.closest(".calendar-day[data-date]");
+          if (dayEl) {
+            const date = dayEl.dataset.date;
+            const workOrders = state.cache.workOrders.filter((wo) => wo.dueDate === date);
+            showCalendarDetailModal(date, workOrders);
+          }
         }
 
         function attachPageSpecificEventListeners(page) {
@@ -2366,6 +2840,12 @@
                     break;
                 case 'userManagement':
                     attachUserManagementEventListeners();
+                    break;
+                case 'locations':
+                    attachLocationsPageEventListeners();
+                    break;
+                case 'workOrderCalendar':
+                    // No specific listeners needed, handled by global main content click handler
                     break;
             }
         }
@@ -2425,6 +2905,16 @@
 
         function attachUserManagementEventListeners() {
             // The main click handler already manages the delete button clicks
+        }
+
+        function attachLocationsPageEventListeners() {
+            document.getElementById('addDivisionForm')?.addEventListener('submit', (e) => handleLocationFormSubmit(e, 'division'));
+            document.getElementById('addDepartmentForm')?.addEventListener('submit', (e) => handleLocationFormSubmit(e, 'department'));
+            document.getElementById('addSubLineForm')?.addEventListener('submit', (e) => handleLocationFormSubmit(e, 'subLine'));
+            document.getElementById('addProductionLineForm')?.addEventListener('submit', (e) => handleLocationFormSubmit(e, 'productionLine'));
+            document.getElementById('addCabinetForm')?.addEventListener('submit', (e) => handleLocationFormSubmit(e, 'cabinet'));
+            document.getElementById('addShelfForm')?.addEventListener('submit', (e) => handleLocationFormSubmit(e, 'shelf'));
+            document.getElementById('addBoxForm')?.addEventListener('submit', (e) => handleLocationFormSubmit(e, 'box'));
         }
         
         function showAssetModal(assetId = null) {
@@ -2544,6 +3034,40 @@
             document.getElementById("workOrderModalTitle").textContent = "Create Work Order";
           }
           document.getElementById("workOrderModal").style.display = "flex";
+        }
+
+        function showCalendarDetailModal(date, workOrders) {
+          document.getElementById(
+            "calendarDetailModalTitle"
+          ).textContent = `Work Orders for ${date}`;
+          const contentEl = document.getElementById("calendarDetailContent");
+
+          if (workOrders.length === 0) {
+            contentEl.innerHTML =
+              "<p>No work orders scheduled for this day.</p>";
+          } else {
+            contentEl.innerHTML = workOrders
+              .map((wo) => {
+                const asset = state.cache.assets.find((a) => a.id === parseInt(wo.assetId));
+                return `
+                    <div class="p-3 border rounded-lg hover:bg-gray-50">
+                        <p class="font-bold">${wo.title}</p>
+                        <p class="text-sm"><strong>Asset:</strong> ${
+                          asset ? asset.name : "N/A"
+                        }</p>
+                        <p class="text-sm"><strong>Status:</strong> ${
+                          wo.status
+                        }</p>
+                        <p class="text-sm"><strong>Priority:</strong> ${
+                          wo.priority
+                        }</p>
+                    </div>
+                `;
+              })
+              .join("");
+          }
+
+          document.getElementById("calendarDetailModal").style.display = "flex";
         }
 
         function addChecklistItem(text) {
