@@ -15,48 +15,56 @@ export const can = {
    */
   view: (item) => {
     if (!state.currentUser) return false;
+    // Admins can see everything.
     if (state.currentUser.role === "Admin") return true;
 
     const {
-      divisions = [], departments = [], subLines = [], productionLines = [],
+      departments = [], subLines = [], productionLines = [],
       cabinets = [], shelves = [], boxes = [],
     } = state.cache.locations || {};
-    let itemDepartmentId;
+    
+    let itemDepartmentId = null;
 
+    // --- THIS IS THE KEY CHANGE ---
+    // A more robust way to find the department ID for any given item.
+
+    // Case 1: The item itself has a departmentId (like a User)
     if (item.departmentId) {
       itemDepartmentId = item.departmentId;
+    
+    // Case 2: The item has a locationId (like an Asset or Part)
     } else if (item.locationId) {
       if (typeof item.locationId !== "string" || !item.locationId.includes("-")) return false;
       const [type, id] = item.locationId.split("-");
       const numId = parseInt(id);
 
-      if (type === "pl") {
+      if (type === "pl") { // Production Line
         const pLine = productionLines.find((l) => l.id === numId);
-        if (pLine) {
-          const subLine = subLines.find((sl) => sl.id === pLine.subLineId);
-          if (subLine) itemDepartmentId = subLine.departmentId;
-        }
-      } else if (type === "box") {
+        const subLine = pLine ? subLines.find((sl) => sl.id === pLine.subLineId) : null;
+        if (subLine) itemDepartmentId = subLine.departmentId;
+      } else if (type === "box") { // Storage Box
         const box = boxes.find((b) => b.id === numId);
         const shelf = box ? shelves.find((s) => s.id === box.shelfId) : null;
         const cabinet = shelf ? cabinets.find((c) => c.id === shelf.cabinetId) : null;
         if (cabinet) itemDepartmentId = cabinet.departmentId;
       }
-      // Add other location types ('sl', 'sh', 'cab') if needed
+      // Add logic for 'sl', 'sh', 'cab' if they can be directly assigned to assets/parts
+    
+    // Case 3: The item is linked to an asset (like a Work Order)
     } else if (item.assetId) {
       const asset = state.cache.assets.find((a) => a.id === parseInt(item.assetId));
-      if (asset && asset.locationId && typeof asset.locationId === "string" && asset.locationId.includes("-")) {
-        const [type, id] = asset.locationId.split("-");
-        const numId = parseInt(id);
-        if (type === "pl") {
-          const pLine = productionLines.find((l) => l.id === numId);
-          if (pLine) {
-            const subLine = subLines.find((sl) => sl.id === pLine.subLineId);
-            if (subLine) itemDepartmentId = subLine.departmentId;
-          }
-        }
+      if (asset && asset.locationId) {
+          // Recursively call this function to find the asset's department.
+          // This avoids duplicating the location logic.
+          return can.view(asset);
       }
     }
+    
+    // If we couldn't determine the item's department, deny access for safety.
+    if (itemDepartmentId === null) {
+        return false;
+    }
+
     return itemDepartmentId === state.currentUser.departmentId;
   },
 
@@ -67,9 +75,10 @@ export const can = {
    */
   viewPage: (page) => {
     if (!state.currentUser) return false;
-    const adminOnlyPages = ["userManagement", "activityLog", "locations"];
+    if (state.currentUser.role === 'Admin') return true;
+    const adminOnlyPages = ["userManagement", "activityLog"];
     if (adminOnlyPages.includes(page)) {
-      return state.currentUser.role === "Admin";
+      return false;
     }
     const nonClerkPages = ["assets", "parts", "workOrders", "workOrderCalendar"];
     if (state.currentUser.role === "Clerk" && nonClerkPages.includes(page)) {
@@ -79,11 +88,8 @@ export const can = {
   },
 };
 
-/**
- * Handles the login form submission.
- * @param {Event} e The form submission event.
- * @param {Function} onLoginSuccess A callback function to run after successful login.
- */
+// ... (rest of the file remains the same)
+
 export async function handleLogin(e, onLoginSuccess) {
   e.preventDefault();
   const username = document.getElementById("username").value;
@@ -99,20 +105,13 @@ export async function handleLogin(e, onLoginSuccess) {
         await logActivity("User Login");
         onLoginSuccess(); // This will call loadAndRender() from app.js
     } else {
-        // This case might not be reached if the API always throws an error for failures, but it's good for safety.
         loginErrorEl.textContent = "Invalid username or password.";
     }
   } catch (error) {
-    // --- THIS IS THE KEY CHANGE ---
-    // Display the specific error message thrown from api.js
     loginErrorEl.textContent = error.message || "Login failed. Please try again.";
   }
 }
 
-/**
- * Handles the logout process.
- * @param {Function} onLogoutSuccess A callback function to run after logout.
- */
 export async function handleLogout(onLogoutSuccess) {
   await logActivity("User Logout");
   state.currentUser = null;
@@ -123,11 +122,6 @@ export async function handleLogout(onLogoutSuccess) {
   onLogoutSuccess(); // This will call render() from app.js
 }
 
-/**
- * Handles the new user registration form submission.
- * @param {Event} e The form submission event.
- * @param {Function} onRegisterSuccess A callback to run on success.
- */
 export async function handleRegistration(e, onRegisterSuccess) {
     e.preventDefault();
     const regError = document.getElementById("regError");
