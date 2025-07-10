@@ -71,6 +71,11 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(data)
       }),
+      updateUserRole: (data) => api.request('update_user_role.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+      }),
       deleteUser: (id) => api.request(`delete_user.php?id=${id}`, { method: 'POST' }),
 
       // LOG operations
@@ -1293,11 +1298,16 @@
                   <td class="p-2">${user.username}</td>
                   <td class="p-2">${user.role}</td>
                   <td class="p-2">${department}</td>
-                  <td class="p-2">
+                  <td class="p-2 space-x-2">
+                      ${
+                          user.id !== 1
+                          ? `<button class="edit-user-btn text-yellow-500 hover:text-yellow-700" data-id="${user.id}" title="Edit Role"><i class="fas fa-user-shield"></i></button>`
+                          : ''
+                      }
                       ${
                           // Prevent deleting the current user or the primary admin (ID 1)
                           user.id !== state.currentUser.id && user.id !== 1
-                          ? `<button class="delete-user-btn text-red-500 hover:text-red-700" data-id="${user.id}"><i class="fas fa-trash"></i></button>`
+                          ? `<button class="delete-user-btn text-red-500 hover:text-red-700" data-id="${user.id}" title="Delete User"><i class="fas fa-trash"></i></button>`
                           : ""
                       }
                   </td>
@@ -1574,6 +1584,24 @@
           } catch (error) {
               showTemporaryMessage(error.message, true);
           }
+      }
+  }
+
+  async function handleUserRoleFormSubmit(e) {
+      e.preventDefault();
+      const userId = parseInt(document.getElementById("editUserId").value);
+      const role = document.getElementById("editUserRole").value;
+
+      try {
+          await api.updateUserRole({ userId, role });
+          await logActivity("User Role Changed", `Changed role for user ID ${userId} to ${role}`);
+          
+          state.cache.users = await api.getUsers();
+          document.getElementById("editUserModal").style.display = "none";
+          await renderMainContent();
+          showTemporaryMessage("User role updated successfully!");
+      } catch (error) {
+          showTemporaryMessage(error.message, true);
       }
   }
 
@@ -1884,6 +1912,7 @@
     document.getElementById("loginForm").addEventListener("submit", handleLogin);
     document.getElementById("logoutBtn").addEventListener("click", handleLogout);
     document.getElementById("registrationForm").addEventListener("submit", handleRegistration);
+    document.getElementById("editUserForm").addEventListener("submit", handleUserRoleFormSubmit);
     
     document.getElementById("createAccountBtn").addEventListener("click", async () => {
         try {
@@ -1950,6 +1979,7 @@
     if (button.classList.contains("delete-wo-btn")) deleteWorkOrder(id);
 
     // User Management buttons
+    if (button.classList.contains("edit-user-btn")) showEditUserModal(id);
     if (button.classList.contains("delete-user-btn")) deleteUser(id);
 
     // Location buttons
@@ -2059,7 +2089,7 @@
   }
 
   function attachUserManagementEventListeners() {
-      // The main click handler already manages the delete button clicks
+      // The main click handler already manages the delete and edit buttons
   }
 
   function attachLocationsPageEventListeners() {
@@ -2234,6 +2264,16 @@
     }
 
     document.getElementById("calendarDetailModal").style.display = "flex";
+  }
+
+  function showEditUserModal(userId) {
+    const user = state.cache.users.find(u => u.id === userId);
+    if (!user) return;
+
+    document.getElementById("editUserId").value = user.id;
+    document.getElementById("editUserFullName").textContent = user.fullName;
+    document.getElementById("editUserRole").value = user.role;
+    document.getElementById("editUserModal").style.display = "flex";
   }
 
   function addChecklistItem(text) {
