@@ -2,7 +2,7 @@
 // --- Password Hash Generator ---
 
 // 1. Enter the password you want to use for your user account.
-$plainPassword = 'password';
+$plainPassword = 'your_new_password_here';
 
 // 2. This will create a secure hash of that password.
 $hashedPassword = password_hash($plainPassword, PASSWORD_DEFAULT);
