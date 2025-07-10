@@ -157,7 +157,12 @@ async function deleteAsset(assetId) {
  */
 function attachPageSpecificEventListeners(page) {
     if (page === 'assets') {
-        document.getElementById("addAssetBtn")?.addEventListener("click", () => showAssetModal());
+        document.getElementById("addAssetBtn")?.addEventListener("click", () => {
+            // --- THIS IS THE KEY CHANGE ---
+            // When the button is clicked, show the modal AND populate the dropdown.
+            showAssetModal();
+            populateLocationDropdown(document.getElementById("assetLocation"), "operational");
+        });
         document.getElementById("assetSearch")?.addEventListener("input", (e) => {
             const searchTerm = e.target.value.toLowerCase();
             const filtered = state.cache.assets.filter(can.view).filter(a =>
@@ -215,9 +220,13 @@ function attachGlobalEventListeners() {
         const id = parseInt(button.dataset.id);
 
         // Asset actions
-        if (button.classList.contains("edit-asset-btn")) showAssetModal(id);
+        if (button.classList.contains("edit-asset-btn")) {
+             // --- THIS IS THE KEY CHANGE ---
+            showAssetModal(id);
+            populateLocationDropdown(document.getElementById("assetLocation"), "operational");
+        }
         if (button.classList.contains("delete-asset-btn")) deleteAsset(id);
-
+        
         // Part actions
         if (button.classList.contains("edit-part-btn")) showPartModal(id);
         // if (button.classList.contains("delete-part-btn")) deletePart(id);
