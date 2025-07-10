@@ -1885,12 +1885,18 @@
     document.getElementById("logoutBtn").addEventListener("click", handleLogout);
     document.getElementById("registrationForm").addEventListener("submit", handleRegistration);
     
-    document.getElementById("createAccountBtn").addEventListener("click", () => {
-        populateLocationDropdowns(
-          document.getElementById("regDivision"),
-          document.getElementById("regDepartment")
-        );
-        document.getElementById("registrationModal").style.display = "flex";
+    document.getElementById("createAccountBtn").addEventListener("click", async () => {
+        try {
+            const locations = await api.getLocations();
+            populateLocationDropdowns(
+              document.getElementById("regDivision"),
+              document.getElementById("regDepartment"),
+              locations
+            );
+            document.getElementById("registrationModal").style.display = "flex";
+        } catch (error) {
+            showTemporaryMessage("Could not load location data. Please try again.", true);
+        }
     });
     
     document.getElementById("sidebar").addEventListener("click", async (e) => {
@@ -2280,8 +2286,8 @@
     container.appendChild(row);
   }
 
-  function populateLocationDropdowns(divisionSelect, departmentSelect) {
-    const { divisions = [], departments = [] } = state.cache.locations || {};
+  function populateLocationDropdowns(divisionSelect, departmentSelect, locations) {
+    const { divisions = [], departments = [] } = locations || state.cache.locations || {};
     divisionSelect.innerHTML =
       `<option value="">Select Division</option>` +
       divisions
