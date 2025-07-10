@@ -23,23 +23,21 @@ import {
     showWorkOrderModal,
     showEditUserModal,
     showCalendarDetailModal,
-    // Add other modal functions if they need to be called from here
+    populateLocationDropdown,
+    // --- IMPORT NEW MODAL FUNCTIONS ---
+    showAssetDetailModal,
+    showTransferAssetModal
 } from './ui.js';
 
 
 // --- CORE APP RENDERING & ROUTING ---
 
-/**
- * Renders the main content area based on the current page in the state.
- */
 function renderMainContent() {
     const mainContent = document.getElementById("mainContent");
     let content = "";
-
     if (!can.viewPage(state.currentPage)) {
         state.currentPage = "dashboard";
     }
-
     switch (state.currentPage) {
         case "dashboard":       content = renderDashboard(); break;
         case "assets":          content = renderAssetsPage(); break;
@@ -56,9 +54,6 @@ function renderMainContent() {
     attachPageSpecificEventListeners(state.currentPage);
 }
 
-/**
- * The main render function for the entire application.
- */
 function render() {
     if (!state.currentUser) {
         document.getElementById("loginScreen").style.display = "flex";
@@ -71,9 +66,6 @@ function render() {
     }
 }
 
-/**
- * Fetches all initial data from the API and stores it in the state cache.
- */
 async function loadInitialData() {
     try {
         const [assets, parts, users, workOrders, partRequests, locations, logs, receivedParts] = await Promise.all([
@@ -87,9 +79,6 @@ async function loadInitialData() {
     }
 }
 
-/**
- * A wrapper function to load data and then render the application.
- */
 async function loadAndRender() {
     await loadInitialData();
     render();
@@ -145,21 +134,50 @@ async function deleteAsset(assetId) {
     }
 }
 
-// ... Add all other action handlers here (handlePartFormSubmit, deletePart, etc.)
-// These functions will call the `api` and then call `renderMainContent()` to refresh the view.
+// --- NEW ACTION HANDLERS ---
+
+async function handleDisposeAsset(assetId) {
+    if (confirm("Are you sure you want to dispose of this asset? This will change its status to Decommissioned.")) {
+        try {
+            const asset = state.cache.assets.find(a => a.id === assetId);
+            const updatedData = { ...asset, status: 'Decommissioned' };
+            await api.updateAsset(assetId, updatedData);
+            await logActivity("Asset Disposed", `Disposed asset: ${asset.name} (ID: ${assetId})`);
+            state.cache.assets = await api.getAssets();
+            renderMainContent();
+            showTemporaryMessage('Asset has been decommissioned.');
+        } catch (error) {
+            showTemporaryMessage('Failed to dispose asset.', true);
+        }
+    }
+}
+
+async function handleTransferAssetFormSubmit(e) {
+    e.preventDefault();
+    const assetId = parseInt(document.getElementById('transferAssetId').value);
+    const newLocationId = document.getElementById('transferLocation').value;
+    const notes = document.getElementById('transferNotes').value;
+
+    try {
+        const asset = state.cache.assets.find(a => a.id === assetId);
+        const updatedData = { ...asset, locationId: newLocationId };
+        await api.updateAsset(assetId, updatedData);
+        await logActivity("Asset Transferred", `Transferred ${asset.name} to new location. Notes: ${notes}`);
+        state.cache.assets = await api.getAssets();
+        document.getElementById('transferAssetModal').style.display = 'none';
+        renderMainContent();
+        showTemporaryMessage('Asset transferred successfully!');
+    } catch (error) {
+        showTemporaryMessage('Failed to transfer asset.', true);
+    }
+}
 
 
 // --- EVENT LISTENER ATTACHMENT ---
 
-/**
- * Attaches event listeners for elements that are specific to the currently rendered page.
- * @param {string} page The current page identifier.
- */
 function attachPageSpecificEventListeners(page) {
     if (page === 'assets') {
         document.getElementById("addAssetBtn")?.addEventListener("click", () => {
-            // --- THIS IS THE KEY CHANGE ---
-            // When the button is clicked, show the modal AND populate the dropdown.
             showAssetModal();
             populateLocationDropdown(document.getElementById("assetLocation"), "operational");
         });
@@ -173,13 +191,8 @@ function attachPageSpecificEventListeners(page) {
             document.getElementById("assetTableBody").innerHTML = generateTableRows("assets", filtered);
         });
     }
-    // Add event listeners for other pages following the same pattern
-    // e.g., for 'parts', 'workOrders', etc.
 }
 
-/**
- * Attaches event listeners that are always active, regardless of the page.
- */
 function attachGlobalEventListeners() {
     // Authentication
     document.getElementById("loginForm").addEventListener("submit", (e) => handleLogin(e, loadAndRender));
@@ -207,8 +220,7 @@ function attachGlobalEventListeners() {
     // Modal closing
     document.body.addEventListener("click", (e) => {
         if (e.target.closest("[data-close-modal]")) {
-            const modal = e.target.closest(".modal");
-            if (modal) modal.style.display = "none";
+            e.target.closest(".modal").style.display = "none";
         }
     });
 
@@ -218,39 +230,32 @@ function attachGlobalEventListeners() {
         if (!button) return;
         
         const id = parseInt(button.dataset.id);
+        const asset = state.cache.assets.find(a => a.id === id);
 
-        // Asset actions
+        // --- UPDATE CLICK HANDLER LOGIC ---
+        if (button.classList.contains("view-asset-btn")) showAssetDetailModal(asset);
         if (button.classList.contains("edit-asset-btn")) {
-             // --- THIS IS THE KEY CHANGE ---
             showAssetModal(id);
             populateLocationDropdown(document.getElementById("assetLocation"), "operational");
         }
         if (button.classList.contains("delete-asset-btn")) deleteAsset(id);
-        
-        // Part actions
-        if (button.classList.contains("edit-part-btn")) showPartModal(id);
-        // if (button.classList.contains("delete-part-btn")) deletePart(id);
+        if (button.classList.contains("transfer-asset-btn")) {
+            showTransferAssetModal(asset);
+            populateLocationDropdown(document.getElementById("transferLocation"), "operational");
+        }
+        if (button.classList.contains("dispose-asset-btn")) handleDisposeAsset(id);
 
         // User actions
         if (button.classList.contains("edit-user-btn")) showEditUserModal(id);
-        // if (button.classList.contains("delete-user-btn")) deleteUser(id);
-        
-        // Calendar actions
-        const dayEl = e.target.closest(".calendar-day[data-date]");
-        if (dayEl) {
-          const date = dayEl.dataset.date;
-          const workOrders = state.cache.workOrders.filter((wo) => wo.dueDate === date);
-          showCalendarDetailModal(date, workOrders);
-        }
     });
 
     // Form Submissions
-    document.getElementById("assetForm")?.addEventListener("submit", handleAssetFormSubmit);
-    // Add other form submission listeners here
+    document.getElementById("assetForm").addEventListener("submit", handleAssetFormSubmit);
+    document.getElementById("transferAssetForm").addEventListener("submit", handleTransferAssetFormSubmit);
 }
 
 // --- APPLICATION INITIALIZATION ---
 document.addEventListener("DOMContentLoaded", () => {
     attachGlobalEventListeners();
-    render(); // Initial render for the login screen
+    render();
 });

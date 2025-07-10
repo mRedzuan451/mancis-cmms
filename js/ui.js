@@ -478,11 +478,12 @@ export function renderSidebar() {
         .join("");
 }
 
+// --- MODAL SHOW/POPULATE FUNCTIONS ---
+
 export function showAssetModal(assetId = null) {
     const form = document.getElementById("assetForm");
     form.reset();
     document.getElementById("assetId").value = "";
-    populateLocationDropdown(document.getElementById("assetLocation"), "operational");
     if (assetId) {
         const asset = state.cache.assets.find((a) => a.id === assetId);
         if (asset) {
@@ -500,6 +501,35 @@ export function showAssetModal(assetId = null) {
         document.getElementById("assetModalTitle").textContent = "Add Asset";
     }
     document.getElementById("assetModal").style.display = "flex";
+}
+
+// --- NEW MODAL FUNCTIONS ---
+
+export function showAssetDetailModal(asset) {
+    if (!asset) return;
+    const contentEl = document.getElementById('assetDetailContent');
+    const locationName = getFullLocationName(asset.locationId);
+    contentEl.innerHTML = `
+        <h2 class="text-2xl font-bold mb-4">${asset.name}</h2>
+        <div class="grid grid-cols-2 gap-4 text-sm">
+            <div><strong>Tag/Serial:</strong> ${asset.tag}</div>
+            <div><strong>Status:</strong> ${asset.status}</div>
+            <div><strong>Category:</strong> ${asset.category}</div>
+            <div><strong>Location:</strong> ${locationName}</div>
+            <div><strong>Purchase Date:</strong> ${asset.purchaseDate}</div>
+            <div><strong>Cost:</strong> ${asset.currency} ${asset.cost}</div>
+        </div>
+        <h3 class="text-lg font-bold mt-6 mb-2">Work Order History</h3>
+        <!-- Work order history can be added here -->
+    `;
+    document.getElementById('assetDetailModal').style.display = 'flex';
+}
+
+export function showTransferAssetModal(asset) {
+    if (!asset) return;
+    document.getElementById('transferAssetId').value = asset.id;
+    document.getElementById('transferAssetName').textContent = asset.name;
+    document.getElementById('transferAssetModal').style.display = 'flex';
 }
 
 export function showPartModal(partId = null) {
