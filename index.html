@@ -8,7 +8,7 @@
     <link
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
       rel="stylesheet"
-    />
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
     <!-- Link to the external JavaScript file -->
     <script src="script.js" defer></script>
     <style>
@@ -54,6 +54,63 @@
       .other-month {
         background-color: #f7fafc;
         color: #a0aec0;
+      }
+      /* --- Logo: Abstract Gear --- */
+      .logo-1 {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          scale: 0.8;
+      }
+
+      .logo-1 .icon {
+          width: 48px;
+          height: 48px;
+          position: relative;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+      }
+
+      /* The outer gear shape, created using clip-path */
+      .logo-1 .icon::before {
+          content: '';
+          position: absolute;
+          width: 100%;
+          height: 100%;
+          background: #3b82f6; /* blue-500 */
+          clip-path: polygon(29% 0%, 71% 0%, 100% 29%, 100% 71%, 71% 100%, 29% 100%, 0% 71%, 0% 29%);
+          transition: transform 0.3s ease;
+      }
+
+      /* The inner circle of the gear */
+      .logo-1 .icon::after {
+          content: '';
+          position: absolute;
+          width: 40%;
+          height: 40%;
+          background: #ffffff; /* white */
+          border-radius: 50%;
+      }
+
+      /* Simple rotation animation on hover */
+      .logo-1:hover .icon::before {
+          transform: rotate(60deg);
+      }
+
+      .logo-1 .text {
+          font-size: 2.25rem; /* text-4xl */
+          font-weight: 700; /* font-bold */
+          line-height: 1;
+      }
+
+      .logo-1 .man {
+          color: #d5dbe6; /* gray-700 */
+      }
+
+      .logo-1 .cis {
+          color: #3b82f6; /* blue-500 */
+          font-weight: 600; /* font-semibold */
       }
     </style>
   </head>
@@ -111,7 +168,13 @@
         class="bg-gray-800 text-white w-64 min-h-screen fixed flex flex-col"
       >
         <div class="p-4 border-b border-gray-700">
-          <h2 class="text-xl font-bold">ManCIS V3</h2>
+                    <!-- Logo HTML -->
+          <div class="logo-1">
+              <div class="icon"></div>
+              <div class="text">
+                  <span class="man">Man</span><span class="cis">CIS</span>
+              </div>
+          </div>
         </div>
         <div id="userInfo" class="p-4 border-b border-gray-700">
           <p id="userFullName" class="font-semibold"></p>
