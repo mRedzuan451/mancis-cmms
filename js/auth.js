@@ -88,21 +88,24 @@ export async function handleLogin(e, onLoginSuccess) {
   e.preventDefault();
   const username = document.getElementById("username").value;
   const password = document.getElementById("password").value;
+  const loginErrorEl = document.getElementById("loginError");
   
   try {
+    loginErrorEl.textContent = ''; // Clear previous errors
     const user = await api.login(username, password);
     if (user && user.id) {
         state.currentUser = user;
-        document.getElementById("loginError").textContent = "";
         document.getElementById("loginForm").reset();
-        
         await logActivity("User Login");
         onLoginSuccess(); // This will call loadAndRender() from app.js
     } else {
-        document.getElementById("loginError").textContent = "Invalid username or password.";
+        // This case might not be reached if the API always throws an error for failures, but it's good for safety.
+        loginErrorEl.textContent = "Invalid username or password.";
     }
   } catch (error) {
-    document.getElementById("loginError").textContent = "Login failed. Please try again.";
+    // --- THIS IS THE KEY CHANGE ---
+    // Display the specific error message thrown from api.js
+    loginErrorEl.textContent = error.message || "Login failed. Please try again.";
   }
 }
 
