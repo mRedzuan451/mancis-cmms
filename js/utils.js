@@ -10,11 +10,14 @@ import { api } from './api.js';
  */
 export async function logActivity(action, details = "") {
     try {
-        await api.createLog({
-            user: state.currentUser ? state.currentUser.fullName : "System",
-            action,
-            details
-        });
+        // Ensure currentUser is available before logging
+        if (state.currentUser) {
+            await api.createLog({
+                user: state.currentUser.fullName,
+                action,
+                details
+            });
+        }
     } catch (error) {
         console.error("Failed to write log to database:", error);
     }
@@ -40,13 +43,8 @@ export function getFullLocationName(locationId) {
   if (typeof locationId !== "string" || !locationId.includes("-")) return "N/A";
 
   const {
-    divisions = [],
-    departments = [],
-    subLines = [],
-    productionLines = [],
-    cabinets = [],
-    shelves = [],
-    boxes = [],
+    divisions = [], departments = [], subLines = [], productionLines = [],
+    cabinets = [], shelves = [], boxes = [],
   } = state.cache.locations || {};
 
   const [type, id] = locationId.split("-");

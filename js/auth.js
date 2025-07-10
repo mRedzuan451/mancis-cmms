@@ -2,87 +2,56 @@
 
 import { state } from './config.js';
 import { api } from './api.js';
-import { showTemporaryMessage } from './utils.js';
+import { showTemporaryMessage, logActivity } from './utils.js';
 
 /**
- * Checks if the current user has permission to perform an action or view an item.
- * @param {string} action The action to check (e.g., 'view', 'viewPage').
- * @param {Object|string} item The item or page being checked.
- * @returns {boolean} True if the user has permission, false otherwise.
+ * An object containing permission-checking functions.
  */
 export const can = {
+  /**
+   * Checks if the current user can view a specific item based on their department.
+   * @param {Object} item The item to check (e.g., asset, part, work order).
+   * @returns {boolean} True if the user has permission.
+   */
   view: (item) => {
     if (!state.currentUser) return false;
     if (state.currentUser.role === "Admin") return true;
 
     const {
-      divisions = [],
-      departments = [],
-      subLines = [],
-      productionLines = [],
-      cabinets = [],
-      shelves = [],
-      boxes = [],
+      divisions = [], departments = [], subLines = [], productionLines = [],
+      cabinets = [], shelves = [], boxes = [],
     } = state.cache.locations || {};
     let itemDepartmentId;
 
     if (item.departmentId) {
       itemDepartmentId = item.departmentId;
     } else if (item.locationId) {
-      if (
-        typeof item.locationId !== "string" ||
-        !item.locationId.includes("-")
-      )
-        return false;
+      if (typeof item.locationId !== "string" || !item.locationId.includes("-")) return false;
       const [type, id] = item.locationId.split("-");
       const numId = parseInt(id);
 
       if (type === "pl") {
         const pLine = productionLines.find((l) => l.id === numId);
         if (pLine) {
-          const subLine = subLines.find(
-            (sl) => sl.id === pLine.subLineId
-          );
+          const subLine = subLines.find((sl) => sl.id === pLine.subLineId);
           if (subLine) itemDepartmentId = subLine.departmentId;
         }
-      } else if (type === "sl") {
-        const subLine = subLines.find((sl) => sl.id === numId);
-        if (subLine) itemDepartmentId = subLine.departmentId;
       } else if (type === "box") {
         const box = boxes.find((b) => b.id === numId);
-        const shelf = box
-          ? shelves.find((s) => s.id === box.shelfId)
-          : null;
-        const cabinet = shelf
-          ? cabinets.find((c) => c.id === shelf.cabinetId)
-          : null;
-        if (cabinet) itemDepartmentId = cabinet.departmentId;
-      } else if (type === "sh") {
-        const shelf = shelves.find((s) => s.id === numId);
-        const cabinet = shelf
-          ? cabinets.find((c) => c.id === shelf.cabinetId)
-          : null;
-        if (cabinet) itemDepartmentId = cabinet.departmentId;
-      } else if (type === "cab") {
-        const cabinet = cabinets.find((c) => c.id === numId);
+        const shelf = box ? shelves.find((s) => s.id === box.shelfId) : null;
+        const cabinet = shelf ? cabinets.find((c) => c.id === shelf.cabinetId) : null;
         if (cabinet) itemDepartmentId = cabinet.departmentId;
       }
+      // Add other location types ('sl', 'sh', 'cab') if needed
     } else if (item.assetId) {
       const asset = state.cache.assets.find((a) => a.id === parseInt(item.assetId));
-      if (
-        asset &&
-        asset.locationId &&
-        typeof asset.locationId === "string" &&
-        asset.locationId.includes("-")
-      ) {
+      if (asset && asset.locationId && typeof asset.locationId === "string" && asset.locationId.includes("-")) {
         const [type, id] = asset.locationId.split("-");
         const numId = parseInt(id);
         if (type === "pl") {
           const pLine = productionLines.find((l) => l.id === numId);
           if (pLine) {
-            const subLine = subLines.find(
-              (sl) => sl.id === pLine.subLineId
-            );
+            const subLine = subLines.find((sl) => sl.id === pLine.subLineId);
             if (subLine) itemDepartmentId = subLine.departmentId;
           }
         }
@@ -90,44 +59,25 @@ export const can = {
     }
     return itemDepartmentId === state.currentUser.departmentId;
   },
+
+  /**
+   * Checks if the current user can view a specific page based on their role.
+   * @param {string} page The page to check.
+   * @returns {boolean} True if the user has permission.
+   */
   viewPage: (page) => {
     if (!state.currentUser) return false;
     const adminOnlyPages = ["userManagement", "activityLog", "locations"];
     if (adminOnlyPages.includes(page)) {
       return state.currentUser.role === "Admin";
     }
-    const nonClerkPages = [
-      "assets",
-      "parts",
-      "workOrders",
-      "workOrderCalendar",
-    ];
-    if (
-      state.currentUser.role === "Clerk" &&
-      nonClerkPages.includes(page)
-    ) {
+    const nonClerkPages = ["assets", "parts", "workOrders", "workOrderCalendar"];
+    if (state.currentUser.role === "Clerk" && nonClerkPages.includes(page)) {
       return false;
     }
     return true;
   },
 };
-
-/**
- * Logs an activity to the database.
- * @param {string} action The action performed.
- * @param {string} details Additional details about the action.
- */
-async function logActivity(action, details = "") {
-    try {
-        await api.createLog({
-            user: state.currentUser ? state.currentUser.fullName : "System",
-            action,
-            details
-        });
-    } catch (error) {
-        console.error("Failed to write log to database:", error);
-    }
-}
 
 /**
  * Handles the login form submission.
@@ -187,7 +137,7 @@ export async function handleRegistration(e, onRegisterSuccess) {
         password: document.getElementById("regPassword").value,
         divisionId: parseInt(document.getElementById("regDivision").value),
         departmentId: parseInt(document.getElementById("regDepartment").value),
-        role: "Clerk",
+        role: "Clerk", // New users default to Clerk role
     };
 
     try {
