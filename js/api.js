@@ -1,27 +1,32 @@
 // js/api.js
 import { API_URL } from './config.js';
-// We no longer import showTemporaryMessage here
 
+/**
+ * A private helper function to make API requests.
+ * It is not exported and only used within this module.
+ * @param {string} endpoint The API endpoint to call (e.g., 'login.php').
+ * @param {object} options The options for the fetch request.
+ * @returns {Promise<object>} The JSON response from the server.
+ */
 async function request(endpoint, options = {}) {
     try {
         const response = await fetch(`${API_URL}/${endpoint}`, options);
         if (!response.ok) {
-            // Get the error message from the server's JSON response
             const errorData = await response.json().catch(() => ({ message: 'An unknown server error occurred' }));
-            // Throw an error with the message from the server
             throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
         }
-        // If the response is OK, parse it and return it
         const text = await response.text();
         return text ? JSON.parse(text) : {};
     } catch (error) {
-        // Log the error to the console for debugging
         console.error(`API request failed for ${endpoint}:`, error.message);
-        // Re-throw the error so the calling function (in auth.js) can catch it and display the message
-        throw error;
+        throw error; // Re-throw the error to be caught by the calling function
     }
 }
 
+/**
+ * An object that exports all the public API functions.
+ * Each function now calls the private `request()` helper directly.
+ */
 export const api = {
     // GET operations
     getAssets: () => request('get_assets.php'),
