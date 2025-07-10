@@ -13,7 +13,9 @@ $dbname = "mancis_db";
 $conn = new mysqli($servername, $username, $password, $dbname);
 
 if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
+    http_response_code(500);
+    echo json_encode(["message" => "Connection failed: " . $conn->connect_error]);
+    exit();
 }
 
 // Get the posted data
@@ -28,18 +30,33 @@ if (!isset($data->username) || !isset($data->password)) {
 $login_user = $data->username;
 $login_pass = $data->password;
 
-// Use a prepared statement to prevent SQL injection
-$stmt = $conn->prepare("SELECT id, fullName, employeeId, username, role, divisionId, departmentId FROM users WHERE username = ? AND password = ?");
-$stmt->bind_param("ss", $login_user, $login_pass);
+// 1. Prepare to select the user by USERNAME ONLY
+$stmt = $conn->prepare("SELECT id, fullName, employeeId, username, role, divisionId, departmentId, password FROM users WHERE username = ?");
+$stmt->bind_param("s", $login_user);
 
 $stmt->execute();
 $result = $stmt->get_result();
 
 if ($result->num_rows > 0) {
     $user = $result->fetch_assoc();
-    http_response_code(200);
-    echo json_encode($user);
+    $hashed_password = $user['password'];
+
+    // 2. Verify the submitted password against the hashed password from the database
+    if (password_verify($login_pass, $hashed_password)) {
+        // Passwords match. Successful login.
+        
+        // Remove the password from the user object before sending it to the frontend
+        unset($user['password']);
+
+        http_response_code(200);
+        echo json_encode($user);
+    } else {
+        // Passwords do not match.
+        http_response_code(401); // Unauthorized
+        echo json_encode(["message" => "Invalid username or password."]);
+    }
 } else {
+    // No user found with that username.
     http_response_code(401); // Unauthorized
     echo json_encode(["message" => "Invalid username or password."]);
 }

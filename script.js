@@ -1,6 +1,8 @@
 (function () {
   "use strict";
 
+  console.log("script.js: File loaded and executing.");
+
   // =================================================================================
   //  PARTITION 1: CONFIGURATION & STATE
   // =================================================================================
@@ -1507,6 +1509,7 @@
 
   async function handleLogin(e) {
     e.preventDefault();
+    console.log("handleLogin triggered"); // DEBUG
     const username = document.getElementById("username").value;
     const password = document.getElementById("password").value;
     
@@ -1909,12 +1912,14 @@
   // =================================================================================
 
   function attachGlobalEventListeners() {
+    console.log("script.js: Attaching global event listeners...");
     document.getElementById("loginForm").addEventListener("submit", handleLogin);
     document.getElementById("logoutBtn").addEventListener("click", handleLogout);
     document.getElementById("registrationForm").addEventListener("submit", handleRegistration);
     document.getElementById("editUserForm").addEventListener("submit", handleUserRoleFormSubmit);
     
     document.getElementById("createAccountBtn").addEventListener("click", async () => {
+        console.log("script.js: Create Account button clicked.");
         try {
             const locations = await api.getLocations();
             populateLocationDropdowns(
@@ -2411,6 +2416,7 @@
 
   // --- APPLICATION INITIALIZATION ---
   document.addEventListener("DOMContentLoaded", () => {
+    console.log("script.js: DOMContentLoaded event fired.");
     attachGlobalEventListeners();
     render();
   });
