@@ -24,7 +24,6 @@ import {
     showEditUserModal,
     showCalendarDetailModal,
     populateLocationDropdown,
-    // --- IMPORT NEW MODAL FUNCTIONS ---
     showAssetDetailModal,
     showTransferAssetModal
 } from './ui.js';
@@ -134,12 +133,10 @@ async function deleteAsset(assetId) {
     }
 }
 
-// --- NEW ACTION HANDLERS ---
-
 async function handleDisposeAsset(assetId) {
     if (confirm("Are you sure you want to dispose of this asset? This will change its status to Decommissioned.")) {
         try {
-            const asset = state.cache.assets.find(a => a.id === assetId);
+            const asset = state.cache.assets.find(a => Number(a.id) === assetId);
             const updatedData = { ...asset, status: 'Decommissioned' };
             await api.updateAsset(assetId, updatedData);
             await logActivity("Asset Disposed", `Disposed asset: ${asset.name} (ID: ${assetId})`);
@@ -227,26 +224,36 @@ function attachGlobalEventListeners() {
     // Main content clicks (delegated)
     document.getElementById("mainContent").addEventListener("click", (e) => {
         const button = e.target.closest("button");
-        if (!button) return;
+        if (!button || !button.dataset.id) return;
         
         const id = parseInt(button.dataset.id);
-        const asset = state.cache.assets.find(a => a.id === id);
+        if (isNaN(id)) return;
 
-        // --- UPDATE CLICK HANDLER LOGIC ---
-        if (button.classList.contains("view-asset-btn")) showAssetDetailModal(asset);
+        // Use a type-insensitive comparison to find the asset
+        const asset = state.cache.assets.find(a => Number(a.id) === id);
+
+        if (button.classList.contains("view-asset-btn")) {
+            if (asset) showAssetDetailModal(asset);
+        }
         if (button.classList.contains("edit-asset-btn")) {
             showAssetModal(id);
             populateLocationDropdown(document.getElementById("assetLocation"), "operational");
         }
-        if (button.classList.contains("delete-asset-btn")) deleteAsset(id);
-        if (button.classList.contains("transfer-asset-btn")) {
-            showTransferAssetModal(asset);
-            populateLocationDropdown(document.getElementById("transferLocation"), "operational");
+        if (button.classList.contains("delete-asset-btn")) {
+            deleteAsset(id);
         }
-        if (button.classList.contains("dispose-asset-btn")) handleDisposeAsset(id);
-
-        // User actions
-        if (button.classList.contains("edit-user-btn")) showEditUserModal(id);
+        if (button.classList.contains("transfer-asset-btn")) {
+            if (asset) {
+                showTransferAssetModal(asset);
+                populateLocationDropdown(document.getElementById("transferLocation"), "operational");
+            }
+        }
+        if (button.classList.contains("dispose-asset-btn")) {
+            handleDisposeAsset(id);
+        }
+        if (button.classList.contains("edit-user-btn")) {
+            showEditUserModal(id);
+        }
     });
 
     // Form Submissions
