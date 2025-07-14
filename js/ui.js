@@ -44,7 +44,14 @@ export function renderAssetsPage() {
     return `
       <div class="flex justify-between items-center mb-6">
           <h1 class="text-3xl font-bold">Asset Management</h1>
-          <div><button id="addAssetBtn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded"><i class="fas fa-plus mr-2"></i>Add Asset</button></div>
+          <div class="space-x-2">
+              <button id="printAssetListBtn" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded">
+                  <i class="fas fa-print mr-2"></i>Print List
+              </button>
+              <button id="addAssetBtn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded">
+                  <i class="fas fa-plus mr-2"></i>Add Asset
+              </button>
+          </div>
       </div>
       <div class="bg-white p-4 rounded-lg shadow">
           <input type="text" id="assetSearch" class="w-full mb-4 px-3 py-2 border rounded" placeholder="Search by name, tag, or category...">
@@ -68,7 +75,10 @@ export function renderPartsPage() {
     return `
       <div class="flex justify-between items-center mb-6">
           <h1 class="text-3xl font-bold">Spare Parts Management</h1>
-          <div>
+          <div class="space-x-2">
+              <button id="printPartListBtn" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded">
+                  <i class="fas fa-print mr-2"></i>Print List
+              </button>
               <button id="addPartBtn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded">
                   <i class="fas fa-plus mr-2"></i>Add Part
               </button>
@@ -81,11 +91,9 @@ export function renderPartsPage() {
                   <thead><tr class="border-b">
                       <th class="p-2 text-left cursor-pointer" data-sort="name">Part Name <i class="fas fa-sort"></i></th>
                       <th class="p-2 text-left cursor-pointer" data-sort="sku">SKU <i class="fas fa-sort"></i></th>
-                      <th class="p-2 text-left cursor-pointer" data-sort="category">Category <i class="fas fa-sort"></i></th>
-                      <th class="p-2 text-left cursor-pointer" data-sort="supplier">Supplier <i class="fas fa-sort"></i></th>
                       <th class="p-2 text-left cursor-pointer" data-sort="quantity">Quantity <i class="fas fa-sort"></i></th>
-                      <th class="p-2 text-left cursor-pointer" data-sort="price">Price <i class="fas fa-sort"></i></th>
-                      <th class="p-2 text-left">Actions</th>
+                      <th class="p-2 text-left">Location</th>
+                      <th class="p-2 text-left">Price</th>
                   </tr></thead>
                   <tbody id="partTableBody">
                       ${generateTableRows("parts", parts)}

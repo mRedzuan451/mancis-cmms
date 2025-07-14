@@ -519,6 +519,33 @@ function attachPageSpecificEventListeners(page) {
             );
             document.getElementById("assetTableBody").innerHTML = generateTableRows("assets", filtered);
         });
+        document.getElementById("printAssetListBtn")?.addEventListener("click", () => {
+            const assetsToPrint = state.cache.assets.filter(can.view);
+            const title = "Asset List Report";
+            let content = `<h1>${title}</h1><p>Generated on: ${new Date().toLocaleString()}</p>`;
+            content += `
+                <table border="1" style="width:100%; border-collapse: collapse;">
+                    <thead>
+                        <tr>
+                            <th style="padding: 5px; text-align: left;">Name</th>
+                            <th style="padding: 5px; text-align: left;">Tag</th>
+                            <th style="padding: 5px; text-align: left;">Location</th>
+                            <th style="padding: 5px; text-align: left;">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${assetsToPrint.map(asset => `
+                            <tr>
+                                <td style="padding: 5px;">${asset.name}</td>
+                                <td style="padding: 5px;">${asset.tag}</td>
+                                <td style="padding: 5px;">${getFullLocationName(asset.locationId)}</td>
+                                <td style="padding: 5px;">${asset.status}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>`;
+            printReport(title, content);
+        });
     } else if (page === 'parts') {
          document.getElementById("addPartBtn")?.addEventListener("click", () => {
             showPartModal();
@@ -531,6 +558,35 @@ function attachPageSpecificEventListeners(page) {
                 p.category.toLowerCase().includes(searchTerm)
             );
             document.getElementById("partTableBody").innerHTML = generateTableRows("parts", filtered);
+        });
+        document.getElementById("printPartListBtn")?.addEventListener("click", () => {
+            const partsToPrint = state.cache.parts.filter(can.view);
+            const title = "Spare Part Inventory Report";
+            let content = `<h1>${title}</h1><p>Generated on: ${new Date().toLocaleString()}</p>`;
+            content += `
+                <table border="1" style="width:100%; border-collapse: collapse;">
+                    <thead>
+                        <tr>
+                            <th style="padding: 5px; text-align: left;">Part Name</th>
+                            <th style="padding: 5px; text-align: left;">SKU</th>
+                            <th style="padding: 5px; text-align: left;">Category</th>
+                            <th style="padding: 5px; text-align: right;">Quantity</th>
+                            <th style="padding: 5px; text-align: left;">Location</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${partsToPrint.map(part => `
+                            <tr>
+                                <td style="padding: 5px;">${part.name}</td>
+                                <td style="padding: 5px;">${part.sku}</td>
+                                <td style="padding: 5px;">${part.category}</td>
+                                <td style="padding: 5px; text-align: right;">${part.quantity}</td>
+                                <td style="padding: 5px;">${getFullLocationName(part.locationId)}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>`;
+            printReport(title, content);
         });
     } else if (page === 'workOrders') {
         document.getElementById("addWorkOrderBtn")?.addEventListener("click", showWorkOrderModal);
