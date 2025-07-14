@@ -3,7 +3,7 @@
 import { state } from './config.js';
 import { api } from './api.js';
 import { handleLogin, handleLogout, handleRegistration, can } from './auth.js';
-import { logActivity, showTemporaryMessage, printReport } from './utils.js';
+import { logActivity, showTemporaryMessage, printReport, getFullLocationName } from './utils.js';
 import {
     renderSidebar,
     renderDashboard,
