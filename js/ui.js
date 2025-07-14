@@ -91,9 +91,11 @@ export function renderPartsPage() {
                   <thead><tr class="border-b">
                       <th class="p-2 text-left cursor-pointer" data-sort="name">Part Name <i class="fas fa-sort"></i></th>
                       <th class="p-2 text-left cursor-pointer" data-sort="sku">SKU <i class="fas fa-sort"></i></th>
+                      <th class="p-2 text-left cursor-pointer" data-sort="category">Category <i class="fas fa-sort"></i></th>
+                      <th class="p-2 text-left cursor-pointer" data-sort="supplier">Supplier <i class="fas fa-sort"></i></th>
                       <th class="p-2 text-left cursor-pointer" data-sort="quantity">Quantity <i class="fas fa-sort"></i></th>
-                      <th class="p-2 text-left">Location</th>
-                      <th class="p-2 text-left">Price</th>
+                      <th class="p-2 text-left cursor-pointer" data-sort="price">Price <i class="fas fa-sort"></i></th>
+                      <th class="p-2 text-left">Actions</th>
                   </tr></thead>
                   <tbody id="partTableBody">
                       ${generateTableRows("parts", parts)}
