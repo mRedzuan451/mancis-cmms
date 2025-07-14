@@ -8,6 +8,8 @@ import { API_URL } from './config.js';
  * @param {object} options The options for the fetch request.
  * @returns {Promise<object>} The JSON response from the server.
  */
+// js/api.js
+
 async function request(endpoint, options = {}) {
     try {
         // --- THIS IS THE FIX ---
