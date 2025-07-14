@@ -574,7 +574,24 @@ export function showPartModal(partId = null) {
     const form = document.getElementById("partForm");
     form.reset();
     document.getElementById("partId").value = "";
+    
+    // --- FIX STARTS HERE ---
+
+    // 1. Populate the Related Assets dropdown
+    const assetSelect = document.getElementById("partRelatedAssets");
+    assetSelect.innerHTML = ''; // Clear existing options
+    state.cache.assets.filter(can.view).forEach(asset => {
+        const option = document.createElement('option');
+        option.value = asset.id;
+        option.textContent = asset.name;
+        assetSelect.appendChild(option);
+    });
+
+    // 2. Populate the Storage Location dropdown
     populateLocationDropdown(document.getElementById("partLocation"), "storage");
+
+    // --- FIX ENDS HERE ---
+
     if (partId) {
         const part = state.cache.parts.find((p) => p.id === partId);
         if (part) {
@@ -590,6 +607,15 @@ export function showPartModal(partId = null) {
             document.getElementById("partPrice").value = part.price;
             document.getElementById("partCurrency").value = part.currency;
             document.getElementById("partLocation").value = part.locationId;
+            
+            // Pre-select related assets if they exist
+            if (part.relatedAssets) {
+                Array.from(assetSelect.options).forEach(option => {
+                    if (part.relatedAssets.includes(option.value)) {
+                        option.selected = true;
+                    }
+                });
+            }
         }
     } else {
         document.getElementById("partModalTitle").textContent = "Add Spare Part";
