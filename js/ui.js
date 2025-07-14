@@ -575,22 +575,19 @@ export function showPartModal(partId = null) {
     form.reset();
     document.getElementById("partId").value = "";
     
-    // --- FIX STARTS HERE ---
-
-    // 1. Populate the Related Assets dropdown
+    // Populate the Related Assets dropdown
     const assetSelect = document.getElementById("partRelatedAssets");
     assetSelect.innerHTML = ''; // Clear existing options
     state.cache.assets.filter(can.view).forEach(asset => {
         const option = document.createElement('option');
         option.value = asset.id;
-        option.textContent = asset.name;
+        // --- THIS LINE HAS BEEN UPDATED ---
+        option.textContent = `${asset.name} (Tag: ${asset.tag})`;
         assetSelect.appendChild(option);
     });
 
-    // 2. Populate the Storage Location dropdown
+    // Populate the Storage Location dropdown
     populateLocationDropdown(document.getElementById("partLocation"), "storage");
-
-    // --- FIX ENDS HERE ---
 
     if (partId) {
         const part = state.cache.parts.find((p) => p.id === partId);
