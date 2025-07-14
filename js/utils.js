@@ -174,17 +174,6 @@ export function printReport(title, content) {
 
     printWindow.document.close();
 
-    // --- DEBUGGING CODE STARTS HERE ---
-
-    // 1. This will pause the browser's script execution if your developer tools are open.
-    debugger; 
-
-    // 2. We will now try to find the button inside the new window.
-    const printButton = printWindow.document.getElementById('printPageBtn');
-    
-    // 3. This message will appear in your developer console.
-    console.log("Print button element:", printButton);
-
     if (printButton) {
         printButton.addEventListener('click', function() {
             printWindow.print();
