@@ -1,6 +1,6 @@
 <?php
-
 require_once 'auth_check.php';
+authorize(['Admin', 'Manager', 'Supervisor', 'Engineer', 'Technician']);
 
 header("Content-Type: application/json; charset=UTF-8");
 
@@ -8,43 +8,23 @@ $servername = "localhost"; $username = "root"; $password = ""; $dbname = "mancis
 $conn = new mysqli($servername, $username, $password, $dbname);
 if ($conn->connect_error) { die("Connection failed: " . $conn->connect_error); }
 
-$data = json_decode(file_get_contents("php://input"));
-$id = isset($_GET['id']) ? intval($_GET['id']) : 0;
+$sql = "SELECT * FROM assets ORDER BY name ASC";
+$result = $conn->query($sql);
 
-if ($id <= 0) {
-    http_response_code(400);
-    echo json_encode(["message" => "Invalid part ID."]);
-    exit();
+$assets_array = array();
+if ($result && $result->num_rows > 0) {
+    while($row = $result->fetch_assoc()) {
+        $row['id'] = intval($row['id']);
+        $row['cost'] = floatval($row['cost']);
+
+        $row['relatedParts'] = json_decode($row['relatedParts']);
+        if (!is_array($row['relatedParts'])) {
+            $row['relatedParts'] = [];
+        }
+        
+        $assets_array[] = $row;
+    }
 }
-
-// --- NEW: Convert the relatedAssets array to a JSON string ---
-$relatedAssetsJson = isset($data->relatedAssets) ? json_encode($data->relatedAssets) : null;
-
-$stmt = $conn->prepare("UPDATE parts SET name=?, sku=?, category=?, quantity=?, minQuantity=?, locationId=?, maker=?, supplier=?, price=?, currency=?, relatedAssets=? WHERE id=?");
-// Note the new 's' for the JSON string and 'i' for the ID at the end
-$stmt->bind_param("sssiisssdssi", 
-    $data->name, 
-    $data->sku, 
-    $data->category, 
-    $data->quantity, 
-    $data->minQuantity, 
-    $data->locationId, 
-    $data->maker, 
-    $data->supplier, 
-    $data->price, 
-    $data->currency,
-    $relatedAssetsJson, // Bind the new JSON string
-    $id
-);
-
-if ($stmt->execute()) {
-    http_response_code(200);
-    echo json_encode(["message" => "Part updated successfully."]);
-} else {
-    http_response_code(500);
-    echo json_encode(["message" => "Failed to update part."]);
-}
-
-$stmt->close();
 $conn->close();
+echo json_encode($assets_array);
 ?>
