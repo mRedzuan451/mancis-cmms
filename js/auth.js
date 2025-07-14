@@ -10,7 +10,7 @@ import { showTemporaryMessage, logActivity } from './utils.js';
 export const can = {
   /**
    * Checks if the current user can view a specific item based on their department.
-   * @param {Object} item The item to check (e.g., asset, part, work order).
+   * @param {Object} item The item to check (e.g., asset, part, work order, part request).
    * @returns {boolean} True if the user has permission.
    */
   view: (item) => {
@@ -18,15 +18,22 @@ export const can = {
     // Admins can see everything.
     if (state.currentUser.role === "Admin") return true;
 
+    // --- NEW LOGIC: For items like Part Requests that are linked to a user ---
+    if (item.requesterId) {
+        // Find the user who made the request
+        const requester = state.cache.users.find(u => u.id === item.requesterId);
+        // If the requester is in the same department, allow viewing.
+        if (requester && requester.departmentId === state.currentUser.departmentId) {
+            return true;
+        }
+    }
+
     const {
       departments = [], subLines = [], productionLines = [],
       cabinets = [], shelves = [], boxes = [],
     } = state.cache.locations || {};
     
     let itemDepartmentId = null;
-
-    // --- THIS IS THE KEY CHANGE ---
-    // A more robust way to find the department ID for any given item.
 
     // Case 1: The item itself has a departmentId (like a User)
     if (item.departmentId) {
@@ -48,19 +55,16 @@ export const can = {
         const cabinet = shelf ? cabinets.find((c) => c.id === shelf.cabinetId) : null;
         if (cabinet) itemDepartmentId = cabinet.departmentId;
       }
-      // Add logic for 'sl', 'sh', 'cab' if they can be directly assigned to assets/parts
     
     // Case 3: The item is linked to an asset (like a Work Order)
     } else if (item.assetId) {
       const asset = state.cache.assets.find((a) => a.id === parseInt(item.assetId));
       if (asset && asset.locationId) {
           // Recursively call this function to find the asset's department.
-          // This avoids duplicating the location logic.
           return can.view(asset);
       }
     }
     
-    // If we couldn't determine the item's department, deny access for safety.
     if (itemDepartmentId === null) {
         return false;
     }
