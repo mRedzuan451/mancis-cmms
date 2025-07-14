@@ -10,6 +10,10 @@ import { API_URL } from './config.js';
  */
 async function request(endpoint, options = {}) {
     try {
+        // --- THIS IS THE FIX ---
+        // This tells the browser to always send cookies with API requests.
+        options.credentials = 'include';
+
         const response = await fetch(`${API_URL}/${endpoint}`, options);
         if (!response.ok) {
             const errorData = await response.json().catch(() => ({ message: 'An unknown server error occurred' }));
