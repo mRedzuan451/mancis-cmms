@@ -1,8 +1,7 @@
 <?php
-
 require_once 'auth_check.php';
+authorize(['Admin', 'Manager','Supervisor']);
 
-header("Access-Control-Allow-Origin: *");
 header("Content-Type: application/json; charset=UTF-8");
 header("Access-Control-Allow-Methods: POST");
 
@@ -11,7 +10,10 @@ $conn = new mysqli($servername, $username, $password, $dbname);
 if ($conn->connect_error) { die("Connection failed: " . $conn->connect_error); }
 
 $data = json_decode(file_get_contents("php://input"));
-$id = isset($_GET['id']) ? intval($_GET['id']) : 0;
+
+// --- THIS IS THE FIX ---
+// Read the ID from the JSON data body, not the URL's GET parameters.
+$id = isset($data->id) ? intval($data->id) : 0;
 
 if ($id <= 0 || empty($data->status) || empty($data->approverId)) {
     http_response_code(400);
