@@ -509,6 +509,21 @@ export function showAssetDetailModal(asset) {
     if (!asset) return;
     const contentEl = document.getElementById('assetDetailContent');
     const locationName = getFullLocationName(asset.locationId);
+
+    // --- NEW: Find related records ---
+
+    // 1. Find related spare parts
+    // This assumes a 'relatedAssets' array exists on your part objects.
+    const relatedParts = state.cache.parts.filter(part => 
+        part.relatedAssets && part.relatedAssets.includes(asset.id.toString())
+    );
+
+    // 2. Find transfer history from the activity log
+    const transferHistory = state.cache.logs.filter(log => 
+        log.action === "Asset Transferred" && log.details.includes(asset.name)
+    );
+
+    // --- Updated HTML with new sections ---
     contentEl.innerHTML = `
         <h2 class="text-2xl font-bold mb-4">${asset.name}</h2>
         <div class="grid grid-cols-2 gap-4 text-sm">
@@ -519,9 +534,32 @@ export function showAssetDetailModal(asset) {
             <div><strong>Purchase Date:</strong> ${asset.purchaseDate}</div>
             <div><strong>Cost:</strong> ${asset.currency} ${asset.cost}</div>
         </div>
+
+        <h3 class="text-lg font-bold mt-6 mb-2">Related Spare Parts</h3>
+        <div class="bg-gray-50 p-3 rounded-md text-sm">
+            ${relatedParts.length > 0 ? `
+                <ul class="list-disc list-inside">
+                    ${relatedParts.map(p => `<li>${p.name} (SKU: ${p.sku})</li>`).join('')}
+                </ul>
+            ` : `<p class="text-gray-500">No spare parts are linked to this asset.</p>`}
+        </div>
+
+        <h3 class="text-lg font-bold mt-6 mb-2">Transfer History</h3>
+        <div class="bg-gray-50 p-3 rounded-md text-sm">
+             ${transferHistory.length > 0 ? `
+                <ul class="space-y-2">
+                    ${transferHistory.map(log => `
+                        <li class="border-b border-gray-200 pb-1">
+                            <p>${log.details}</p>
+                            <p class="text-xs text-gray-500">By ${log.user} on ${new Date(log.timestamp).toLocaleString()}</p>
+                        </li>
+                    `).join('')}
+                </ul>
+            ` : `<p class="text-gray-500">No transfer history found for this asset.</p>`}
+        </div>
+        
         <h3 class="text-lg font-bold mt-6 mb-2">Work Order History</h3>
-        <!-- Work order history can be added here -->
-    `;
+        `;
     document.getElementById('assetDetailModal').style.display = 'flex';
 }
 
