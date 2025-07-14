@@ -1,10 +1,18 @@
 <?php
-// --- Start the session ---
-// This must be at the very top of the file, before any output.
+// --- NEW: Handle browser preflight 'OPTIONS' requests ---
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    header("Access-Control-Allow-Origin: http://localhost");
+    header("Access-Control-Allow-Methods: POST, GET, OPTIONS");
+    header("Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With");
+    header("Access-control-allow-credentials: true");
+    http_response_code(200);
+    exit();
+}
+
 session_start();
 
-header("Access-Control-Allow-Origin: http://localhost"); // More secure CORS
-header("Access-Control-Allow-Credentials: true"); // Allow cookies to be sent
+header("Access-Control-Allow-Origin: http://localhost");
+header("Access-Control-Allow-Credentials: true");
 header("Content-Type: application/json; charset=UTF-8");
 header("Access-Control-Allow-Methods: POST");
 header("Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With");
@@ -46,28 +54,22 @@ if ($result->num_rows > 0) {
     $user = $result->fetch_assoc();
     $hashed_password = $user['password'];
 
-    // Verify the submitted password against the hashed password from the database
     if (password_verify($login_pass, $hashed_password)) {
-        // --- KEY CHANGE: SESSION CREATION ---
-        // Passwords match. Store user data in the session.
         $_SESSION['user_id'] = $user['id'];
         $_SESSION['user_role'] = $user['role'];
         $_SESSION['user_department_id'] = $user['departmentId'];
         $_SESSION['user_fullname'] = $user['fullName'];
 
-        // Remove the password from the user object before sending it to the frontend
         unset($user['password']);
 
         http_response_code(200);
         echo json_encode($user);
     } else {
-        // Passwords do not match.
-        http_response_code(401); // Unauthorized
+        http_response_code(401); 
         echo json_encode(["message" => "Invalid username or password."]);
     }
 } else {
-    // No user found with that username.
-    http_response_code(401); // Unauthorized
+    http_response_code(401);
     echo json_encode(["message" => "Invalid username or password."]);
 }
 
