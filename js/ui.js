@@ -698,3 +698,32 @@ export function populateLocationDropdown(selectElement, type = "all") {
     }
     selectElement.innerHTML = options;
 }
+
+export function showCompleteWorkOrderModal(workOrder) {
+    if (!workOrder) return;
+    
+    // Set the hidden ID and the title in the modal
+    document.getElementById('completeWorkOrderId').value = workOrder.id;
+    document.getElementById('completeWoTitle').textContent = workOrder.title;
+
+    // Populate the checklist for confirmation
+    const checklistContainer = document.getElementById('completeWoChecklist');
+    checklistContainer.innerHTML = ''; // Clear previous items
+    if (workOrder.checklist && workOrder.checklist.length > 0) {
+        workOrder.checklist.forEach(item => {
+            const itemEl = document.createElement('div');
+            itemEl.className = 'flex items-center';
+            itemEl.innerHTML = `
+                <i class="fas fa-check-square text-green-500 mr-2"></i>
+                <span>${item.text}</span>
+            `;
+            checklistContainer.appendChild(itemEl);
+        });
+    } else {
+        checklistContainer.innerHTML = '<p class="text-gray-500">No checklist items for this work order.</p>';
+    }
+
+    // Clear previous notes and show the modal
+    document.getElementById('completionNotes').value = '';
+    document.getElementById('completeWorkOrderModal').style.display = 'flex';
+}
