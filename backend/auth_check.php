@@ -18,6 +18,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit();
 }
 
+// FIX: Configure the session cookie for cross-origin HTTP development
+session_set_cookie_params([
+    'lifetime' => 86400, // Cookie valid for 1 day
+    'path' => '/',
+    'domain' => '', // Set your domain if needed, otherwise leave empty
+    'secure' => false, // MUST be false for HTTP
+    'httponly' => true, // Good security practice
+    'samesite' => 'Lax' // Use 'Lax' or 'None'. 'Lax' is safer for development.
+]);
+
 session_start();
 
 header("Access-Control-Allow-Credentials: true");
