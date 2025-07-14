@@ -2,11 +2,10 @@
 // --- Reusable Authentication & Authorization Check ---
 
 // --- NEW: Whitelist of allowed origins ---
-$allowed_origins = ['http://localhost', 'http://192.168.141.42'];
+$allowed_origins = ['http://localhost', 'http://127.0.0.1', 'http://192.168.141.42'];
 
 // Check if the request origin is in our whitelist
 if (isset($_SERVER['HTTP_ORIGIN']) && in_array($_SERVER['HTTP_ORIGIN'], $allowed_origins)) {
-    // If it is, set the header to that specific origin
     header("Access-Control-Allow-Origin: " . $_SERVER['HTTP_ORIGIN']);
 }
 
