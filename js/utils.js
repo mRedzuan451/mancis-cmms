@@ -143,6 +143,8 @@ export function showTemporaryMessage(message, isError = false) {
  */
 export function printReport(title, content) {
     const printWindow = window.open("", "_blank", "height=600,width=800");
+
+    // Write the basic structure of the new window
     printWindow.document.write(`
         <html>
             <head>
@@ -158,26 +160,28 @@ export function printReport(title, content) {
                         .no-print { display: none; }
                         body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
                     }
-                    .print-button-container {
-                        text-align: right;
-                        padding: 10px;
-                    }
-                    .print-button {
-                        padding: 8px 16px;
-                        border: 1px solid #ccc;
-                        background-color: #f0f0f0;
-                        cursor: pointer;
-                    }
+                    .print-button-container { text-align: right; padding: 10px; }
+                    .print-button { padding: 8px 16px; border: 1px solid #ccc; background-color: #f0f0f0; cursor: pointer; }
                 </style>
             </head>
             <body>
                 <div class="no-print print-button-container">
-                    <button onclick="window.print()" class="print-button">Print this page</button>
+                    <button id="printPageBtn" class="print-button">Print this page</button>
                 </div>
                 ${content}
             </body>
         </html>
     `);
+
+    // --- FIX: Add the click event using JavaScript ---
+    // Find the button we just created inside the new window
+    const printButton = printWindow.document.getElementById('printPageBtn');
+    
+    // Attach a click event listener that calls the print command for that window
+    printButton.addEventListener('click', function() {
+        printWindow.print();
+    });
+
     printWindow.document.close();
     printWindow.focus();
 }
