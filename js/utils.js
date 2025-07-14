@@ -144,7 +144,6 @@ export function showTemporaryMessage(message, isError = false) {
 export function printReport(title, content) {
     const printWindow = window.open("", "_blank", "height=600,width=800");
 
-    // Write the basic structure of the new window
     printWindow.document.write(`
         <html>
             <head>
@@ -173,15 +172,27 @@ export function printReport(title, content) {
         </html>
     `);
 
-    // --- FIX: Add the click event using JavaScript ---
-    // Find the button we just created inside the new window
+    printWindow.document.close();
+
+    // --- DEBUGGING CODE STARTS HERE ---
+
+    // 1. This will pause the browser's script execution if your developer tools are open.
+    debugger; 
+
+    // 2. We will now try to find the button inside the new window.
     const printButton = printWindow.document.getElementById('printPageBtn');
     
-    // Attach a click event listener that calls the print command for that window
-    printButton.addEventListener('click', function() {
-        printWindow.print();
-    });
+    // 3. This message will appear in your developer console.
+    console.log("Print button element:", printButton);
 
-    printWindow.document.close();
+    if (printButton) {
+        printButton.addEventListener('click', function() {
+            printWindow.print();
+        });
+        console.log("Event listener attached to print button.");
+    } else {
+        console.error("Could not find the print button in the new window.");
+    }
+
     printWindow.focus();
 }
