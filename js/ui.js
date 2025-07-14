@@ -727,3 +727,137 @@ export function showCompleteWorkOrderModal(workOrder) {
     document.getElementById('completionNotes').value = '';
     document.getElementById('completeWorkOrderModal').style.display = 'flex';
 }
+
+// --- ADD ALL OF THE FOLLOWING FUNCTIONS TO THE END OF YOUR UI.JS FILE ---
+
+export function showPartDetailModal(part) {
+    if (!part) return;
+    const contentEl = document.getElementById('partDetailContent');
+    const locationName = getFullLocationName(part.locationId);
+    
+    // Find related assets
+    const relatedAssets = state.cache.assets.filter(asset =>
+        asset.relatedParts && asset.relatedParts.includes(part.id.toString())
+    );
+
+    contentEl.innerHTML = `
+        <h2 class="text-2xl font-bold mb-4">${part.name}</h2>
+        <div class="grid grid-cols-2 gap-4 text-sm">
+            <div><strong>Part Number/SKU:</strong> ${part.sku}</div>
+            <div><strong>Category:</strong> ${part.category}</div>
+            <div><strong>Quantity on Hand:</strong> ${part.quantity}</div>
+            <div><strong>Low Stock Threshold:</strong> ${part.minQuantity}</div>
+            <div><strong>Storage Location:</strong> ${locationName}</div>
+            <div><strong>Maker:</strong> ${part.maker || 'N/A'}</div>
+            <div><strong>Supplier:</strong> ${part.supplier || 'N/A'}</div>
+            <div><strong>Price:</strong> ${part.currency} ${part.price}</div>
+        </div>
+        <h3 class="text-lg font-bold mt-6 mb-2">Related Assets</h3>
+        <ul class="list-disc list-inside">
+            ${relatedAssets.length > 0 ? relatedAssets.map(a => `<li>${a.name}</li>`).join('') : '<li>No assets are linked to this part.</li>'}
+        </ul>
+        ${part.attachmentRef ? `<h3 class="text-lg font-bold mt-6 mb-2">Attachments</h3><a href="${part.attachmentRef}" target="_blank" class="text-blue-500 hover:underline">View Attachment</a>` : ''}
+    `;
+    document.getElementById('partDetailModal').style.display = 'flex';
+}
+
+export function showWorkOrderDetailModal(workOrder) {
+    if (!workOrder) return;
+    const contentEl = document.getElementById('workOrderDetailContent');
+    const asset = state.cache.assets.find(a => a.id === workOrder.assetId);
+    const assignedUser = state.cache.users.find(u => u.id === workOrder.assignedTo);
+
+    contentEl.innerHTML = `
+        <h2 class="text-2xl font-bold mb-4">${workOrder.title}</h2>
+        <div class="grid grid-cols-2 gap-4 text-sm">
+            <div><strong>Status:</strong> <span class="font-bold">${workOrder.status}</span></div>
+            <div><strong>Priority:</strong> <span class="font-bold">${workOrder.priority}</span></div>
+            <div><strong>Asset:</strong> ${asset?.name || 'N/A'}</div>
+            <div><strong>Assigned To:</strong> ${assignedUser?.fullName || 'N/A'}</div>
+            <div><strong>Due Date:</strong> ${workOrder.dueDate}</div>
+            <div><strong>Task Type:</strong> ${workOrder.task}</div>
+        </div>
+        <h3 class="text-lg font-bold mt-6 mb-2">Description</h3>
+        <p class="text-sm bg-gray-50 p-3 rounded">${workOrder.description}</p>
+        
+        <h3 class="text-lg font-bold mt-6 mb-2">Checklist</h3>
+        <div class="space-y-1 text-sm">
+            ${workOrder.checklist && workOrder.checklist.length > 0 ? workOrder.checklist.map(item => `
+                <div class="flex items-center"><i class="far fa-square mr-2"></i> ${item.text}</div>
+            `).join('') : '<p class="text-gray-500">No checklist.</p>'}
+        </div>
+    `;
+    document.getElementById('workOrderDetailModal').style.display = 'flex';
+}
+
+export function showPartRequestModal() {
+    // Populate dropdown with existing parts
+    const partSelect = document.getElementById('requestPartId');
+    partSelect.innerHTML = state.cache.parts
+        .filter(can.view)
+        .map(p => `<option value="${p.id}">${p.name} (SKU: ${p.sku})</option>`).join('');
+
+    // Toggle visibility of new part fields
+    const checkbox = document.getElementById('requestNewPartCheckbox');
+    const newPartContainer = document.getElementById('newPartContainer');
+    const existingPartContainer = document.getElementById('existingPartContainer');
+    checkbox.addEventListener('change', () => {
+        newPartContainer.classList.toggle('hidden', !checkbox.checked);
+        existingPartContainer.classList.toggle('hidden', checkbox.checked);
+    });
+    // Reset state
+    checkbox.checked = false;
+    newPartContainer.classList.add('hidden');
+    existingPartContainer.classList.remove('hidden');
+
+    document.getElementById('partRequestModal').style.display = 'flex';
+}
+
+export function showStorageRequestModal() {
+     const partSelect = document.getElementById('storageRequestPartId');
+     partSelect.innerHTML = '<option value="">Select a part...</option>' + state.cache.parts
+        .filter(p => can.view(p) && p.quantity > 0)
+        .map(p => `<option value="${p.id}">${p.name} (In Stock: ${p.quantity})</option>`).join('');
+    document.getElementById('storageRequestModal').style.display = 'flex';
+}
+
+export function showReceivePartsModal() {
+    const requestSelect = document.getElementById('receiveRequestId');
+    const approvedRequests = state.cache.partRequests.filter(pr => pr.status === 'Approved' && can.view(pr));
+    requestSelect.innerHTML = '<option value="">Select an approved request...</option>' + approvedRequests.map(pr => {
+        const partName = pr.newPartName || state.cache.parts.find(p => p.id === pr.partId)?.name;
+        return `<option value="${pr.id}">Request #${pr.id} - ${pr.quantity} x ${partName}</option>`
+    }).join('');
+    document.getElementById('receivePartsModal').style.display = 'flex';
+}
+
+export function showRestockPartsModal() {
+    const partSelect = document.getElementById('restockPartId');
+    const receivedParts = state.cache.receivedParts.filter(rp => can.view(rp)); // Assuming can.view works
+     partSelect.innerHTML = '<option value="">Select received parts...</option>' + receivedParts.map(rp => {
+        const partName = rp.newPartName || state.cache.parts.find(p => p.id === rp.partId)?.name;
+        return `<option value="${rp.id}">Received #${rp.id} - ${rp.quantity} x ${partName}</option>`
+    }).join('');
+
+    populateLocationDropdown(document.getElementById('restockLocationId'), 'storage');
+    document.getElementById('restockPartsModal').style.display = 'flex';
+}
+
+// This function was also missing from your original ui.js
+export function populateLocationDropdowns(divisionSelect, departmentSelect) {
+    const { divisions = [], departments = [] } = state.cache.locations;
+
+    if (divisionSelect) {
+        divisionSelect.innerHTML = '<option value="">Select Division</option>' + 
+            divisions.map(d => `<option value="${d.id}">${d.name}</option>`).join('');
+        
+        divisionSelect.onchange = () => {
+            const selectedDivisionId = parseInt(divisionSelect.value);
+            const filteredDepartments = departments.filter(d => d.divisionId === selectedDivisionId);
+            if (departmentSelect) {
+                departmentSelect.innerHTML = '<option value="">Select Department</option>' + 
+                    filteredDepartments.map(d => `<option value="${d.id}">${d.name}</option>`).join('');
+            }
+        };
+    }
+}
