@@ -785,6 +785,11 @@ function attachGlobalEventListeners() {
             "addChecklistItemBtn": () => {
                 const input = document.getElementById('newChecklistItem');
                 if (input.value) { addChecklistItem(input.value); input.value = ''; }
+            },
+            // --- THIS IS THE NEW LOGIC ---
+            "remove-checklist-item-btn": () => {
+                // Find the closest parent div with the 'checklist-item' class and remove it
+                button.closest('.checklist-item').remove();
             }
         };
 
