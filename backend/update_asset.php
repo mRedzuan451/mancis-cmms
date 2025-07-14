@@ -1,10 +1,8 @@
 <?php
-
 require_once 'auth_check.php';
+authorize(['Admin', 'Manager', 'Supervisor']);
 
-header("Access-Control-Allow-Origin: *");
 header("Content-Type: application/json; charset=UTF-8");
-header("Access-Control-Allow-Methods: POST"); // Using POST to handle update
 
 $servername = "localhost"; $username = "root"; $password = ""; $dbname = "mancis_db";
 $conn = new mysqli($servername, $username, $password, $dbname);
@@ -19,8 +17,10 @@ if ($id <= 0 || empty($data->name)) {
     exit();
 }
 
-$stmt = $conn->prepare("UPDATE assets SET name=?, tag=?, category=?, locationId=?, purchaseDate=?, cost=?, currency=? WHERE id=?");
-$stmt->bind_param("sssssdsi", 
+$relatedPartsJson = isset($data->relatedParts) ? json_encode($data->relatedParts) : null;
+
+$stmt = $conn->prepare("UPDATE assets SET name=?, tag=?, category=?, locationId=?, purchaseDate=?, cost=?, currency=?, relatedParts=? WHERE id=?");
+$stmt->bind_param("sssssdssi", 
     $data->name, 
     $data->tag, 
     $data->category, 
@@ -28,6 +28,7 @@ $stmt->bind_param("sssssdsi",
     $data->purchaseDate, 
     $data->cost, 
     $data->currency,
+    $relatedPartsJson,
     $id
 );
 
