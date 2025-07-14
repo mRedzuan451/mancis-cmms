@@ -785,15 +785,14 @@ export function showPartDetailModal(part) {
     const contentEl = document.getElementById('partDetailContent');
     const locationName = getFullLocationName(part.locationId);
     
-    // --- FIX STARTS HERE ---
-    // Get the array of asset IDs directly from the part object.
-    const relatedAssetIds = part.relatedAssets || [];
+    // --- THIS IS THE FIX ---
+    // Get the array of asset IDs and convert them all from strings to numbers.
+    const relatedAssetIds = (part.relatedAssets || []).map(id => Number(id));
 
-    // Now, find the full asset objects from the cache that match those IDs.
+    // Now, find the full asset objects by comparing numbers to numbers.
     const relatedAssets = state.cache.assets.filter(asset => 
         relatedAssetIds.includes(asset.id)
     );
-    // --- FIX ENDS HERE ---
 
     contentEl.innerHTML = `
         <h2 class="text-2xl font-bold mb-4">${part.name}</h2>
