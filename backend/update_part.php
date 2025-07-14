@@ -2,9 +2,7 @@
 
 require_once 'auth_check.php';
 
-header("Access-Control-Allow-Origin: *");
 header("Content-Type: application/json; charset=UTF-8");
-header("Access-Control-Allow-Methods: POST");
 
 $servername = "localhost"; $username = "root"; $password = ""; $dbname = "mancis_db";
 $conn = new mysqli($servername, $username, $password, $dbname);
@@ -19,8 +17,12 @@ if ($id <= 0) {
     exit();
 }
 
-$stmt = $conn->prepare("UPDATE parts SET name=?, sku=?, category=?, quantity=?, minQuantity=?, locationId=?, maker=?, supplier=?, price=?, currency=? WHERE id=?");
-$stmt->bind_param("sssiisssdsi", 
+// --- NEW: Convert the relatedAssets array to a JSON string ---
+$relatedAssetsJson = isset($data->relatedAssets) ? json_encode($data->relatedAssets) : null;
+
+$stmt = $conn->prepare("UPDATE parts SET name=?, sku=?, category=?, quantity=?, minQuantity=?, locationId=?, maker=?, supplier=?, price=?, currency=?, relatedAssets=? WHERE id=?");
+// Note the new 's' for the JSON string and 'i' for the ID at the end
+$stmt->bind_param("sssiisssdssi", 
     $data->name, 
     $data->sku, 
     $data->category, 
@@ -31,6 +33,7 @@ $stmt->bind_param("sssiisssdsi",
     $data->supplier, 
     $data->price, 
     $data->currency,
+    $relatedAssetsJson, // Bind the new JSON string
     $id
 );
 

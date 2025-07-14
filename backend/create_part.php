@@ -2,11 +2,7 @@
 
 require_once 'auth_check.php';
 
-authorize(['Admin', 'Supervisor', 'Engineer', 'Technician']);
-
-header("Access-Control-Allow-Origin: *");
 header("Content-Type: application/json; charset=UTF-8");
-header("Access-Control-Allow-Methods: POST");
 
 $servername = "localhost"; $username = "root"; $password = ""; $dbname = "mancis_db";
 $conn = new mysqli($servername, $username, $password, $dbname);
@@ -20,8 +16,12 @@ if (empty($data->name) || empty($data->sku) || empty($data->locationId)) {
     exit();
 }
 
-$stmt = $conn->prepare("INSERT INTO parts (name, sku, category, quantity, minQuantity, locationId, maker, supplier, price, currency) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-$stmt->bind_param("sssiisssds", 
+// --- NEW: Convert the relatedAssets array to a JSON string ---
+$relatedAssetsJson = isset($data->relatedAssets) ? json_encode($data->relatedAssets) : null;
+
+$stmt = $conn->prepare("INSERT INTO parts (name, sku, category, quantity, minQuantity, locationId, maker, supplier, price, currency, relatedAssets) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+// Note the new 's' at the end for the JSON string
+$stmt->bind_param("sssiisssdss", 
     $data->name, 
     $data->sku, 
     $data->category, 
@@ -31,14 +31,13 @@ $stmt->bind_param("sssiisssds",
     $data->maker, 
     $data->supplier, 
     $data->price, 
-    $data->currency
+    $data->currency,
+    $relatedAssetsJson // Bind the new JSON string
 );
 
 if ($stmt->execute()) {
-    $new_id = $conn->insert_id;
-    $data->id = $new_id;
     http_response_code(201);
-    echo json_encode($data);
+    echo json_encode(["message" => "Part created successfully."]);
 } else {
     http_response_code(500);
     echo json_encode(["message" => "Failed to create part."]);
