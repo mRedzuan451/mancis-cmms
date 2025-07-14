@@ -785,10 +785,15 @@ export function showPartDetailModal(part) {
     const contentEl = document.getElementById('partDetailContent');
     const locationName = getFullLocationName(part.locationId);
     
-    // Find related assets
-    const relatedAssets = state.cache.assets.filter(asset =>
-        asset.relatedParts && asset.relatedParts.includes(part.id.toString())
+    // --- FIX STARTS HERE ---
+    // Get the array of asset IDs directly from the part object.
+    const relatedAssetIds = part.relatedAssets || [];
+
+    // Now, find the full asset objects from the cache that match those IDs.
+    const relatedAssets = state.cache.assets.filter(asset => 
+        relatedAssetIds.includes(asset.id)
     );
+    // --- FIX ENDS HERE ---
 
     contentEl.innerHTML = `
         <h2 class="text-2xl font-bold mb-4">${part.name}</h2>
@@ -803,9 +808,13 @@ export function showPartDetailModal(part) {
             <div><strong>Price:</strong> ${part.currency} ${part.price}</div>
         </div>
         <h3 class="text-lg font-bold mt-6 mb-2">Related Assets</h3>
-        <ul class="list-disc list-inside">
-            ${relatedAssets.length > 0 ? relatedAssets.map(a => `<li>${a.name}</li>`).join('') : '<li>No assets are linked to this part.</li>'}
-        </ul>
+        <div class="bg-gray-50 p-3 rounded-md text-sm">
+            ${relatedAssets.length > 0 ? `
+                <ul class="list-disc list-inside">
+                    ${relatedAssets.map(a => `<li>${a.name} (Tag: ${a.tag})</li>`).join('')}
+                </ul>
+            ` : `<p class="text-gray-500">No assets are linked to this part.</p>`}
+        </div>
         ${part.attachmentRef ? `<h3 class="text-lg font-bold mt-6 mb-2">Attachments</h3><a href="${part.attachmentRef}" target="_blank" class="text-blue-500 hover:underline">View Attachment</a>` : ''}
     `;
     document.getElementById('partDetailModal').style.display = 'flex';
