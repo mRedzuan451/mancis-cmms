@@ -643,16 +643,19 @@ function attachGlobalEventListeners() {
         const actions = {
             "view-asset-btn": () => showAssetDetailModal(state.cache.assets.find(a => a.id === id)),
             "edit-asset-btn": () => {
-                showAssetModal(id);
-                // This line was missing for the edit action
+                // --- FIX: The order of these two lines is now correct ---
+                // 1. First, populate the dropdown with all possible locations.
                 populateLocationDropdown(document.getElementById("assetLocation"), "operational");
+                // 2. Then, show the modal, which will now correctly select the asset's current location.
+                showAssetModal(id);
             },
             "delete-asset-btn": () => deleteItem('assets', id),
             "transfer-asset-btn": () => {
                 const asset = state.cache.assets.find(a => a.id === id);
                 if (asset) {
-                    showTransferAssetModal(asset);
+                    // This one also needs the same fix
                     populateLocationDropdown(document.getElementById("transferLocation"), "operational");
+                    showTransferAssetModal(asset);
                 }
             },
             "dispose-asset-btn": () => handleDisposeAsset(id),
