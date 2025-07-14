@@ -135,4 +135,10 @@ export const api = {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
     }),
+    // ... (inside the 'api' object, after the other functions)
+    createAutoPartRequest: (data) => request('create_auto_part_request.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+    }),
 };

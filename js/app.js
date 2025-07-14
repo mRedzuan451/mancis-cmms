@@ -88,8 +88,61 @@ async function loadInitialData() {
 async function loadAndRender() {
     await loadInitialData();
     render();
+    // --- ADD THIS LINE ---
+    // After everything is loaded and rendered, check for low stock.
+    await checkForLowStockAndCreateRequests();
 }
 
+async function checkForLowStockAndCreateRequests() {
+    console.log("Checking for low stock parts...");
+
+    // 1. Find parts that are low on stock
+    const lowStockParts = state.cache.parts.filter(p => p.quantity <= p.minQuantity);
+
+    if (lowStockParts.length === 0) {
+        console.log("No low stock parts found.");
+        return; // Exit if no parts are low on stock
+    }
+
+    // 2. Find parts that ALREADY have an open request
+    const openRequestStatuses = ["Requested", "Approved", "Received", "Requested from Storage"];
+    const partsWithOpenRequests = new Set(
+        state.cache.partRequests
+            .filter(req => openRequestStatuses.includes(req.status) && req.partId)
+            .map(req => req.partId)
+    );
+    
+    // 3. Determine which low-stock parts need a new request
+    const partsToRequest = lowStockParts.filter(p => !partsWithOpenRequests.has(p.id));
+
+    if (partsToRequest.length > 0) {
+        showTemporaryMessage(`Found ${partsToRequest.length} low-stock item(s). Automatically creating requests...`);
+        
+        for (const part of partsToRequest) {
+            try {
+                // Request a quantity of double the minimum, or 10 if min is 0.
+                const requestQty = (part.minQuantity > 0) ? (part.minQuantity * 2) : 10;
+                
+                await api.createAutoPartRequest({
+                    partId: part.id,
+                    quantity: requestQty
+                });
+                console.log(`Successfully created automatic request for part: ${part.name}`);
+            } catch (error) {
+                console.error(`Failed to create request for part ${part.name}:`, error);
+            }
+        }
+
+        // Refresh the part requests data in the cache after creating new ones
+        state.cache.partRequests = await api.getPartRequests();
+        // Re-render the content if the user is on the part requests page
+        if(state.currentPage === 'partRequests') {
+            renderMainContent();
+        }
+    } else {
+        console.log("All low stock parts already have an open request.");
+    }
+}
 
 // --- ACTION HANDLERS (Forms, Deletes, etc.) ---
 
