@@ -704,7 +704,6 @@ function attachGlobalEventListeners() {
         document.getElementById("registrationModal").style.display = "flex";
         const divisionSelect = document.getElementById('regDivision');
         const departmentSelect = document.getElementById('regDepartment');
-        // We need to fetch locations if not already available
         if(!state.cache.locations || Object.keys(state.cache.locations).length === 0) {
            api.getLocations().then(locations => {
                state.cache.locations = locations;
@@ -731,18 +730,19 @@ function attachGlobalEventListeners() {
       }
     });
 
-    // Modal closing
+    // Modal closing and main page clicks (delegated from the body)
+    // --- THIS IS THE FIX: The listener is now attached to document.body ---
     document.body.addEventListener("click", (e) => {
-        if (e.target.closest("[data-close-modal]")) {
-            e.target.closest(".modal").style.display = "none";
-        }
-    });
-
-    // Main content clicks (delegated)
-    document.getElementById("mainContent").addEventListener("click", (e) => {
         const target = e.target;
         const button = target.closest("button");
 
+        // Handle modal closing first
+        if (target.closest("[data-close-modal]")) {
+            target.closest(".modal").style.display = "none";
+            return; // Stop further processing
+        }
+
+        // Handle calendar day clicks
         if (target.closest('.calendar-day')?.dataset.date) {
              const date = target.closest('.calendar-day').dataset.date;
              const wosOnDay = state.cache.workOrders.filter(wo => wo.dueDate === date && can.view(wo));
@@ -750,25 +750,21 @@ function attachGlobalEventListeners() {
              return;
         }
 
+        // If no button was clicked, do nothing
         if (!button) return;
 
         const id = button.dataset.id ? parseInt(button.dataset.id) : null;
         
-        // Use a map for cleaner action handling
         const actions = {
             "view-asset-btn": () => showAssetDetailModal(state.cache.assets.find(a => a.id === id)),
             "edit-asset-btn": () => {
-                // --- FIX: The order of these two lines is now correct ---
-                // 1. First, populate the dropdown with all possible locations.
                 populateLocationDropdown(document.getElementById("assetLocation"), "operational");
-                // 2. Then, show the modal, which will now correctly select the asset's current location.
                 showAssetModal(id);
             },
             "delete-asset-btn": () => deleteItem('assets', id),
             "transfer-asset-btn": () => {
                 const asset = state.cache.assets.find(a => a.id === id);
                 if (asset) {
-                    // This one also needs the same fix
                     populateLocationDropdown(document.getElementById("transferLocation"), "operational");
                     showTransferAssetModal(asset);
                 }
