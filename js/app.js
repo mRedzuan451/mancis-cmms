@@ -642,9 +642,19 @@ function attachGlobalEventListeners() {
         // Use a map for cleaner action handling
         const actions = {
             "view-asset-btn": () => showAssetDetailModal(state.cache.assets.find(a => a.id === id)),
-            "edit-asset-btn": () => showAssetModal(id),
+            "edit-asset-btn": () => {
+                showAssetModal(id);
+                // This line was missing for the edit action
+                populateLocationDropdown(document.getElementById("assetLocation"), "operational");
+            },
             "delete-asset-btn": () => deleteItem('assets', id),
-            "transfer-asset-btn": () => showTransferAssetModal(state.cache.assets.find(a => a.id === id)),
+            "transfer-asset-btn": () => {
+                const asset = state.cache.assets.find(a => a.id === id);
+                if (asset) {
+                    showTransferAssetModal(asset);
+                    populateLocationDropdown(document.getElementById("transferLocation"), "operational");
+                }
+            },
             "dispose-asset-btn": () => handleDisposeAsset(id),
             "view-part-btn": () => showPartDetailModal(state.cache.parts.find(p => p.id === id)),
             "edit-part-btn": () => showPartModal(id),
