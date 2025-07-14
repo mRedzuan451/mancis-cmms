@@ -144,6 +144,12 @@ export function showTemporaryMessage(message, isError = false) {
 export function printReport(title, content) {
     const printWindow = window.open("", "_blank", "height=600,width=800");
 
+    // Add a check for pop-up blockers
+    if (!printWindow) {
+        alert("Please allow pop-ups for this site to print reports.");
+        return;
+    }
+
     printWindow.document.write(`
         <html>
             <head>
@@ -173,15 +179,21 @@ export function printReport(title, content) {
     `);
 
     printWindow.document.close();
-
-    if (printButton) {
-        printButton.addEventListener('click', function() {
-            printWindow.print();
-        });
-        console.log("Event listener attached to print button.");
-    } else {
-        console.error("Could not find the print button in the new window.");
-    }
+    
+    // Use a timeout to ensure the popup DOM is ready before we access it
+    setTimeout(() => {
+        try {
+            const printButton = printWindow.document.getElementById('printPageBtn');
+            if (printButton) {
+                printButton.addEventListener('click', function() {
+                    printWindow.print();
+                });
+            }
+        } catch (error) {
+            // This will catch any errors if the window was closed before the script ran
+            console.error("Could not attach print event listener:", error);
+        }
+    }, 250); // A 250ms delay
 
     printWindow.focus();
 }
