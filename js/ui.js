@@ -662,17 +662,6 @@ export function addWoPartRow(selectedPartId = "", quantity = 1) {
     container.appendChild(row);
 }
 
-export function populateLocationDropdowns(divisionSelect, departmentSelect, locations) {
-    const { divisions = [], departments = [] } = locations || state.cache.locations || {};
-    divisionSelect.innerHTML = `<option value="">Select Division</option>` + divisions.map((d) => `<option value="${d.id}">${d.name}</option>`).join("");
-    departmentSelect.innerHTML = `<option value="">Select Department</option>`;
-    divisionSelect.addEventListener("change", () => {
-        const selectedDivisionId = parseInt(divisionSelect.value);
-        const filteredDepartments = departments.filter((d) => d.divisionId === selectedDivisionId);
-        departmentSelect.innerHTML = `<option value="">Select Department</option>` + filteredDepartments.map((d) => `<option value="${d.id}">${d.name}</option>`).join("");
-    });
-}
-
 export function populateLocationDropdown(selectElement, type = "all") {
     const { productionLines = [], cabinets = [], shelves = [], boxes = [] } = state.cache.locations || {};
     let options = '<option value="">Select a location</option>';
