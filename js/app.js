@@ -1,4 +1,4 @@
-// js/app.js (Complete, Corrected Code)
+// js/app.js
 
 import { state } from './config.js';
 import { api } from './api.js';
@@ -88,23 +88,21 @@ async function loadInitialData() {
 async function loadAndRender() {
     await loadInitialData();
     render();
-    // --- ADD THIS LINE ---
-    // After everything is loaded and rendered, check for low stock.
     await checkForLowStockAndCreateRequests();
 }
 
+
+// --- ACTION HANDLERS (Forms, Deletes, etc.) ---
+
 async function checkForLowStockAndCreateRequests() {
     console.log("Checking for low stock parts...");
-
-    // 1. Find parts that are low on stock
     const lowStockParts = state.cache.parts.filter(p => p.quantity <= p.minQuantity);
 
     if (lowStockParts.length === 0) {
         console.log("No low stock parts found.");
-        return; // Exit if no parts are low on stock
+        return;
     }
 
-    // 2. Find parts that ALREADY have an open request
     const openRequestStatuses = ["Requested", "Approved", "Received", "Requested from Storage"];
     const partsWithOpenRequests = new Set(
         state.cache.partRequests
@@ -112,7 +110,6 @@ async function checkForLowStockAndCreateRequests() {
             .map(req => req.partId)
     );
     
-    // 3. Determine which low-stock parts need a new request
     const partsToRequest = lowStockParts.filter(p => !partsWithOpenRequests.has(p.id));
 
     if (partsToRequest.length > 0) {
@@ -120,7 +117,6 @@ async function checkForLowStockAndCreateRequests() {
         
         for (const part of partsToRequest) {
             try {
-                // Request a quantity of double the minimum, or 10 if min is 0.
                 const requestQty = (part.minQuantity > 0) ? (part.minQuantity * 2) : 10;
                 
                 await api.createAutoPartRequest({
@@ -132,10 +128,7 @@ async function checkForLowStockAndCreateRequests() {
                 console.error(`Failed to create request for part ${part.name}:`, error);
             }
         }
-
-        // Refresh the part requests data in the cache after creating new ones
         state.cache.partRequests = await api.getPartRequests();
-        // Re-render the content if the user is on the part requests page
         if(state.currentPage === 'partRequests') {
             renderMainContent();
         }
@@ -143,8 +136,6 @@ async function checkForLowStockAndCreateRequests() {
         console.log("All low stock parts already have an open request.");
     }
 }
-
-// --- ACTION HANDLERS (Forms, Deletes, etc.) ---
 
 async function handleAssetFormSubmit(e) {
     e.preventDefault();
@@ -179,7 +170,7 @@ async function handleAssetFormSubmit(e) {
 }
 
 async function deleteItem(type, id) {
-    const typeName = type.slice(0, -1); // "assets" -> "asset"
+    const typeName = type.slice(0, -1);
     if (!confirm(`Are you sure you want to delete this ${typeName}? This may affect related items.`)) {
         return;
     }
@@ -190,7 +181,7 @@ async function deleteItem(type, id) {
                 itemToDelete = state.cache.assets.find(i => i.id === id);
                 await api.deleteAsset(id);
                 state.cache.assets = await api.getAssets();
-                state.cache.workOrders = await api.getWorkOrders(); // Refresh WOs as they might be deleted
+                state.cache.workOrders = await api.getWorkOrders();
                 break;
             case 'parts':
                 itemToDelete = state.cache.parts.find(i => i.id === id);
@@ -415,8 +406,6 @@ async function handleStorageRequestFormSubmit(e) {
         requesterId: state.currentUser.id,
         requestDate: new Date().toISOString().split('T')[0],
         status: 'Requested from Storage',
-        // --- THIS IS THE FIX ---
-        // Explicitly set new-part fields to null for a storage request
         newPartName: null,
         newPartNumber: null,
         newPartMaker: null,
@@ -444,7 +433,6 @@ async function handlePartRequestAction(id, newStatus) {
         });
         await logActivity(`Part Request ${newStatus}`, `Request ID ${id} was marked as ${newStatus}`);
         state.cache.partRequests = await api.getPartRequests();
-        // If approved from storage, part stock may have changed
         if (newStatus === 'Approved') {
             state.cache.parts = await api.getParts();
         }
@@ -730,19 +718,15 @@ function attachGlobalEventListeners() {
       }
     });
 
-    // Modal closing and main page clicks (delegated from the body)
-    // --- THIS IS THE FIX: The listener is now attached to document.body ---
     document.body.addEventListener("click", (e) => {
         const target = e.target;
         const button = target.closest("button");
 
-        // Handle modal closing first
         if (target.closest("[data-close-modal]")) {
             target.closest(".modal").style.display = "none";
-            return; // Stop further processing
+            return;
         }
 
-        // Handle calendar day clicks
         if (target.closest('.calendar-day')?.dataset.date) {
              const date = target.closest('.calendar-day').dataset.date;
              const wosOnDay = state.cache.workOrders.filter(wo => wo.dueDate === date && can.view(wo));
@@ -750,7 +734,6 @@ function attachGlobalEventListeners() {
              return;
         }
 
-        // If no button was clicked, do nothing
         if (!button) return;
 
         const id = button.dataset.id ? parseInt(button.dataset.id) : null;
@@ -786,9 +769,7 @@ function attachGlobalEventListeners() {
                 const input = document.getElementById('newChecklistItem');
                 if (input.value) { addChecklistItem(input.value); input.value = ''; }
             },
-            // --- THIS IS THE NEW LOGIC ---
             "remove-checklist-item-btn": () => {
-                // Find the closest parent div with the 'checklist-item' class and remove it
                 button.closest('.checklist-item').remove();
             }
         };
@@ -817,5 +798,5 @@ function attachGlobalEventListeners() {
 // --- APPLICATION INITIALIZATION ---
 document.addEventListener("DOMContentLoaded", () => {
     attachGlobalEventListeners();
-    render(); // Initial render for login screen
+    render();
 });
