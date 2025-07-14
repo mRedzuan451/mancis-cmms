@@ -1,7 +1,10 @@
 <?php
-// --- NEW: Handle browser preflight 'OPTIONS' requests ---
+// Use your server's actual IP address here
+$allowed_origin = "http://192.168.141.42";
+
+// --- Handle browser preflight 'OPTIONS' requests ---
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    header("Access-Control-Allow-Origin: http://localhost");
+    header("Access-Control-Allow-Origin: " . $allowed_origin);
     header("Access-Control-Allow-Methods: POST, GET, OPTIONS");
     header("Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With");
     header("Access-control-allow-credentials: true");
@@ -11,7 +14,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 
 session_start();
 
-header("Access-Control-Allow-Origin: http://localhost");
+header("Access-Control-Allow-Origin: " . $allowed_origin);
 header("Access-Control-Allow-Credentials: true");
 header("Content-Type: application/json; charset=UTF-8");
 header("Access-Control-Allow-Methods: POST");
@@ -31,7 +34,6 @@ if ($conn->connect_error) {
     exit();
 }
 
-// Get the posted data
 $data = json_decode(file_get_contents("php://input"));
 
 if (!isset($data->username) || !isset($data->password)) {
@@ -43,10 +45,8 @@ if (!isset($data->username) || !isset($data->password)) {
 $login_user = $data->username;
 $login_pass = $data->password;
 
-// Prepare to select the user by USERNAME ONLY
 $stmt = $conn->prepare("SELECT id, fullName, employeeId, username, role, divisionId, departmentId, password FROM users WHERE username = ?");
 $stmt->bind_param("s", $login_user);
-
 $stmt->execute();
 $result = $stmt->get_result();
 
