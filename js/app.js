@@ -362,6 +362,12 @@ async function handleStorageRequestFormSubmit(e) {
         requesterId: state.currentUser.id,
         requestDate: new Date().toISOString().split('T')[0],
         status: 'Requested from Storage',
+        // --- THIS IS THE FIX ---
+        // Explicitly set new-part fields to null for a storage request
+        newPartName: null,
+        newPartNumber: null,
+        newPartMaker: null,
+        notes: ''
     };
      try {
         await api.createPartRequest(requestData);
