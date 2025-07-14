@@ -1,4 +1,12 @@
 <?php
+
+// 1. REQUIRE THE AUTH CHECK AT THE VERY TOP
+require_once 'auth_check.php';
+
+// 2. AUTHORIZE SPECIFIC ROLES
+// Only these roles can create an asset.
+authorize(['Admin', 'Manager', 'Supervisor']);
+
 header("Access-Control-Allow-Origin: *");
 header("Content-Type: application/json; charset=UTF-8");
 header("Access-Control-Allow-Methods: POST");

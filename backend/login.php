@@ -1,5 +1,10 @@
 <?php
-header("Access-Control-Allow-Origin: *");
+// --- Start the session ---
+// This must be at the very top of the file, before any output.
+session_start();
+
+header("Access-Control-Allow-Origin: http://localhost"); // More secure CORS
+header("Access-Control-Allow-Credentials: true"); // Allow cookies to be sent
 header("Content-Type: application/json; charset=UTF-8");
 header("Access-Control-Allow-Methods: POST");
 header("Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With");
@@ -30,7 +35,7 @@ if (!isset($data->username) || !isset($data->password)) {
 $login_user = $data->username;
 $login_pass = $data->password;
 
-// 1. Prepare to select the user by USERNAME ONLY
+// Prepare to select the user by USERNAME ONLY
 $stmt = $conn->prepare("SELECT id, fullName, employeeId, username, role, divisionId, departmentId, password FROM users WHERE username = ?");
 $stmt->bind_param("s", $login_user);
 
@@ -41,10 +46,15 @@ if ($result->num_rows > 0) {
     $user = $result->fetch_assoc();
     $hashed_password = $user['password'];
 
-    // 2. Verify the submitted password against the hashed password from the database
+    // Verify the submitted password against the hashed password from the database
     if (password_verify($login_pass, $hashed_password)) {
-        // Passwords match. Successful login.
-        
+        // --- KEY CHANGE: SESSION CREATION ---
+        // Passwords match. Store user data in the session.
+        $_SESSION['user_id'] = $user['id'];
+        $_SESSION['user_role'] = $user['role'];
+        $_SESSION['user_department_id'] = $user['departmentId'];
+        $_SESSION['user_fullname'] = $user['fullName'];
+
         // Remove the password from the user object before sending it to the frontend
         unset($user['password']);
 

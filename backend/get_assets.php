@@ -1,4 +1,7 @@
 <?php
+
+require_once 'auth_check.php';
+
 // Set headers to allow requests from any origin (CORS) and define the response type as JSON
 header("Access-Control-Allow-Origin: *");
 header("Content-Type: application/json; charset=UTF-8");
