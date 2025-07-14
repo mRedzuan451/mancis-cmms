@@ -29,6 +29,9 @@ $assets_array = array();
 // Loop through the results from the database and add them to our PHP array
 if ($result && $result->num_rows > 0) {
     while($row = $result->fetch_assoc()) {
+        // --- KEY FIX: Convert the ID from a string to an integer ---
+        $row['id'] = intval($row['id']);
+        
         $assets_array[] = $row;
     }
 }
