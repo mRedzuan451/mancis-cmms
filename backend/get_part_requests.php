@@ -1,8 +1,7 @@
 <?php
-
 require_once 'auth_check.php';
+authorize(['Admin', 'Manager', 'Supervisor', 'Engineer', 'Technician', 'Clerk']);
 
-header("Access-Control-Allow-Origin: *");
 header("Content-Type: application/json; charset=UTF-8");
 
 $servername = "localhost"; $username = "root"; $password = ""; $dbname = "mancis_db";
@@ -17,6 +16,11 @@ if ($result->num_rows > 0) {
     while($row = $result->fetch_assoc()) {
         $row['id'] = intval($row['id']);
         $row['quantity'] = intval($row['quantity']);
+        
+        // --- THIS IS THE FIX ---
+        // Ensure that partId is converted to a number (or is null if it doesn't exist)
+        $row['partId'] = $row['partId'] ? intval($row['partId']) : null;
+
         $output_array[] = $row;
     }
 }
