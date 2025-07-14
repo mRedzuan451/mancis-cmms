@@ -142,31 +142,42 @@ export function showTemporaryMessage(message, isError = false) {
  * @param {string} content The HTML content to be printed.
  */
 export function printReport(title, content) {
-  const printWindow = window.open("", "_blank", "height=600,width=800");
-  printWindow.document.write("<html><head><title>" + title + "</title>");
-  printWindow.document.write(`
-    <style>
-        body { font-family: Arial, sans-serif; }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
-        h1 { text-align: center; border-bottom: 2px solid #000; padding-bottom: 10px; }
-        h2 { background-color: #f2f2f2; padding: 10px; margin-top: 20px; border-bottom: 1px solid #ddd; }
-        p { margin-bottom: 20px; }
-        @page { size: A4; margin: 20mm; }
-        @media print {
-            body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-            h2 { background-color: #f2f2f2 !important; }
-            tr { page-break-inside: avoid; }
-        }
-    </style>
-  `);
-  printWindow.document.write("</head><body>");
-  printWindow.document.write(content);
-  printWindow.document.write("</body></html>");
-  printWindow.document.close();
-  printWindow.focus();
-  setTimeout(function () {
-    printWindow.print();
-    printWindow.close();
-  }, 250);
+    const printWindow = window.open("", "_blank", "height=600,width=800");
+    printWindow.document.write(`
+        <html>
+            <head>
+                <title>${title}</title>
+                <style>
+                    body { font-family: Arial, sans-serif; }
+                    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+                    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+                    h1 { text-align: center; border-bottom: 2px solid #000; padding-bottom: 10px; }
+                    p { margin-bottom: 20px; }
+                    @page { size: A4; margin: 20mm; }
+                    @media print {
+                        .no-print { display: none; }
+                        body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+                    }
+                    .print-button-container {
+                        text-align: right;
+                        padding: 10px;
+                    }
+                    .print-button {
+                        padding: 8px 16px;
+                        border: 1px solid #ccc;
+                        background-color: #f0f0f0;
+                        cursor: pointer;
+                    }
+                </style>
+            </head>
+            <body>
+                <div class="no-print print-button-container">
+                    <button onclick="window.print()" class="print-button">Print this page</button>
+                </div>
+                ${content}
+            </body>
+        </html>
+    `);
+    printWindow.document.close();
+    printWindow.focus();
 }
