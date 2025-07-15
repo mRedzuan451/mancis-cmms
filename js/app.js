@@ -458,13 +458,28 @@ async function handleStorageRequestFormSubmit(e) {
     }
 }
 
+// js/app.js
+
 async function handlePartRequestAction(id, newStatus) {
+    let rejectionReason = null;
+
+    // If rejecting, prompt for a reason
+    if (newStatus === 'Rejected') {
+        rejectionReason = prompt("Please provide a reason for rejecting this request:");
+        // If the user clicks "Cancel" on the prompt, stop the function
+        if (rejectionReason === null) {
+            return; 
+        }
+    }
+
     if (!confirm(`Are you sure you want to ${newStatus.toLowerCase()} this request?`)) return;
+    
     try {
         await api.updatePartRequestStatus({
             id,
             status: newStatus,
-            approverId: state.currentUser.id
+            approverId: state.currentUser.id,
+            rejectionReason: rejectionReason // Send the reason to the API
         });
         await logActivity(`Part Request ${newStatus}`, `Request ID ${id} was marked as ${newStatus}`);
         state.cache.partRequests = await api.getPartRequests();

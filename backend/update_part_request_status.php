@@ -11,9 +11,9 @@ if ($conn->connect_error) { die("Connection failed: " . $conn->connect_error); }
 
 $data = json_decode(file_get_contents("php://input"));
 
-// --- THIS IS THE FIX ---
-// Read the ID from the JSON data body, not the URL's GET parameters.
 $id = isset($data->id) ? intval($data->id) : 0;
+// Get the rejection reason from the request data
+$rejectionReason = isset($data->rejectionReason) ? $data->rejectionReason : null;
 
 if ($id <= 0 || empty($data->status) || empty($data->approverId)) {
     http_response_code(400);
@@ -53,8 +53,10 @@ try {
         $data->status = 'Completed'; 
     }
 
-    $stmt = $conn->prepare("UPDATE partrequests SET status = ?, approverId = ?, approvalDate = NOW() WHERE id = ?");
-    $stmt->bind_param("sii", $data->status, $data->approverId, $id);
+    // UPDATE the query to include rejectionReason
+    $stmt = $conn->prepare("UPDATE partrequests SET status = ?, approverId = ?, approvalDate = NOW(), rejectionReason = ? WHERE id = ?");
+    // Change the bind_param types from "sii" to "ssii"
+    $stmt->bind_param("ssii", $data->status, $data->approverId, $rejectionReason, $id);
     $stmt->execute();
     $stmt->close();
 

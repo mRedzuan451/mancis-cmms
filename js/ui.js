@@ -339,15 +339,16 @@ export function renderPartsRequestPage() {
       ${header}
       <div class="bg-white p-4 rounded-lg shadow">
           <div class="overflow-x-auto">
+              // js/ui.js --> inside renderPartsRequestPage()
+
               <table class="w-full">
                   <thead><tr class="border-b">
                       <th class="p-2 text-left">Part Name</th>
                       <th class="p-2 text-left">Part Number</th>
                       <th class="p-2 text-left">Maker</th>
                       <th class="p-2 text-left">Quantity</th>
-                      <th class="p-2 text-left">Purpose</th>
                       <th class="p-2 text-left">Status</th>
-                      <th class="p-2 text-left">Actions</th>
+                      <th class="p-2 text-left">Purpose / Rejection Reason</th> <th class="p-2 text-left">Actions</th>
                   </tr></thead>
                   <tbody>
                       ${generateTableRows("partRequests", partRequests)}
@@ -449,6 +450,8 @@ export function generateTableRows(type, data) {
                       ` : ""}
                   </td>
               </tr>`).join("");
+      // js/ui.js --> inside generateTableRows()
+
       case "partRequests":
         const prStatusColors = { Requested: "bg-blue-200 text-blue-800", "Requested from Storage": "bg-cyan-200 text-cyan-800", Approved: "bg-yellow-200 text-yellow-800", Rejected: "bg-red-200 text-red-800", Received: "bg-green-200 text-green-800", Completed: "bg-gray-400 text-gray-800" };
         return data.map((req) => {
@@ -457,14 +460,20 @@ export function generateTableRows(type, data) {
             const partNumber = req.newPartNumber || (part ? part.sku : "N/A");
             const maker = req.newPartMaker || (part ? part.maker : "N/A");
             const statusColorClass = prStatusColors[req.status] || "bg-gray-200 text-gray-800";
+
+            // Determine what to show in the final column
+            const notesOrReason = req.status === 'Rejected' 
+                ? `<span class="text-red-600">${req.rejectionReason || 'No reason provided.'}</span>` 
+                : req.purpose;
+
             return `
               <tr class="border-b hover:bg-gray-50">
                   <td class="p-2">${partName}</td>
                   <td class="p-2">${partNumber}</td>
                   <td class="p-2">${maker}</td>
                   <td class="p-2">${req.quantity}</td>
-                  <td class="p-2">${req.purpose}</td>
                   <td class="p-2"><span class="px-2 py-1 text-xs font-semibold rounded-full ${statusColorClass}">${req.status}</span></td>
+                  <td class="p-2 text-sm">${notesOrReason}</td>
                   <td class="p-2 space-x-2">
                       ${(state.currentUser.role === "Admin" || state.currentUser.role === "Manager") && (req.status === "Requested" || req.status === "Requested from Storage") ? `<button class="approve-pr-btn text-green-500 hover:text-green-700" data-id="${req.id}" title="Approve"><i class="fas fa-check"></i></button><button class="reject-pr-btn text-red-500 hover:text-red-700" data-id="${req.id}" title="Reject"><i class="fas fa-times"></i></button>` : ""}
                   </td>
