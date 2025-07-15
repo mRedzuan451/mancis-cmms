@@ -534,6 +534,7 @@ export function showAssetModal(assetId = null) {
     const form = document.getElementById("assetForm");
     form.reset();
     document.getElementById("assetId").value = "";
+    populateLocationDropdown(document.getElementById("assetLocation"), "operational");
     if (assetId) {
         const asset = state.cache.assets.find((a) => a.id === assetId);
         if (asset) {
