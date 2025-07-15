@@ -925,17 +925,17 @@ export function showReceivePartsModal() {
 
 // js/ui.js
 
+// js/ui.js
+
 export async function showRestockPartsModal() {
-    // --- THIS IS THE FIX: Fetch the latest data from the server ---
     try {
         showTemporaryMessage("Loading received parts...");
         state.cache.receivedParts = await api.getReceivedParts();
     } catch (error) {
         showTemporaryMessage("Failed to load received parts.", true);
-        return; // Stop if data can't be loaded
+        return;
     }
 
-    // --- The rest of the function remains the same ---
     const requestSelect = document.getElementById('restockPartId');
     const receivedParts = state.cache.receivedParts;
     requestSelect.innerHTML = '<option value="">Select received parts...</option>' + receivedParts.map(rp => {
@@ -959,15 +959,23 @@ export async function showRestockPartsModal() {
     const isNewPartCheckbox = document.getElementById('isNewPartCheckbox');
     const existingPartSelector = document.getElementById('existingPartSelector');
     const newPartInputs = document.getElementById('newPartInputs');
+    
+    // --- Get all the relevant input elements once ---
+    const restockPartIdInput = document.getElementById('restockPartId');
+    const directStockPartIdInput = document.getElementById('directStockPartId');
+    const directStockQuantityInput = document.getElementById('directStockQuantity');
+    const newPartNameInput = document.getElementById('newPartName');
+    const newPartSkuInput = document.getElementById('newPartSku');
 
     isNewPartCheckbox.addEventListener('change', () => {
         const isChecked = isNewPartCheckbox.checked;
         existingPartSelector.style.display = isChecked ? 'none' : 'block';
         newPartInputs.style.display = isChecked ? 'block' : 'none';
         
-        document.getElementById('directStockPartId').required = !isChecked;
-        document.getElementById('newPartName').required = isChecked;
-        document.getElementById('newPartSku').required = isChecked;
+        directStockPartIdInput.required = !isChecked;
+        directStockPartIdInput.disabled = isChecked;
+        newPartNameInput.required = isChecked;
+        newPartSkuInput.required = isChecked;
     });
 
     const setMode = (mode) => {
@@ -975,12 +983,22 @@ export async function showRestockPartsModal() {
         fromRequestContainer.style.display = isRequestMode ? 'block' : 'none';
         directStockContainer.style.display = isRequestMode ? 'none' : 'block';
 
-        document.getElementById('restockPartId').required = isRequestMode;
-        document.getElementById('directStockPartId').required = !isRequestMode;
+        // --- UPDATE THIS LOGIC TO INCLUDE .disabled ---
+        // Toggle fields for "From Request" mode
+        restockPartIdInput.required = isRequestMode;
+        restockPartIdInput.disabled = !isRequestMode;
+
+        // Toggle fields for "Direct Stock" mode
+        directStockPartIdInput.required = !isRequestMode;
+        directStockPartIdInput.disabled = isRequestMode;
+        directStockQuantityInput.required = !isRequestMode;
+        directStockQuantityInput.disabled = isRequestMode;
         
         isNewPartCheckbox.checked = false;
         existingPartSelector.style.display = 'block';
         newPartInputs.style.display = 'none';
+        newPartNameInput.required = false;
+        newPartSkuInput.required = false;
 
         requestBtn.classList.toggle('bg-blue-500', isRequestMode);
         requestBtn.classList.toggle('text-white', isRequestMode);
