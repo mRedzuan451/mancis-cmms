@@ -965,10 +965,36 @@
           </div>
           
           <div id="directStockContainer" class="hidden space-y-4">
-             <div class="mb-4">
-                <label for="directStockPartId" class="block text-sm font-medium text-gray-700">Part to Restock</label>
-                <select id="directStockPartId" class="w-full mt-1 px-3 py-2 border rounded" required></select>
-             </div>
+            
+            <div class="relative flex items-start">
+              <div class="flex items-center h-5">
+                <input id="isNewPartCheckbox" type="checkbox" class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded">
+              </div>
+              <div class="ml-3 text-sm">
+                <label for="isNewPartCheckbox" class="font-medium text-gray-700">Add a new part not in the list</label>
+              </div>
+            </div>
+
+            <div id="existingPartSelector" class="mb-4">
+               <label for="directStockPartId" class="block text-sm font-medium text-gray-700">Part to Restock</label>
+               <select id="directStockPartId" class="w-full mt-1 px-3 py-2 border rounded" required></select>
+            </div>
+            
+            <div id="newPartInputs" class="hidden space-y-4 border-t pt-4">
+                <input type="text" id="newPartName" placeholder="New Part Name" class="w-full px-3 py-2 border rounded" />
+                <input type="text" id="newPartSku" placeholder="New Part Number / SKU" class="w-full px-3 py-2 border rounded" />
+                <input type="text" id="newPartMaker" placeholder="Maker (Optional)" class="w-full px-3 py-2 border rounded" />
+                <select id="newPartCategory" class="w-full px-3 py-2 border rounded">
+                    <option value="">Select Category...</option>
+                    <option value="Mechanical">Mechanical</option>
+                    <option value="Electrical">Electrical</option>
+                    <option value="Hydraulic">Hydraulic</option>
+                    <option value="Pneumatic">Pneumatic</option>
+                    <option value="Consumable">Consumable</option>
+                    <option value="Other">Other</option>
+                </select>
+            </div>
+            
              <div class="mb-4">
                 <label for="directStockQuantity" class="block text-sm font-medium text-gray-700">Quantity</label>
                 <input type="number" id="directStockQuantity" class="w-full mt-1 px-3 py-2 border rounded" min="1" required />

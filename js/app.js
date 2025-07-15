@@ -499,30 +499,42 @@ async function handleReceivePartsFormSubmit(e) {
 
 // js/app.js
 
+// js/app.js
+
 async function handleRestockPartsFormSubmit(e) {
     e.preventDefault();
     
-    // Check which mode is active by seeing which container is visible
     const isDirectStockMode = document.getElementById('directStockContainer').style.display === 'block';
     
     try {
+        let payload = {};
+        
         if (isDirectStockMode) {
-            // --- Handle Direct Stock ---
-            const partId = parseInt(document.getElementById('directStockPartId').value);
-            const quantity = parseInt(document.getElementById('directStockQuantity').value);
-            const locationId = document.getElementById('restockLocationId').value;
-            const notes = document.getElementById('directStockNotes').value;
+            const isNewPart = document.getElementById('isNewPartCheckbox').checked;
+            
+            payload = {
+                quantity: parseInt(document.getElementById('directStockQuantity').value),
+                locationId: document.getElementById('restockLocationId').value,
+                notes: document.getElementById('directStockNotes').value
+            };
 
-            await api.directRestockPart({ partId, quantity, locationId, notes });
-            await logActivity("Part Restocked (Direct)", `Added ${quantity} units to part ID ${partId}`);
+            if (isNewPart) {
+                // --- Handle New Part Creation ---
+                payload.newPartName = document.getElementById('newPartName').value;
+                payload.newPartSku = document.getElementById('newPartSku').value;
+                payload.newPartMaker = document.getElementById('newPartMaker').value;
+                payload.newPartCategory = document.getElementById('newPartCategory').value;
+            } else {
+                // --- Handle Direct Stock of Existing Part ---
+                payload.partId = parseInt(document.getElementById('directStockPartId').value);
+            }
+            await api.directRestockPart(payload);
 
         } else {
-            // --- Handle Restock from Request (original logic) ---
+            // --- Handle Restock from Request ---
             const receivedId = parseInt(document.getElementById('restockPartId').value);
             const locationId = document.getElementById('restockLocationId').value;
-
             await api.restockParts({ receivedId, locationId });
-            await logActivity("Parts Restocked (Request)", `Restocked parts from received ID ${receivedId}.`);
         }
         
         // Refresh all relevant data caches
