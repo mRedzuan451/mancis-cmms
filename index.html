@@ -105,7 +105,12 @@
       }
 
       .logo-1 .man {
-          color: #ffffff; /* white, to be visible on dark sidebar */
+          color: #374151; /* gray-700 */
+      }
+
+      /* This new rule makes the text white ONLY when the logo is inside the sidebar. */
+      #sidebar .logo-1 .man {
+          color: #ffffff;
       }
 
       .logo-1 .cis {
@@ -121,9 +126,12 @@
       class="flex items-center justify-center min-h-screen bg-gray-200"
     >
       <div class="bg-white p-8 rounded-lg shadow-lg w-full max-w-md">
-        <h1 class="text-2xl font-bold mb-6 text-center text-gray-700">
-          ManCIS Login
-        </h1>
+        <div class="logo-1 justify-center mb-6">
+            <div class="icon"></div>
+            <div class="text">
+                <span class="man">Man</span><span class="cis">CIS</span>
+            </div>
+        </div>
         <form id="loginForm">
           <div class="mb-4">
             <label for="username" class="block text-gray-700">Username</label>
