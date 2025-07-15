@@ -72,13 +72,48 @@ function render() {
     }
 }
 
+// js/app.js
+
 async function loadInitialData() {
     try {
-        const [assets, parts, users, workOrders, partRequests, locations, logs, receivedParts] = await Promise.all([
-            api.getAssets(), api.getParts(), api.getUsers(), api.getWorkOrders(),
-            api.getPartRequests(), api.getLocations(), api.getLogs(), api.getReceivedParts(),
-        ]);
-        state.cache = { assets, parts, users, workOrders, partRequests, locations, logs, receivedParts };
+        const { role } = state.currentUser;
+        
+        // Start with promises that everyone can access
+        const promises = [
+            api.getPartRequests(),
+            api.getLocations(),
+            api.getReceivedParts(),
+        ];
+
+        // Conditionally add promises based on user role
+        if (role === 'Admin') {
+            promises.push(api.getAssets(), api.getParts(), api.getUsers(), api.getWorkOrders(), api.getLogs());
+        } else if (role !== 'Clerk') {
+            // For Manager, Supervisor, Engineer, Technician
+            promises.push(api.getAssets(), api.getParts(), api.getUsers(), api.getWorkOrders());
+        }
+
+        const results = await Promise.all(promises);
+
+        // Assign results to the cache based on what was fetched
+        // This is more complex but correctly handles the partial data
+        state.cache.partRequests = results[0];
+        state.cache.locations = results[1];
+        state.cache.receivedParts = results[2];
+        
+        if (role === 'Admin') {
+            state.cache.assets = results[3];
+            state.cache.parts = results[4];
+            state.cache.users = results[5];
+            state.cache.workOrders = results[6];
+            state.cache.logs = results[7];
+        } else if (role !== 'Clerk') {
+            state.cache.assets = results[3];
+            state.cache.parts = results[4];
+            state.cache.users = results[5];
+            state.cache.workOrders = results[6];
+        }
+
     } catch (error) {
         showTemporaryMessage("Failed to load initial application data. Please try again.", true);
         handleLogout(render);
