@@ -800,10 +800,8 @@ function attachPageSpecificEventListeners(page) {
         const startDateInput = document.getElementById('startDate');
         const endDateInput = document.getElementById('endDate');
 
-        // This helper function formats a Date object into YYYY-MM-DD
         const formatDate = (date) => date.toISOString().split('T')[0];
 
-        // This listener updates the date inputs when the dropdown changes
         dateRangeSelect.addEventListener('change', (e) => {
             const range = e.target.value;
             const today = new Date();
@@ -812,51 +810,44 @@ function attachPageSpecificEventListeners(page) {
 
             switch (range) {
                 case 'this-week':
-                    // Sets start to the beginning of the week (Sunday)
                     start.setDate(today.getDate() - today.getDay());
                     break;
                 case 'last-7-days':
                     start.setDate(today.getDate() - 6);
                     break;
                 case 'this-month':
-                    // Sets start to the first day of the current month
                     start = new Date(today.getFullYear(), today.getMonth(), 1);
                     break;
                 case 'last-30-days':
                     start.setDate(today.getDate() - 29);
                     break;
                 case 'last-month':
-                    // Sets start and end to the beginning and end of last month
                     start = new Date(today.getFullYear(), today.getMonth() - 1, 1);
                     end = new Date(today.getFullYear(), today.getMonth(), 0);
                     break;
                 case 'custom':
-                    // Allows user to select their own dates
                     startDateInput.readOnly = false;
                     endDateInput.readOnly = false;
                     return;
             }
 
-            // Set the calculated dates and make inputs read-only for presets
             startDateInput.value = formatDate(start);
             endDateInput.value = formatDate(end);
             startDateInput.readOnly = true;
             endDateInput.readOnly = true;
         });
 
-        // Trigger the change event on load to set the initial state
         dateRangeSelect.dispatchEvent(new Event('change'));
 
-        // This listener handles the form submission
         document.getElementById('reportForm')?.addEventListener('submit', async (e) => {
             e.preventDefault();
             const startDate = startDateInput.value;
             const endDate = endDateInput.value;
             
-            // --- DATE VALIDATION ---
             if (new Date(endDate) <= new Date(startDate)) {
                 showTemporaryMessage("The End Date must be at least one day after the Start Date.", true);
-                return; // Stop the submission
+                return;
+
             }
 
             const container = document.getElementById('reportResultContainer');
@@ -866,7 +857,7 @@ function attachPageSpecificEventListeners(page) {
                 const reportData = await api.getInventoryReport({ startDate, endDate });
                 
                 let grandTotalValue = 0;
-                let tableHTML = `
+                let tableHeader = `
                     <div class="flex justify-between items-center mb-4">
                         <h2 class="text-xl font-bold">Report for ${startDate} to ${endDate}</h2>
                         <button id="printReportBtn" class="bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-2 px-4 rounded"><i class="fas fa-print mr-2"></i>Print Report</button>
@@ -880,15 +871,16 @@ function attachPageSpecificEventListeners(page) {
                             <th class="p-2 text-right font-bold">Ending Qty</th>
                             <th class="p-2 text-right">Unit Price</th>
                             <th class="p-2 text-right">Total Value</th>
-                        </tr></thead>
-                        <tbody>`;
+                        </tr></thead>`;
                 
+                let tableBody;
                 if (reportData.length === 0) {
-                    tableHTML += '<tr><td colspan="7" class="text-center p-4">No data for this period.</td></tr>';
+                    tableBody = '<tbody><tr><td colspan="7" class="text-center p-4">No data for this period.</td></tr></tbody>';
                 } else {
+                    tableBody = '<tbody>';
                     reportData.forEach(item => {
                         grandTotalValue += item.total_value;
-                        tableHTML += `
+                        tableBody += `
                             <tr class="border-b hover:bg-gray-50">
                                 <td class="p-2">${item.name} (${item.sku})</td>
                                 <td class="p-2 text-right">${item.starting_qty}</td>
@@ -900,9 +892,19 @@ function attachPageSpecificEventListeners(page) {
                             </tr>
                         `;
                     });
+                    tableBody += '</tbody>';
                 }
-                tableHTML += '</tbody><tfoot><tr class="border-t-2 font-bold"><td class="p-2" colspan="6">Grand Total Value of Stock</td><td class="p-2 text-right">RM ${grandTotalValue.toFixed(2)}</td></tr></tfoot></table>`;
-                container.innerHTML = tableHTML;
+
+                let tableFooter = `
+                    <tfoot>
+                        <tr class="border-t-2 font-bold">
+                            <td class="p-2" colspan="6">Grand Total Value of Stock</td>
+                            <td class="p-2 text-right">RM ${grandTotalValue.toFixed(2)}</td>
+                        </tr>
+                    </tfoot>
+                </table>`;
+                
+                container.innerHTML = tableHeader + tableBody + tableFooter;
                 
                 document.getElementById('printReportBtn').addEventListener('click', () => {
                     const reportTitle = `Inventory Report for ${startDate} to ${endDate}`;
