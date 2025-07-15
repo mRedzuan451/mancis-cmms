@@ -910,18 +910,65 @@ export function showReceivePartsModal() {
     document.getElementById('receivePartsModal').style.display = 'flex';
 }
 
+// js/ui.js
+
 export function showRestockPartsModal() {
-    const partSelect = document.getElementById('restockPartId');
+    // --- Setup for "From Request" mode ---
+    const requestSelect = document.getElementById('restockPartId');
     const receivedParts = state.cache.receivedParts.filter(rp => can.view(rp)); // Assuming can.view works
-     partSelect.innerHTML = '<option value="">Select received parts...</option>' + receivedParts.map(rp => {
+    requestSelect.innerHTML = '<option value="">Select received parts...</option>' + receivedParts.map(rp => {
         const partName = rp.newPartName || state.cache.parts.find(p => p.id === rp.partId)?.name;
         return `<option value="${rp.id}">Received #${rp.id} - ${rp.quantity} x ${partName}</option>`
     }).join('');
 
+    // --- Setup for "Direct Stock" mode ---
+    const directPartSelect = document.getElementById('directStockPartId');
+    directPartSelect.innerHTML = '<option value="">Select an existing part...</option>' + state.cache.parts
+        .filter(can.view)
+        .map(p => `<option value="${p.id}">${p.name} (SKU: ${p.sku})</option>`).join('');
+
+    // --- Common Fields ---
     populateLocationDropdown(document.getElementById('restockLocationId'), 'storage');
+    document.getElementById('restockPartsForm').reset();
+    
+    // --- Logic to switch between modes ---
+    const fromRequestContainer = document.getElementById('fromRequestContainer');
+    const directStockContainer = document.getElementById('directStockContainer');
+    const requestBtn = document.getElementById('restockTypeRequest');
+    const directBtn = document.getElementById('restockTypeDirect');
+
+    const setMode = (mode) => {
+        if (mode === 'request') {
+            fromRequestContainer.style.display = 'block';
+            directStockContainer.style.display = 'none';
+            document.getElementById('restockPartId').required = true;
+            document.getElementById('directStockPartId').required = false;
+            document.getElementById('directStockQuantity').required = false;
+            requestBtn.classList.replace('bg-white', 'bg-blue-500');
+            requestBtn.classList.replace('text-gray-700', 'text-white');
+            directBtn.classList.replace('bg-blue-500', 'bg-white');
+            directBtn.classList.replace('text-white', 'text-gray-700');
+        } else {
+            fromRequestContainer.style.display = 'none';
+            directStockContainer.style.display = 'block';
+            document.getElementById('restockPartId').required = false;
+            document.getElementById('directStockPartId').required = true;
+            document.getElementById('directStockQuantity').required = true;
+            directBtn.classList.replace('bg-white', 'bg-blue-500');
+            directBtn.classList.replace('text-gray-700', 'text-white');
+            requestBtn.classList.replace('bg-blue-500', 'bg-white');
+            requestBtn.classList.replace('text-white', 'text-gray-700');
+        }
+    };
+
+    requestBtn.onclick = () => setMode('request');
+    directBtn.onclick = () => setMode('direct');
+
+    // Set initial state
+    setMode('request');
+
     document.getElementById('restockPartsModal').style.display = 'flex';
 }
-
 // This function was also missing from your original ui.js
 export function populateLocationDropdowns(divisionSelect, departmentSelect) {
     const { divisions = [], departments = [] } = state.cache.locations;

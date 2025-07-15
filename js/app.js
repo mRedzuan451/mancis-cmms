@@ -497,19 +497,44 @@ async function handleReceivePartsFormSubmit(e) {
     }
 }
 
+// js/app.js
+
 async function handleRestockPartsFormSubmit(e) {
     e.preventDefault();
-    const receivedId = parseInt(document.getElementById('restockPartId').value);
-    const locationId = document.getElementById('restockLocationId').value;
+    
+    // Check which mode is active by seeing which container is visible
+    const isDirectStockMode = document.getElementById('directStockContainer').style.display === 'block';
+    
     try {
-        await api.restockParts({ receivedId, locationId });
-        await logActivity("Parts Restocked", `Restocked parts from received ID ${receivedId}.`);
+        if (isDirectStockMode) {
+            // --- Handle Direct Stock ---
+            const partId = parseInt(document.getElementById('directStockPartId').value);
+            const quantity = parseInt(document.getElementById('directStockQuantity').value);
+            const locationId = document.getElementById('restockLocationId').value;
+            const notes = document.getElementById('directStockNotes').value;
+
+            await api.directRestockPart({ partId, quantity, locationId, notes });
+            await logActivity("Part Restocked (Direct)", `Added ${quantity} units to part ID ${partId}`);
+
+        } else {
+            // --- Handle Restock from Request (original logic) ---
+            const receivedId = parseInt(document.getElementById('restockPartId').value);
+            const locationId = document.getElementById('restockLocationId').value;
+
+            await api.restockParts({ receivedId, locationId });
+            await logActivity("Parts Restocked (Request)", `Restocked parts from received ID ${receivedId}.`);
+        }
+        
+        // Refresh all relevant data caches
         state.cache.receivedParts = await api.getReceivedParts();
         state.cache.partRequests = await api.getPartRequests();
         state.cache.parts = await api.getParts();
+        state.cache.logs = await api.getLogs();
+        
         document.getElementById('restockPartsModal').style.display = 'none';
         renderMainContent();
         showTemporaryMessage("Parts restocked successfully.");
+
     } catch (error) {
         showTemporaryMessage(`Failed to restock parts. ${error.message}`, true);
     }
