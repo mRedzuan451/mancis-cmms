@@ -339,8 +339,6 @@ export function renderPartsRequestPage() {
       ${header}
       <div class="bg-white p-4 rounded-lg shadow">
           <div class="overflow-x-auto">
-              // js/ui.js --> inside renderPartsRequestPage()
-
               <table class="w-full">
                   <thead><tr class="border-b">
                       <th class="p-2 text-left">Part Name</th>
