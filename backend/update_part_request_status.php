@@ -34,6 +34,7 @@ try {
     $request = $request_result->fetch_assoc();
     $stmt_get->close();
 
+    // If it was a storage request and it's approved, deduct from stock
     if ($data->status === 'Approved' && $request['status'] === 'Requested from Storage') {
         $part_id = $request['partId'];
         $quantity_requested = $request['quantity'];
@@ -47,15 +48,14 @@ try {
             throw new Exception("Not enough stock to fulfill storage request or part not found.");
         }
         $stmt_part->close();
+        // Change status to completed as it's an internal transfer
         $data->status = 'Completed'; 
     }
 
-    $stmt = $conn->prepare("UPDATE partrequests SET status = ?, approverId = ?, approvalDate = NOW(), rejectionReason = ? WHERE id = ?");
+    // This query updates the status, saves the rejection reason, and resets the notification flag for the user.
+    $stmt = $conn->prepare("UPDATE partrequests SET status = ?, approverId = ?, approvalDate = NOW(), rejectionReason = ?, requester_viewed_status = 0 WHERE id = ?");
     
-    // --- THIS IS THE FIX ---
-    // The previous type string was "ssii", which was incorrect.
-    // The correct types are: status (s), approverId (i), rejectionReason (s), id (i).
-    // The correct type string is "sisi".
+    // The correct type string is "sisi" for status(string), approverId(int), rejectionReason(string), and id(int).
     $stmt->bind_param("sisi", $data->status, $data->approverId, $rejectionReason, $id);
     
     $stmt->execute();

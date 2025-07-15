@@ -911,6 +911,37 @@ function attachGlobalEventListeners() {
     document.getElementById("restockPartsForm").addEventListener("submit", handleRestockPartsFormSubmit);
 }
 
+// js/app.js
+
+async function checkForNotifications() {
+    try {
+        const notifications = await api.getNotifications();
+        if (notifications && notifications.length > 0) {
+            const idsToMarkAsRead = [];
+            
+            notifications.forEach((req, index) => {
+                const partName = req.newPartName || `request #${req.id}`;
+                const isError = req.status === 'Rejected';
+                const message = `Update: Your request for "${partName}" has been ${req.status}.`;
+                
+                // Use a timeout to stagger the notifications
+                setTimeout(() => {
+                    showTemporaryMessage(message, isError);
+                }, index * 1500);
+
+                idsToMarkAsRead.push(req.id);
+            });
+
+            // After showing all notifications, mark them as read
+            if (idsToMarkAsRead.length > 0) {
+                await api.markNotificationsRead({ ids: idsToMarkAsRead });
+            }
+        }
+    } catch (error) {
+        console.error("Failed to check for notifications:", error);
+    }
+}
+
 // --- APPLICATION INITIALIZATION ---
 document.addEventListener("DOMContentLoaded", () => {
     attachGlobalEventListeners();
