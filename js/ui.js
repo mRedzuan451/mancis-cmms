@@ -39,20 +39,21 @@ export function renderDashboard() {
     </div>`;
 }
 
+// js/ui.js
+
 export function renderAssetsPage() {
     const assets = state.cache.assets.filter(can.view);
+
+    // Use the new helper function to create the header
+    const header = renderPageHeader("Asset Management", [
+        // Add the new Refresh button here
+        '<button id="refreshDataBtn" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded"><i class="fas fa-sync-alt mr-2"></i>Refresh</button>',
+        '<button id="printAssetListBtn" class="bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-2 px-4 rounded"><i class="fas fa-print mr-2"></i>Print List</button>',
+        '<button id="addAssetBtn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded"><i class="fas fa-plus mr-2"></i>Add Asset</button>'
+    ]);
+
     return `
-      <div class="flex justify-between items-center mb-6">
-          <h1 class="text-3xl font-bold">Asset Management</h1>
-          <div class="space-x-2">
-              <button id="printAssetListBtn" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded">
-                  <i class="fas fa-print mr-2"></i>Print List
-              </button>
-              <button id="addAssetBtn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded">
-                  <i class="fas fa-plus mr-2"></i>Add Asset
-              </button>
-          </div>
-      </div>
+      ${header}
       <div class="bg-white p-4 rounded-lg shadow">
           <input type="text" id="assetSearch" class="w-full mb-4 px-3 py-2 border rounded" placeholder="Search by name, tag, or category...">
           <div class="overflow-x-auto">
@@ -72,18 +73,15 @@ export function renderAssetsPage() {
 
 export function renderPartsPage() {
     const parts = state.cache.parts.filter(can.view);
+    
+    const header = renderPageHeader("Spare Parts Management", [
+        '<button id="refreshDataBtn" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded"><i class="fas fa-sync-alt mr-2"></i>Refresh</button>',
+        '<button id="printPartListBtn" class="bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-2 px-4 rounded"><i class="fas fa-print mr-2"></i>Print List</button>',
+        '<button id="addPartBtn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded"><i class="fas fa-plus mr-2"></i>Add Part</button>'
+    ]);
+    
     return `
-      <div class="flex justify-between items-center mb-6">
-          <h1 class="text-3xl font-bold">Spare Parts Management</h1>
-          <div class="space-x-2">
-              <button id="printPartListBtn" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded">
-                  <i class="fas fa-print mr-2"></i>Print List
-              </button>
-              <button id="addPartBtn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded">
-                  <i class="fas fa-plus mr-2"></i>Add Part
-              </button>
-          </div>
-      </div>
+      ${header}
       <div class="bg-white p-4 rounded-lg shadow">
           <input type="text" id="partSearch" class="w-full mb-4 px-3 py-2 border rounded" placeholder="Search by name, SKU, category, or maker...">
           <div class="overflow-x-auto">
@@ -108,15 +106,14 @@ export function renderPartsPage() {
 
 export function renderWorkOrdersPage() {
     const workOrders = state.cache.workOrders.filter(can.view);
+
+    const header = renderPageHeader("Work Order Management", [
+        '<button id="refreshDataBtn" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded"><i class="fas fa-sync-alt mr-2"></i>Refresh</button>',
+        '<button id="addWorkOrderBtn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded"><i class="fas fa-plus mr-2"></i>Create Work Order</button>'
+    ]);
+
     return `
-      <div class="flex justify-between items-center mb-6">
-          <h1 class="text-3xl font-bold">Work Order Management</h1>
-          <div>
-              <button id="addWorkOrderBtn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded">
-                  <i class="fas fa-plus mr-2"></i>Create Work Order
-              </button>
-          </div>
-      </div>
+      ${header}
       <div class="bg-white p-4 rounded-lg shadow">
           <input type="text" id="workOrderSearch" class="w-full mb-4 px-3 py-2 border rounded" placeholder="Search by title or asset name...">
           <div class="overflow-x-auto">
@@ -139,11 +136,13 @@ export function renderWorkOrdersPage() {
 }
 
 export function renderUserManagementPage() {
-    const users = state.cache.users; // Admin can see all users
+    const users = state.cache.users;
+    const header = renderPageHeader("User Management", [
+        '<button id="refreshDataBtn" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded"><i class="fas fa-sync-alt mr-2"></i>Refresh</button>'
+    ]);
+
     return `
-      <div class="flex justify-between items-center mb-6">
-          <h1 class="text-3xl font-bold">User Management</h1>
-      </div>
+      ${header}
       <div class="bg-white p-4 rounded-lg shadow">
           <div class="overflow-x-auto">
               <table class="w-full" id="userTable">
@@ -306,8 +305,12 @@ export function renderLocationsPage() {
 
 export function renderActivityLogPage() {
     const logs = state.cache.logs;
+    const header = renderPageHeader("Activity Log", [
+        '<button id="refreshDataBtn" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded"><i class="fas fa-sync-alt mr-2"></i>Refresh</button>'
+    ]);
+
     return `
-      <h1 class="text-3xl font-bold mb-6">Activity Log</h1>
+      ${header}
       <div class="bg-white p-4 rounded-lg shadow">
           <ul class="space-y-4">
               ${logs.map((log) => `
@@ -322,17 +325,18 @@ export function renderActivityLogPage() {
 
 export function renderPartsRequestPage() {
     const partRequests = state.cache.partRequests.filter(can.view);
+
+    const header = renderPageHeader("Part Requests", [
+        '<button id="refreshDataBtn" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded"><i class="fas fa-sync-alt mr-2"></i>Refresh</button>',
+        '<button id="printPurchaseListBtn" class="bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 px-4 rounded"><i class="fas fa-file-invoice mr-2"></i>Print Purchase List</button>',
+        '<button id="storageRequestBtn" class="bg-teal-500 hover:bg-teal-600 text-white font-bold py-2 px-4 rounded"><i class="fas fa-warehouse mr-2"></i>Request from Storage</button>',
+        '<button id="newPartRequestBtn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded"><i class="fas fa-plus mr-2"></i>New Purchase Request</button>',
+        '<button id="receivePartsBtn" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded"><i class="fas fa-box-open mr-2"></i>Receive Parts</button>',
+        '<button id="restockPartsBtn" class="bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded"><i class="fas fa-dolly-flatbed mr-2"></i>Restock Parts</button>'
+    ]);
+
     return `
-      <div class="flex justify-between items-center mb-6">
-          <h1 class="text-3xl font-bold">Part Requests</h1>
-          <div class="space-x-2">
-               <button id="printPurchaseListBtn" class="bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 px-4 rounded"><i class="fas fa-file-invoice mr-2"></i>Print Purchase List</button>
-               <button id="storageRequestBtn" class="bg-teal-500 hover:bg-teal-600 text-white font-bold py-2 px-4 rounded"><i class="fas fa-warehouse mr-2"></i>Request from Storage</button>
-              <button id="newPartRequestBtn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded"><i class="fas fa-plus mr-2"></i>New Purchase Request</button>
-              <button id="receivePartsBtn" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded"><i class="fas fa-box-open mr-2"></i>Receive Parts</button>
-              <button id="restockPartsBtn" class="bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded"><i class="fas fa-dolly-flatbed mr-2"></i>Restock Parts</button>
-          </div>
-      </div>
+      ${header}
       <div class="bg-white p-4 rounded-lg shadow">
           <div class="overflow-x-auto">
               <table class="w-full">
@@ -929,4 +933,18 @@ export function populateLocationDropdowns(divisionSelect, departmentSelect) {
             }
         };
     }
+}
+
+// js/ui.js
+
+// THIS IS A NEW HELPER FUNCTION
+function renderPageHeader(title, buttons = []) {
+  return `
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="text-3xl font-bold">${title}</h1>
+        <div class="space-x-2">
+            ${buttons.join('\n')}
+        </div>
+    </div>
+  `;
 }

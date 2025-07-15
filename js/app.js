@@ -684,6 +684,29 @@ function attachPageSpecificEventListeners(page) {
     }
 }
 
+// js/app.js
+
+// --- NEW REFRESH FUNCTION ---
+async function refreshAllDataAndRender() {
+    // Safety Check: Don't refresh if a modal is open (i.e., user is editing)
+    const isModalOpen = !!document.querySelector('.modal[style*="display: flex"]');
+    if (isModalOpen) {
+        console.log("Refresh skipped: a modal is open.");
+        return;
+    }
+
+    console.log("Refreshing data...");
+    showTemporaryMessage("Refreshing data...");
+    
+    try {
+        await loadInitialData(); // Re-fetch all data from the server
+        renderMainContent();     // Re-render the current page with the new data
+        console.log("Data refreshed successfully.");
+    } catch (error) {
+        showTemporaryMessage("Failed to refresh data.", true);
+    }
+}
+
 function attachGlobalEventListeners() {
     // Authentication
     document.getElementById("loginForm").addEventListener("submit", (e) => handleLogin(e, loadAndRender));
@@ -721,6 +744,10 @@ function attachGlobalEventListeners() {
     document.body.addEventListener("click", (e) => {
         const target = e.target;
         const button = target.closest("button");
+
+        if (e.target.id === "refreshDataBtn") {
+            refreshAllDataAndRender();
+        }
 
         if (target.closest("[data-close-modal]")) {
             target.closest(".modal").style.display = "none";
@@ -782,6 +809,8 @@ function attachGlobalEventListeners() {
         }
     });
 
+    
+
     // Form Submissions
     document.getElementById("assetForm").addEventListener("submit", handleAssetFormSubmit);
     document.getElementById("partForm").addEventListener("submit", handlePartFormSubmit);
@@ -799,4 +828,8 @@ function attachGlobalEventListeners() {
 document.addEventListener("DOMContentLoaded", () => {
     attachGlobalEventListeners();
     render();
+    // --- ADD THIS BLOCK FOR AUTOMATIC REFRESHING ---
+    // Set an interval to automatically refresh data every 5 minutes (300,000 milliseconds)
+    const refreshInterval = 5 * 60 * 1000; 
+    setInterval(refreshAllDataAndRender, refreshInterval);
 });
