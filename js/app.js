@@ -52,6 +52,7 @@ function renderMainContent() {
         case "userManagement":      content = renderUserManagementPage(); break;
         case "workOrderCalendar":   content = renderWorkOrderCalendar(); break;
         case "locations":           content = renderLocationsPage(); break;
+        case "inventoryReport":     content = renderInventoryReportPage(); break;
         case "activityLog":         content = renderActivityLogPage(); break;
         case "partRequests":        content = renderPartsRequestPage(); break;
         default:                    content = renderDashboard();
@@ -768,6 +769,64 @@ function attachPageSpecificEventListeners(page) {
         document.querySelector('#addCabinetForm')?.addEventListener('submit', handleLocationFormSubmit);
         document.querySelector('#addShelfForm')?.addEventListener('submit', handleLocationFormSubmit);
         document.querySelector('#addBoxForm')?.addEventListener('submit', handleLocationFormSubmit);
+    } else if (page === 'inventoryReport') {
+        document.getElementById('reportForm')?.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+            const container = document.getElementById('reportResultContainer');
+            container.innerHTML = '<p>Generating report, please wait...</p>';
+
+            try {
+                const reportData = await api.getInventoryReport({ startDate, endDate });
+                
+                let tableHTML = `
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-xl font-bold">Report for ${startDate} to ${endDate}</h2>
+                        <button id="printReportBtn" class="bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-2 px-4 rounded"><i class="fas fa-print mr-2"></i>Print Report</button>
+                    </div>
+                    <table class="w-full">
+                        <thead><tr class="border-b">
+                            <th class="p-2 text-left">Part Name (SKU)</th>
+                            <th class="p-2 text-right">Starting Qty</th>
+                            <th class="p-2 text-right text-green-600">Stock In</th>
+                            <th class="p-2 text-right text-red-600">Stock Out</th>
+                            <th class="p-2 text-right font-bold">Ending Qty</th>
+                            <th class="p-2 text-right">Unit Price</th>
+                            <th class="p-2 text-right">Total Value</th>
+                        </tr></thead>
+                        <tbody>`;
+                
+                if (reportData.length === 0) {
+                    tableHTML += '<tr><td colspan="7" class="text-center p-4">No data for this period.</td></tr>';
+                } else {
+                    reportData.forEach(item => {
+                        tableHTML += `
+                            <tr class="border-b hover:bg-gray-50">
+                                <td class="p-2">${item.name} (${item.sku})</td>
+                                <td class="p-2 text-right">${item.starting_qty}</td>
+                                <td class="p-2 text-right text-green-600">+${item.stock_in}</td>
+                                <td class="p-2 text-right text-red-600">-${item.stock_out}</td>
+                                <td class="p-2 text-right font-bold">${item.ending_qty}</td>
+                                <td class="p-2 text-right">${item.price.toFixed(2)}</td>
+                                <td class="p-2 text-right">${item.total_value.toFixed(2)}</td>
+                            </tr>
+                        `;
+                    });
+                }
+                tableHTML += '</tbody></table>';
+                container.innerHTML = tableHTML;
+                
+                // Add event listener for the new print button
+                document.getElementById('printReportBtn').addEventListener('click', () => {
+                    const reportTitle = `Inventory Report for ${startDate} to ${endDate}`;
+                    printReport(reportTitle, container.innerHTML);
+                });
+
+            } catch (error) {
+                container.innerHTML = `<p class="text-red-500">Error generating report: ${error.message}</p>`;
+            }
+        });
     }
 }
 

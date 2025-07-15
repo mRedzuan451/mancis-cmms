@@ -495,6 +495,7 @@ export function renderSidebar() {
         { page: "workOrders", icon: "fa-clipboard-list", text: "Work Orders", roles: ["Admin", "Manager", "Supervisor", "Engineer", "Technician"] },
         { page: "workOrderCalendar", icon: "fa-calendar-alt", text: "Calendar", roles: ["Admin", "Manager", "Supervisor", "Engineer", "Technician"] },
         { page: "locations", icon: "fa-map-marker-alt", text: "Locations", roles: ["Admin", "Manager", "Supervisor"] },
+        { page: "inventoryReport", icon: "fa-chart-line", text: "Inventory Report", roles: ["Admin", "Manager"] },
         { page: "userManagement", icon: "fa-users-cog", text: "User Management", roles: ["Admin"] },
         { page: "activityLog", icon: "fa-history", text: "Activity Log", roles: ["Admin"] },
     ];
@@ -1009,6 +1010,31 @@ export function populateLocationDropdowns(divisionSelect, departmentSelect) {
             }
         };
     }
+}
+
+export function renderInventoryReportPage() {
+    const today = new Date().toISOString().split('T')[0];
+    return `
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-3xl font-bold">Inventory Report</h1>
+        </div>
+        <div class="bg-white p-4 rounded-lg shadow mb-6">
+            <form id="reportForm" class="flex items-end gap-4">
+                <div>
+                    <label for="startDate" class="block text-sm font-medium text-gray-700">Start Date</label>
+                    <input type="date" id="startDate" value="${today}" class="mt-1 px-3 py-2 border rounded w-full">
+                </div>
+                <div>
+                    <label for="endDate" class="block text-sm font-medium text-gray-700">End Date</label>
+                    <input type="date" id="endDate" value="${today}" class="mt-1 px-3 py-2 border rounded w-full">
+                </div>
+                <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded">Generate Report</button>
+            </form>
+        </div>
+        <div id="reportResultContainer" class="bg-white p-4 rounded-lg shadow">
+            <p class="text-gray-500">Please select a date range and click "Generate Report".</p>
+        </div>
+    `;
 }
 
 // js/ui.js
