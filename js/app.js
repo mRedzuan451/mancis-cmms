@@ -521,6 +521,7 @@ async function handleReceivePartsFormSubmit(e) {
 async function handleRestockPartsFormSubmit(e) {
     e.preventDefault();
     
+    // Check which mode is active by seeing which container is visible
     const isDirectStockMode = document.getElementById('directStockContainer').style.display === 'block';
     
     try {
@@ -554,7 +555,7 @@ async function handleRestockPartsFormSubmit(e) {
             await api.restockParts({ receivedId, locationId });
         }
         
-        // Refresh all relevant data caches
+        // Refresh all relevant data caches to update the UI
         state.cache.receivedParts = await api.getReceivedParts();
         state.cache.partRequests = await api.getPartRequests();
         state.cache.parts = await api.getParts();
