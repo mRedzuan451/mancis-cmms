@@ -3,6 +3,7 @@
 import { state } from './config.js';
 import { can } from './auth.js';
 import { getFullLocationName, getUserDepartment } from './utils.js';
+import { api } from './api.js'; // <-- ADD THIS LINE
 
 // Each function that creates a page view is now exported.
 
@@ -922,8 +923,19 @@ export function showReceivePartsModal() {
 
 // js/ui.js
 
-export function showRestockPartsModal() {
-    // --- Setup for "From Request" mode ---
+// js/ui.js
+
+export async function showRestockPartsModal() {
+    // --- THIS IS THE FIX: Fetch the latest data from the server ---
+    try {
+        showTemporaryMessage("Loading received parts...");
+        state.cache.receivedParts = await api.getReceivedParts();
+    } catch (error) {
+        showTemporaryMessage("Failed to load received parts.", true);
+        return; // Stop if data can't be loaded
+    }
+
+    // --- The rest of the function remains the same ---
     const requestSelect = document.getElementById('restockPartId');
     const receivedParts = state.cache.receivedParts.filter(rp => can.view(rp));
     requestSelect.innerHTML = '<option value="">Select received parts...</option>' + receivedParts.map(rp => {
@@ -931,23 +943,19 @@ export function showRestockPartsModal() {
         return `<option value="${rp.id}">Received #${rp.id} - ${rp.quantity} x ${partName}</option>`
     }).join('');
 
-    // --- Setup for "Direct Stock" mode ---
     const directPartSelect = document.getElementById('directStockPartId');
     directPartSelect.innerHTML = '<option value="">Select an existing part...</option>' + state.cache.parts
         .filter(can.view)
         .map(p => `<option value="${p.id}">${p.name} (SKU: ${p.sku})</option>`).join('');
 
-    // --- Common Fields ---
     populateLocationDropdown(document.getElementById('restockLocationId'), 'storage');
     document.getElementById('restockPartsForm').reset();
     
-    // --- Logic to switch between main modes ---
     const fromRequestContainer = document.getElementById('fromRequestContainer');
     const directStockContainer = document.getElementById('directStockContainer');
     const requestBtn = document.getElementById('restockTypeRequest');
     const directBtn = document.getElementById('restockTypeDirect');
     
-    // --- Logic for the "new part" checkbox ---
     const isNewPartCheckbox = document.getElementById('isNewPartCheckbox');
     const existingPartSelector = document.getElementById('existingPartSelector');
     const newPartInputs = document.getElementById('newPartInputs');
@@ -957,7 +965,6 @@ export function showRestockPartsModal() {
         existingPartSelector.style.display = isChecked ? 'none' : 'block';
         newPartInputs.style.display = isChecked ? 'block' : 'none';
         
-        // Toggle which fields are required for form validation
         document.getElementById('directStockPartId').required = !isChecked;
         document.getElementById('newPartName').required = isChecked;
         document.getElementById('newPartSku').required = isChecked;
@@ -971,12 +978,10 @@ export function showRestockPartsModal() {
         document.getElementById('restockPartId').required = isRequestMode;
         document.getElementById('directStockPartId').required = !isRequestMode;
         
-        // Reset checkbox when switching modes
         isNewPartCheckbox.checked = false;
         existingPartSelector.style.display = 'block';
         newPartInputs.style.display = 'none';
 
-        // Update button styles
         requestBtn.classList.toggle('bg-blue-500', isRequestMode);
         requestBtn.classList.toggle('text-white', isRequestMode);
         requestBtn.classList.toggle('bg-white', !isRequestMode);
@@ -990,7 +995,7 @@ export function showRestockPartsModal() {
     requestBtn.onclick = () => setMode('request');
     directBtn.onclick = () => setMode('direct');
 
-    setMode('request'); // Set initial state
+    setMode('request');
     document.getElementById('restockPartsModal').style.display = 'flex';
 }
 // This function was also missing from your original ui.js
