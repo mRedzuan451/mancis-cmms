@@ -432,6 +432,8 @@ export function generateTableRows(type, data) {
               </tr>`;
           }).join("");
       case "users":
+        // Only show the edit and delete buttons if the current user is an Admin
+        const showAdminActions = state.currentUser.role === 'Admin';
         return data.map((user) => `
               <tr class="border-b hover:bg-gray-50">
                   <td class="p-2">${user.fullName}</td>
@@ -439,8 +441,12 @@ export function generateTableRows(type, data) {
                   <td class="p-2">${user.role}</td>
                   <td class="p-2">${getUserDepartment(user)}</td>
                   <td class="p-2 space-x-2">
-                      ${user.id !== 1 ? `<button class="edit-user-btn text-yellow-500 hover:text-yellow-700" data-id="${user.id}" title="Edit Role"><i class="fas fa-user-shield"></i></button>` : ''}
-                      ${user.id !== state.currentUser.id && user.id !== 1 ? `<button class="delete-user-btn text-red-500 hover:text-red-700" data-id="${user.id}" title="Delete User"><i class="fas fa-trash"></i></button>` : ""}
+                      ${showAdminActions && user.id !== 1 ? `
+                          <button class="edit-user-btn text-yellow-500 hover:text-yellow-700" data-id="${user.id}" title="Edit Role"><i class="fas fa-user-shield"></i></button>
+                      ` : ''}
+                      ${showAdminActions && user.id !== state.currentUser.id && user.id !== 1 ? `
+                          <button class="delete-user-btn text-red-500 hover:text-red-700" data-id="${user.id}" title="Delete User"><i class="fas fa-trash"></i></button>
+                      ` : ""}
                   </td>
               </tr>`).join("");
       case "partRequests":
