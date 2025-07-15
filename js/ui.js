@@ -2,7 +2,7 @@
 
 import { state } from './config.js';
 import { can } from './auth.js';
-import { getFullLocationName, getUserDepartment } from './utils.js';
+import { getFullLocationName, getUserDepartment, showTemporaryMessage } from './utils.js';
 import { api } from './api.js'; // <-- ADD THIS LINE
 
 // Each function that creates a page view is now exported.
