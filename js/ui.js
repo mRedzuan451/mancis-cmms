@@ -1086,9 +1086,9 @@ export function showPartRequestDetailModal(req) {
         <p><strong>Quantity:</strong> ${req.quantity}</p>
         <p><strong>Status:</strong> ${req.status}</p>
         <p><strong>Requester:</strong> ${requester}</p>
-        <p><strong>Request Date:</strong> ${req.requestDate}</p>
+        <p><strong>Request Date:</strong> ${new Date(req.requestDate).toLocaleString()}</p>
         <p><strong>Approver:</strong> ${approver}</p>
-        <p><strong>Approval Date:</strong> ${req.approvalDate || 'N/A'}</p>
+        <p><strong>Approval Date:</strong> ${req.approvalDate ? new Date(req.approvalDate).toLocaleString() : 'N/A'}</p>
         <p><strong>Purpose:</strong> ${req.purpose}</p>
         ${req.status === 'Rejected' ? `<p class="text-red-600"><strong>Rejection Reason:</strong> ${req.rejectionReason}</p>` : ''}
     `;
