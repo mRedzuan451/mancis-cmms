@@ -1,7 +1,10 @@
 <?php
+// backend/get_received_parts.php
 
 require_once 'auth_check.php';
 
+// --- ADD THIS LINE TO DEFINE PERMISSIONS ---
+// Grant access to anyone who can manage parts or requests.
 authorize(['Admin', 'Manager', 'Supervisor', 'Clerk', 'Engineer', 'Technician']);
 
 // Turn on error reporting for better debugging
