@@ -458,16 +458,27 @@ export function generateTableRows(type, data) {
       // js/ui.js --> inside generateTableRows()
 
       case "partRequests":
-        const prStatusColors = { /* ... (colors remain the same) */ };
+        // This object maps a status name to a set of Tailwind CSS color classes.
+        const prStatusColors = { 
+            "Requested": "bg-blue-200 text-blue-800", 
+            "Requested from Storage": "bg-cyan-200 text-cyan-800", 
+            "Approved": "bg-yellow-200 text-yellow-800", 
+            "Rejected": "bg-red-200 text-red-800", 
+            "Received": "bg-green-200 text-green-800", 
+            "Completed": "bg-gray-400 text-gray-800" 
+        };
+
         return data.map((req) => {
             const part = req.partId ? state.cache.parts.find((p) => p.id === req.partId) : null;
             const partName = part ? part.name : `<span class="italic text-gray-500">${req.newPartName} (New)</span>`;
+            
+            // Look up the correct color class, or use a default gray if not found.
             const statusColorClass = prStatusColors[req.status] || "bg-gray-200 text-gray-800";
+            
             const notesOrReason = req.status === 'Rejected' 
                 ? `<span class="text-red-600">${req.rejectionReason || 'No reason provided.'}</span>` 
                 : req.purpose;
             
-            // --- Determine which buttons to show based on permissions ---
             const canEdit = req.requesterId === state.currentUser.id && req.status === 'Requested';
             const canDelete = ['Admin', 'Manager'].includes(state.currentUser.role);
             const canApprove = (state.currentUser.role === "Admin" || state.currentUser.role === "Manager") && (req.status === "Requested" || req.status === "Requested from Storage");
@@ -476,7 +487,9 @@ export function generateTableRows(type, data) {
               <tr class="border-b hover:bg-gray-50">
                   <td class="p-2">${partName}</td>
                   <td class="p-2">${req.quantity}</td>
+                  
                   <td class="p-2"><span class="px-2 py-1 text-xs font-semibold rounded-full ${statusColorClass}">${req.status}</span></td>
+                  
                   <td class="p-2 text-sm">${notesOrReason}</td>
                   <td class="p-2 space-x-2 whitespace-nowrap">
                       <button class="view-pr-btn text-blue-500 hover:text-blue-700" data-id="${req.id}" title="View Details"><i class="fas fa-eye"></i></button>
