@@ -784,7 +784,6 @@ function attachPageSpecificEventListeners(page) {
             try {
                 const reportData = await api.getInventoryReport({ startDate, endDate });
                 
-                // 1. Initialize a variable to hold the grand total.
                 let grandTotalValue = 0;
 
                 let tableHTML = `
@@ -808,7 +807,6 @@ function attachPageSpecificEventListeners(page) {
                     tableHTML += '<tr><td colspan="7" class="text-center p-4">No data for this period.</td></tr>';
                 } else {
                     reportData.forEach(item => {
-                        // 2. Add each item's value to the grand total during the loop.
                         grandTotalValue += item.total_value;
 
                         tableHTML += `
@@ -818,20 +816,19 @@ function attachPageSpecificEventListeners(page) {
                                 <td class="p-2 text-right text-green-600">+${item.stock_in}</td>
                                 <td class="p-2 text-right text-red-600">-${item.stock_out}</td>
                                 <td class="p-2 text-right font-bold">${item.ending_qty}</td>
-                                <td class="p-2 text-right">${item.price.toFixed(2)}</td>
-                                <td class="p-2 text-right">${item.total_value.toFixed(2)}</td>
+                                <td class="p-2 text-right">RM ${item.price.toFixed(2)}</td>
+                                <td class="p-2 text-right">RM ${item.total_value.toFixed(2)}</td>
                             </tr>
                         `;
                     });
                 }
                 tableHTML += '</tbody>';
 
-                // 3. Add the table footer (<tfoot>) with the calculated grand total.
                 tableHTML += `
                     <tfoot>
                         <tr class="border-t-2 font-bold">
                             <td class="p-2" colspan="6">Grand Total Value of Stock</td>
-                            <td class="p-2 text-right">${grandTotalValue.toFixed(2)}</td>
+                            <td class="p-2 text-right">RM ${grandTotalValue.toFixed(2)}</td>
                         </tr>
                     </tfoot>
                 `;
