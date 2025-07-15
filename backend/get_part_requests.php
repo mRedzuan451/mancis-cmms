@@ -1,7 +1,5 @@
 <?php
 require_once 'auth_check.php';
-// All logged-in users can access this page, so no specific role check here.
-// The SQL query will handle the authorization.
 
 header("Content-Type: application/json; charset=UTF-8");
 
@@ -9,41 +7,61 @@ $servername = "localhost"; $username = "root"; $password = ""; $dbname = "mancis
 $conn = new mysqli($servername, $username, $password, $dbname);
 if ($conn->connect_error) { die("Connection failed: " . $conn->connect_error); }
 
-// --- NEW FILTERING LOGIC ---
-$sql = "";
 $user_role = $_SESSION['user_role'];
 $user_id = $_SESSION['user_id'];
 $user_department_id = $_SESSION['user_department_id'];
 
+$sql = "";
+$params = [];
+$types = "";
+
+// Determine the correct SQL query based on the user's role
 if ($user_role === 'Admin') {
-    // Admins can see all requests.
     $sql = "SELECT * FROM partrequests ORDER BY requestDate DESC";
 } else if ($user_role === 'Manager' || $user_role === 'Supervisor') {
-    // Managers/Supervisors see requests from users in their own department.
-    // We need to join with the users table to get the requester's department.
-    $sql = "SELECT pr.* FROM partrequests pr 
-            JOIN users u ON pr.requesterId = u.id 
-            WHERE u.departmentId = " . $user_department_id . " 
-            ORDER BY pr.requestDate DESC";
+    $sql = "SELECT pr.* FROM partrequests pr JOIN users u ON pr.requesterId = u.id WHERE u.departmentId = ? ORDER BY pr.requestDate DESC";
+    $types = "i";
+    $params[] = $user_department_id;
 } else {
-    // Regular users can only see their own requests.
-    $sql = "SELECT * FROM partrequests WHERE requesterId = " . $user_id . " ORDER BY requestDate DESC";
+    $sql = "SELECT * FROM partrequests WHERE requesterId = ? ORDER BY requestDate DESC";
+    $types = "i";
+    $params[] = $user_id;
 }
-// --- END NEW LOGIC ---
 
-$result = $conn->query($sql);
+// Prepare and execute the statement
+$stmt = $conn->prepare($sql);
 
-$output_array = array();
-if ($result && $result->num_rows > 0) {
+if ($types) {
+    $stmt->bind_param($types, ...$params);
+}
+
+$stmt->execute();
+$result = $stmt->get_result();
+
+// This new block checks for errors. If the query fails, it will report why.
+if (!$result) {
+    http_response_code(500);
+    echo json_encode([
+        "message" => "Database query failed.",
+        "error" => $conn->error,
+        "query" => $sql
+    ]);
+    $conn->close();
+    exit();
+}
+
+$output_array = [];
+if ($result->num_rows > 0) {
     while($row = $result->fetch_assoc()) {
         $row['id'] = intval($row['id']);
         $row['quantity'] = intval($row['quantity']);
         $row['partId'] = $row['partId'] ? intval($row['partId']) : null;
         $row['requesterId'] = intval($row['requesterId']);
-
         $output_array[] = $row;
     }
 }
+
+$stmt->close();
 $conn->close();
 echo json_encode($output_array);
 ?>
