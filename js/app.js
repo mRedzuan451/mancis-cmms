@@ -661,17 +661,23 @@ async function deleteLocation(type, id) {
 function attachPageSpecificEventListeners(page) {
     if (page === 'assets') {
         document.getElementById("addAssetBtn")?.addEventListener("click", () => {
+            // Note: I've updated this call to match the fix from your last request.
+            populateLocationDropdown(document.getElementById("assetLocation"), "operational");
             showAssetModal();
         });
+
         document.getElementById("assetSearch")?.addEventListener("input", (e) => {
             const searchTerm = e.target.value.toLowerCase();
             const filtered = state.cache.assets.filter(can.view).filter(a =>
                 a.name.toLowerCase().includes(searchTerm) ||
                 a.tag.toLowerCase().includes(searchTerm) ||
-                a.category.toLowerCase().includes(searchTerm)
+                a.category.toLowerCase().includes(searchTerm) ||
+                // --- ADD THIS LINE TO SEARCH BY LOCATION ---
+                getFullLocationName(a.locationId).toLowerCase().includes(searchTerm)
             );
             document.getElementById("assetTableBody").innerHTML = generateTableRows("assets", filtered);
         });
+
         document.getElementById("printAssetListBtn")?.addEventListener("click", () => {
             const assetsToPrint = state.cache.assets.filter(can.view);
             const title = "Asset List Report";
