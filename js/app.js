@@ -771,7 +771,9 @@ function attachPageSpecificEventListeners(page) {
         document.querySelector('#addCabinetForm')?.addEventListener('submit', handleLocationFormSubmit);
         document.querySelector('#addShelfForm')?.addEventListener('submit', handleLocationFormSubmit);
         document.querySelector('#addBoxForm')?.addEventListener('submit', handleLocationFormSubmit);
-    } else if (page === 'inventoryReport') {
+    }
+    
+    if (page === 'inventoryReport') {
         document.getElementById('reportForm')?.addEventListener('submit', async (e) => {
             e.preventDefault();
             const startDate = document.getElementById('startDate').value;
@@ -782,6 +784,9 @@ function attachPageSpecificEventListeners(page) {
             try {
                 const reportData = await api.getInventoryReport({ startDate, endDate });
                 
+                // 1. Initialize a variable to hold the grand total.
+                let grandTotalValue = 0;
+
                 let tableHTML = `
                     <div class="flex justify-between items-center mb-4">
                         <h2 class="text-xl font-bold">Report for ${startDate} to ${endDate}</h2>
@@ -803,6 +808,9 @@ function attachPageSpecificEventListeners(page) {
                     tableHTML += '<tr><td colspan="7" class="text-center p-4">No data for this period.</td></tr>';
                 } else {
                     reportData.forEach(item => {
+                        // 2. Add each item's value to the grand total during the loop.
+                        grandTotalValue += item.total_value;
+
                         tableHTML += `
                             <tr class="border-b hover:bg-gray-50">
                                 <td class="p-2">${item.name} (${item.sku})</td>
@@ -816,10 +824,21 @@ function attachPageSpecificEventListeners(page) {
                         `;
                     });
                 }
-                tableHTML += '</tbody></table>';
+                tableHTML += '</tbody>';
+
+                // 3. Add the table footer (<tfoot>) with the calculated grand total.
+                tableHTML += `
+                    <tfoot>
+                        <tr class="border-t-2 font-bold">
+                            <td class="p-2" colspan="6">Grand Total Value of Stock</td>
+                            <td class="p-2 text-right">${grandTotalValue.toFixed(2)}</td>
+                        </tr>
+                    </tfoot>
+                `;
+
+                tableHTML += '</table>';
                 container.innerHTML = tableHTML;
                 
-                // Add event listener for the new print button
                 document.getElementById('printReportBtn').addEventListener('click', () => {
                     const reportTitle = `Inventory Report for ${startDate} to ${endDate}`;
                     printReport(reportTitle, container.innerHTML);
