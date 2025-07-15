@@ -407,30 +407,45 @@ async function handleCompleteWorkOrderFormSubmit(e) {
 
 async function handlePartRequestFormSubmit(e) {
     e.preventDefault();
-    const isNewPart = document.getElementById('requestNewPartCheckbox').checked;
-    
-    let requestData = {
-        partId: isNewPart ? null : parseInt(document.getElementById('requestPartId').value),
-        quantity: parseInt(document.getElementById('requestQuantity').value),
-        purpose: document.getElementById('requestPurpose').value,
-        requesterId: state.currentUser.id,
-        requestDate: new Date().toISOString().split('T')[0],
-        status: 'Requested',
-        notes: '',
-        newPartName: isNewPart ? document.getElementById('newPartName').value : null,
-        newPartNumber: isNewPart ? document.getElementById('newPartNumber').value : null,
-        newPartMaker: isNewPart ? document.getElementById('newPartMaker').value : null,
-    };
+    const requestId = document.getElementById('partRequestId').value;
+    const isEditing = !!requestId;
 
     try {
-        await api.createPartRequest(requestData);
-        await logActivity("Part Request Submitted", `User requested ${requestData.quantity} x ${isNewPart ? requestData.newPartName : 'existing part'}`);
+        if (isEditing) {
+            // Logic for UPDATING an existing request
+            const requestData = {
+                partId: parseInt(document.getElementById('requestPartId').value),
+                quantity: parseInt(document.getElementById('requestQuantity').value),
+                purpose: document.getElementById('requestPurpose').value,
+            };
+            await api.updatePartRequest(requestId, requestData);
+            await logActivity("Part Request Updated", `Updated request ID: ${requestId}`);
+        } else {
+            // Logic for CREATING a new request
+            const isNewPart = document.getElementById('requestNewPartCheckbox').checked;
+            let requestData = {
+                partId: isNewPart ? null : parseInt(document.getElementById('requestPartId').value),
+                quantity: parseInt(document.getElementById('requestQuantity').value),
+                purpose: document.getElementById('requestPurpose').value,
+                requesterId: state.currentUser.id,
+                requestDate: new Date().toISOString().split('T')[0],
+                status: 'Requested',
+                notes: '',
+                newPartName: isNewPart ? document.getElementById('newPartName').value : null,
+                newPartNumber: isNewPart ? document.getElementById('newPartNumber').value : null,
+                newPartMaker: isNewPart ? document.getElementById('newPartMaker').value : null,
+            };
+            await api.createPartRequest(requestData);
+            await logActivity("Part Request Submitted", `User requested ${requestData.quantity} x ${isNewPart ? requestData.newPartName : 'existing part'}`);
+        }
+
         state.cache.partRequests = await api.getPartRequests();
         document.getElementById('partRequestModal').style.display = 'none';
         renderMainContent();
-        showTemporaryMessage("Part request submitted successfully!");
+        showTemporaryMessage(`Part request ${isEditing ? 'updated' : 'submitted'} successfully!`);
+
     } catch (error) {
-        showTemporaryMessage(`Failed to submit request. ${error.message}`, true);
+        showTemporaryMessage(`Failed to save request. ${error.message}`, true);
     }
 }
 
@@ -953,6 +968,15 @@ function attachGlobalEventListeners() {
             "complete-wo-btn": () => showCompleteWorkOrderModal(state.cache.workOrders.find(w => w.id === id)),
             "edit-user-btn": () => showEditUserModal(id),
             "delete-user-btn": () => deleteItem('users', id),
+            "view-pr-btn": () => showPartRequestDetailModal(state.cache.partRequests.find(pr => pr.id === id)),
+            "edit-pr-btn": () => {
+                const req = state.cache.partRequests.find(pr => pr.id === id);
+                // Populate the dropdown before showing the modal
+                const partSelect = document.getElementById('requestPartId');
+                partSelect.innerHTML = state.cache.parts.filter(can.view).map(p => `<option value="${p.id}">${p.name} (SKU: ${p.sku})</option>`).join('');
+                showEditPartRequestModal(req);
+            },
+            "delete-pr-btn": () => deletePartRequest(id),
             "approve-pr-btn": () => handlePartRequestAction(id, 'Approved'),
             "reject-pr-btn": () => handlePartRequestAction(id, 'Rejected'),
             "delete-location-btn": () => deleteLocation(button.dataset.type, id),
@@ -1016,6 +1040,20 @@ async function checkForNotifications() {
         }
     } catch (error) {
         console.error("Failed to check for notifications:", error);
+    }
+}
+
+async function deletePartRequest(id) {
+    if (confirm("Are you sure you want to permanently delete this part request?")) {
+        try {
+            await api.deletePartRequest(id);
+            await logActivity("Part Request Deleted", `Deleted request ID: ${id}`);
+            state.cache.partRequests = await api.getPartRequests();
+            renderMainContent();
+            showTemporaryMessage("Request deleted successfully.");
+        } catch (error) {
+            showTemporaryMessage(`Failed to delete request. ${error.message}`, true);
+        }
     }
 }
 

@@ -802,6 +802,7 @@
       <div class="modal-content max-h-[90vh] overflow-y-auto">
         <h2 class="text-xl font-bold mb-4">New Part Request</h2>
         <form id="partRequestForm">
+          <input type="hidden" id="partRequestId" />
           <div class="mb-4 flex items-center">
             <input
               type="checkbox"
@@ -1191,6 +1192,18 @@
             class="bg-gray-300 hover:bg-gray-400 text-black py-2 px-4 rounded"
             data-close-modal
           >
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div id="partRequestDetailModal" class="modal">
+      <div class="modal-content max-h-[90vh] overflow-y-auto">
+        <h2 class="text-2xl font-bold mb-4">Part Request Details</h2>
+        <div id="partRequestDetailContent" class="space-y-2 text-sm"></div>
+        <div class="mt-6 flex justify-end">
+          <button type="button" class="bg-gray-300 hover:bg-gray-400 text-black py-2 px-4 rounded" data-close-modal>
             Close
           </button>
         </div>
