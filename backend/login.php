@@ -1,44 +1,42 @@
 <?php
+// login.php
 
-// --- FINAL SESSION FIX ---
+// 1. SET UP CORS AND HANDLE PREFLIGHT REQUEST
+$allowed_origins = ['http://localhost', 'http://127.0.0.1', 'http://192.168.141.42'];
 
-// 1. Set a dedicated, writable session path
-$session_path = __DIR__ . '/sessions'; // A 'sessions' folder in the same 'backend' directory
-
-// 2. Check if the directory exists and is writable
-if (!is_dir($session_path)) {
-    // Try to create it if it doesn't exist
-    mkdir($session_path, 0777, true);
+if (isset($_SERVER['HTTP_ORIGIN']) && in_array($_SERVER['HTTP_ORIGIN'], $allowed_origins)) {
+    header("Access-Control-Allow-Origin: " . $_SERVER['HTTP_ORIGIN']);
 }
 
-// 3. If the path is still not writable, stop and show a clear error.
-if (!is_writable($session_path)) {
-    header('Content-Type: application/json');
-    http_response_code(500); // Internal Server Error
-    echo json_encode([
-        'message' => 'FATAL ERROR: The PHP session save path is not writable.',
-        'path' => $session_path,
-        'solution' => 'Please check the file permissions for this directory. The web server (Apache) needs to be able to write files here.'
-    ]);
-    exit(); // Stop the script
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    header("Access-Control-Allow-Methods: POST, GET, OPTIONS");
+    header("Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With");
+    header("Access-Control-Allow-Credentials: true");
+    http_response_code(200);
+    exit();
 }
 
-// 4. Set the session path and cookie parameters
-session_save_path($session_path);
+
+// 2. CONFIGURE THE SESSION COOKIE
 session_set_cookie_params([
-    'lifetime' => 86400,    // 1 day
+    'lifetime' => 86400,    // Cookie valid for 1 day
     'path' => '/',
-    'secure' => false,      // Must be false for HTTP
+    'secure' => false,      // Must be false for HTTP development
     'httponly' => true,
     'samesite' => 'Lax'
 ]);
 
+
+// 3. START THE SESSION
 session_start();
 
+
+// 4. SET REMAINING HEADERS
 header("Access-Control-Allow-Credentials: true");
 header("Content-Type: application/json; charset=UTF-8");
 
-// Database connection
+
+// 5. DATABASE AND LOGIN LOGIC
 $servername = "localhost";
 $username = "root";
 $password = "";
@@ -73,11 +71,13 @@ if ($result->num_rows > 0) {
     $hashed_password = $user['password'];
 
     if (password_verify($login_pass, $hashed_password)) {
+        // Set session variables
         $_SESSION['user_id'] = $user['id'];
         $_SESSION['user_role'] = $user['role'];
         $_SESSION['user_department_id'] = $user['departmentId'];
         $_SESSION['user_fullname'] = $user['fullName'];
 
+        // Remove password from the returned object for security
         unset($user['password']);
 
         http_response_code(200);
