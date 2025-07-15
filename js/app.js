@@ -27,6 +27,7 @@ import {
     showAssetDetailModal,
     showPartDetailModal,
     showWorkOrderDetailModal,
+    showPartRequestDetailModal,
     showTransferAssetModal,
     showCompleteWorkOrderModal,
     showPartRequestModal,
