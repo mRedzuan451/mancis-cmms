@@ -23,6 +23,7 @@ if ($id <= 0 || empty($data->status) || empty($data->approverId)) {
 $conn->begin_transaction();
 
 try {
+    // ... (keep the SELECT query to get the request details)
     $request_sql = "SELECT * FROM partrequests WHERE id = ?";
     $stmt_get = $conn->prepare($request_sql);
     $stmt_get->bind_param("i", $id);
@@ -48,16 +49,24 @@ try {
             throw new Exception("Not enough stock to fulfill storage request or part not found.");
         }
         $stmt_part->close();
+        
+        // --- ADD THIS LOGGING BLOCK ---
+        $log_user = $_SESSION['user_fullname'];
+        // Create a details string compatible with the report (e.g., "3 x PartID 42")
+        $log_details = "Issued from storage for request #" . $request['id'] . ": " . $quantity_requested . " x PartID " . $part_id;
+        $log_stmt = $conn->prepare("INSERT INTO logs (user, action, details) VALUES (?, 'Parts Issued from Storage', ?)");
+        $log_stmt->bind_param("ss", $log_user, $log_details);
+        $log_stmt->execute();
+        $log_stmt->close();
+        // --- END LOGGING BLOCK ---
+
         // Change status to completed as it's an internal transfer
         $data->status = 'Completed'; 
     }
 
-    // This query updates the status, saves the rejection reason, and resets the notification flag for the user.
+    // This part remains the same
     $stmt = $conn->prepare("UPDATE partrequests SET status = ?, approverId = ?, approvalDate = NOW(), rejectionReason = ?, requester_viewed_status = 0 WHERE id = ?");
-    
-    // The correct type string is "sisi" for status(string), approverId(int), rejectionReason(string), and id(int).
     $stmt->bind_param("sisi", $data->status, $data->approverId, $rejectionReason, $id);
-    
     $stmt->execute();
     $stmt->close();
 

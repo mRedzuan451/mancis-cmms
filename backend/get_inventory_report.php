@@ -50,7 +50,7 @@ while($log = $logs_result->fetch_assoc()) {
         if (isset($report[$partId])) {
             $report[$partId]['stock_in'] += $qty;
         }
-    } elseif ($action === 'Parts Consumed' && !empty($out_matches)) {
+    } elseif (($action === 'Parts Consumed' || $action === 'Parts Issued from Storage') && !empty($out_matches)) {
         foreach($out_matches as $match) {
             $partId = intval($match[2]);
             $qty = intval($match[1]);
