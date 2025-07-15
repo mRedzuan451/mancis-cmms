@@ -224,6 +224,7 @@ export function renderWorkOrderCalendar() {
 export function renderLocationsPage() {
     const { divisions = [], departments = [], subLines = [], productionLines = [], cabinets = [], shelves = [], boxes = [] } = state.cache.locations || {};
     const isAdmin = state.currentUser.role === "Admin";
+
     return `
       <h1 class="text-3xl font-bold mb-6">Location Management</h1>
       <div class="grid grid-cols-1 ${isAdmin ? "md:grid-cols-3" : ""} gap-6">
@@ -252,7 +253,7 @@ export function renderLocationsPage() {
                       ${subLines.map((sl) => `<li class="flex justify-between items-center p-2 bg-gray-50 rounded"><div><p>${sl.name}</p><p class="text-xs text-gray-500">${departments.find(d => d.id === sl.departmentId)?.name || "No Department"}</p></div><button class="delete-location-btn text-red-500 hover:text-red-700" data-id="${sl.id}" data-type="subLine"><i class="fas fa-trash"></i></button></li>`).join("") || '<li class="text-gray-500">No sub lines found.</li>'}
                   </ul>
                   <form id="addSubLineForm" class="border-t pt-4">
-                      <select id="subLineDepartmentSelect" class="w-full mb-2 px-2 py-1 border rounded" required><option value="">Select Department</option>${departments.map((d) => `<option value="${d.id}">${d.name}</option>`).join("")}</select>
+                      <select id="subLineDepartmentSelect" class="w-full mb-2 px-2 py-1 border rounded" required><option value="">Select Department</option>${departments.map((d) => `<option value="${d.id}">${divisions.find(div => div.id === d.divisionId)?.name || ''} > ${d.name}</option>`).join("")}</select>
                       <div class="flex gap-2"><input type="text" id="newSubLineName" class="flex-grow px-2 py-1 border rounded" placeholder="New Sub Line Name" required><button type="submit" class="bg-blue-500 text-white px-3 py-1 rounded">+</button></div>
                   </form>
               </div>
@@ -264,7 +265,7 @@ export function renderLocationsPage() {
               </ul>
               <form id="addProductionLineForm" class="border-t pt-4">
                   <h3 class="font-semibold mb-2">Add New Production Line</h3>
-                  <select id="productionLineSubLineSelect" class="w-full mb-2 px-2 py-1 border rounded" required><option value="">Select Sub Line</option>${subLines.map((sl) => `<option value="${sl.id}">${sl.name}</option>`).join("")}</select>
+                  <select id="productionLineSubLineSelect" class="w-full mb-2 px-2 py-1 border rounded" required><option value="">Select Sub Line</option>${subLines.map((sl) => `<option value="${sl.id}">${getFullLocationName(`sl-${sl.id}`)}</option>`).join("")}</select>
                   <div class="flex gap-2"><input type="text" id="newProductionLineName" class="flex-grow px-2 py-1 border rounded" placeholder="New Line Name" required><button type="submit" class="bg-blue-500 text-white px-3 py-1 rounded">+</button></div>
               </form>
           </div>` : ""}
@@ -276,7 +277,7 @@ export function renderLocationsPage() {
                       ${cabinets.map((c) => `<li class="flex justify-between items-center p-2 bg-gray-50 rounded"><span>${c.name} <span class="text-xs text-gray-500">(${departments.find(d => d.id === c.departmentId)?.name || "N/A"})</span></span><button class="delete-location-btn text-red-500 hover:text-red-700" data-id="${c.id}" data-type="cabinet"><i class="fas fa-trash"></i></button></li>`).join("") || '<li class="text-gray-500">No cabinets found.</li>'}
                   </ul>
                   <form id="addCabinetForm" class="border-t pt-2">
-                      <select id="cabinetDepartmentSelect" class="w-full mb-2 px-2 py-1 border rounded" required><option value="">Select Department</option>${departments.map((d) => `<option value="${d.id}">${d.name}</option>`).join("")}</select>
+                      <select id="cabinetDepartmentSelect" class="w-full mb-2 px-2 py-1 border rounded" required><option value="">Select Department</option>${departments.map((d) => `<option value="${d.id}">${divisions.find(div => div.id === d.divisionId)?.name || ''} > ${d.name}</option>`).join("")}</select>
                       <div class="flex gap-2"><input type="text" id="newCabinetName" class="flex-grow px-2 py-1 border rounded" placeholder="New Cabinet Name" required><button type="submit" class="bg-blue-500 text-white px-3 py-1 rounded">+</button></div>
                   </form>
               </div>
@@ -286,7 +287,7 @@ export function renderLocationsPage() {
                       ${shelves.map((s) => `<li class="flex justify-between items-center p-2 bg-gray-50 rounded"><span>${s.name} <span class="text-xs text-gray-500">(${cabinets.find(c => c.id === s.cabinetId)?.name || "N/A"})</span></span><button class="delete-location-btn text-red-500 hover:text-red-700" data-id="${s.id}" data-type="shelf"><i class="fas fa-trash"></i></button></li>`).join("") || '<li class="text-gray-500">No shelves found.</li>'}
                   </ul>
                   <form id="addShelfForm" class="border-t pt-2">
-                      <select id="shelfCabinetSelect" class="w-full mb-2 px-2 py-1 border rounded" required><option value="">Select Cabinet</option>${cabinets.map((c) => `<option value="${c.id}">${c.name}</option>`).join("")}</select>
+                      <select id="shelfCabinetSelect" class="w-full mb-2 px-2 py-1 border rounded" required><option value="">Select Cabinet</option>${cabinets.map((c) => `<option value="${c.id}">${getFullLocationName(`cab-${c.id}`)}</option>`).join("")}</select>
                       <div class="flex gap-2"><input type="text" id="newShelfName" class="flex-grow px-2 py-1 border rounded" placeholder="New Shelf Name" required><button type="submit" class="bg-blue-500 text-white px-3 py-1 rounded">+</button></div>
                   </form>
               </div>
@@ -296,7 +297,7 @@ export function renderLocationsPage() {
                       ${boxes.map((b) => `<li class="flex justify-between items-center p-2 bg-gray-50 rounded"><span>${b.name} <span class="text-xs text-gray-500">(${shelves.find(s => s.id === b.shelfId)?.name || "N/A"})</span></span><button class="delete-location-btn text-red-500 hover:text-red-700" data-id="${b.id}" data-type="box"><i class="fas fa-trash"></i></button></li>`).join("") || '<li class="text-gray-500">No boxes found.</li>'}
                   </ul>
                   <form id="addBoxForm" class="border-t pt-2">
-                      <select id="boxShelfSelect" class="w-full mb-2 px-2 py-1 border rounded" required><option value="">Select Shelf</option>${shelves.map((s) => `<option value="${s.id}">${s.name}</option>`).join("")}</select>
+                      <select id="boxShelfSelect" class="w-full mb-2 px-2 py-1 border rounded" required><option value="">Select Shelf</option>${shelves.map((s) => `<option value="${s.id}">${getFullLocationName(`sh-${s.id}`)}</option>`).join("")}</select>
                       <div class="flex gap-2"><input type="text" id="newBoxName" class="flex-grow px-2 py-1 border rounded" placeholder="New Box Name" required><button type="submit" class="bg-blue-500 text-white px-3 py-1 rounded">+</button></div>
                   </form>
               </div>
