@@ -1,6 +1,5 @@
 <?php
 require_once 'auth_check.php';
-authorize(['Admin', 'Manager', 'Supervisor', 'Clerk']);
 
 header("Content-Type: application/json; charset=UTF-8");
 header("Access-Control-Allow-Methods: POST");

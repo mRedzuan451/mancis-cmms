@@ -2,6 +2,8 @@
 
 require_once 'auth_check.php';
 
+authorize(['Admin', 'Manager', 'Supervisor', 'Clerk', 'Engineer', 'Technician']);
+
 // Turn on error reporting for better debugging
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
