@@ -937,7 +937,7 @@ export async function showRestockPartsModal() {
 
     // --- The rest of the function remains the same ---
     const requestSelect = document.getElementById('restockPartId');
-    const receivedParts = state.cache.receivedParts.filter(rp => can.view(rp));
+    const receivedParts = state.cache.receivedParts;
     requestSelect.innerHTML = '<option value="">Select received parts...</option>' + receivedParts.map(rp => {
         const partName = rp.newPartName || state.cache.parts.find(p => p.id === rp.partId)?.name;
         return `<option value="${rp.id}">Received #${rp.id} - ${rp.quantity} x ${partName}</option>`
