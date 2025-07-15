@@ -15,6 +15,7 @@ import {
     renderLocationsPage,
     renderActivityLogPage,
     renderPartsRequestPage,
+    renderInventoryReportPage,
     generateTableRows,
     showAssetModal,
     showPartModal,
@@ -1002,32 +1003,6 @@ async function checkForNotifications() {
 }
 
 // js/app.js
-
-export async function handleLogin(e, onLoginSuccess) {
-  e.preventDefault();
-  const username = document.getElementById("username").value;
-  const password = document.getElementById("password").value;
-  const loginErrorEl = document.getElementById("loginError");
-  
-  try {
-    loginErrorEl.textContent = '';
-    const user = await api.login(username, password);
-    if (user && user.id) {
-        state.currentUser = user;
-        document.getElementById("loginForm").reset();
-        await logActivity("User Login");
-        onLoginSuccess(); // This will call loadAndRender()
-        
-        // ADD THIS CALL
-        await checkForNotifications();
-
-    } else {
-        loginErrorEl.textContent = "Invalid username or password.";
-    }
-  } catch (error) {
-    loginErrorEl.textContent = error.message || "Login failed. Please try again.";
-  }
-}
 
 // --- APPLICATION INITIALIZATION ---
 document.addEventListener("DOMContentLoaded", () => {
