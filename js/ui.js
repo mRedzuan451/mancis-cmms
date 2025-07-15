@@ -325,8 +325,7 @@ export function renderActivityLogPage() {
 }
 
 export function renderPartsRequestPage() {
-    const partRequests = state.cache.partRequests.filter(can.view);
-
+    
     const header = renderPageHeader("Part Requests", [
         '<button id="refreshDataBtn" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded"><i class="fas fa-sync-alt mr-2"></i>Refresh</button>',
         '<button id="printPurchaseListBtn" class="bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 px-4 rounded"><i class="fas fa-file-invoice mr-2"></i>Print Purchase List</button>',
