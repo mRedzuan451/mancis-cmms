@@ -1203,11 +1203,30 @@ export function showPmScheduleModal() {
     const form = document.getElementById("pmScheduleForm");
     form.reset();
 
-    // Populate dropdowns
+    // Set default values for creating a new schedule
+    document.getElementById("pmScheduleId").value = "";
+    modalTitle.textContent = "New PM Schedule";
+    document.getElementById("pmStartDate").value = new Date().toISOString().split('T')[0];
+    
+    // Populate dropdowns for both modes
     const assets = state.cache.assets.filter(can.view);
     document.getElementById("pmAsset").innerHTML = '<option value="">Select Asset</option>' + assets.map((a) => `<option value="${a.id}">${a.name}</option>`).join("");
     const users = state.cache.users.filter((u) => ["Engineer", "Technician", "Supervisor"].includes(u.role) && can.view(u));
     document.getElementById("pmAssignedTo").innerHTML = '<option value="">Assign To</option>' + users.map((u) => `<option value="${u.id}">${u.fullName}</option>`).join("");
+
+    // If we are editing, pre-fill the form with the schedule's data
+    if (schedule) {
+        modalTitle.textContent = "Edit PM Schedule";
+        document.getElementById("pmScheduleId").value = schedule.id;
+        document.getElementById("pmTitle").value = schedule.title;
+        document.getElementById("pmStartDate").value = schedule.schedule_start_date;
+        document.getElementById("pmFrequency").value = schedule.frequency;
+        document.getElementById("pmAsset").value = schedule.assetId;
+        document.getElementById("pmAssignedTo").value = schedule.assignedTo;
+        document.getElementById("pmTask").value = schedule.task;
+        document.getElementById("pmDescription").value = schedule.description;
+        // You would also add logic here to re-create checklist and required parts items if needed.
+    }
 
     document.getElementById('pmScheduleModal').style.display = 'flex';
 }
