@@ -1,10 +1,9 @@
 <?php
+// backend/create_work_order.php (Corrected Version)
 
 require_once 'auth_check.php';
-
 authorize(['Admin', 'Manager', 'Supervisor', 'Engineer', 'Technician']);
 
-header("Access-Control-Allow-Origin: *");
 header("Content-Type: application/json; charset=UTF-8");
 header("Access-Control-Allow-Methods: POST");
 
@@ -16,16 +15,21 @@ $data = json_decode(file_get_contents("php://input"));
 
 if (empty($data->title) || empty($data->assetId) || empty($data->dueDate)) {
     http_response_code(400);
-    echo json_encode(["message" => "Incomplete data for Work Order."]);
+    echo json_encode(["message" => "Incomplete data. Title, Asset, and Due Date are required."]);
     exit();
 }
 
-// Encode checklist and required parts arrays into JSON strings for database storage
 $checklistJson = json_encode($data->checklist);
 $requiredPartsJson = json_encode($data->requiredParts);
 
-$stmt = $conn->prepare("INSERT INTO workorders (title, description, assetId, assignedTo, task, dueDate, priority, frequency, status, breakdownTimestamp, checklist, requiredParts) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-$stmt->bind_param("ssiissssssss", 
+// This query now includes the 'wo_type' column.
+$stmt = $conn->prepare(
+    "INSERT INTO workorders (title, description, assetId, assignedTo, task, dueDate, priority, frequency, status, breakdownTimestamp, checklist, requiredParts, wo_type) 
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+);
+
+// The bind_param string is updated to include the new field.
+$stmt->bind_param("ssiisssssssss", 
     $data->title, 
     $data->description, 
     $data->assetId, 
@@ -37,8 +41,8 @@ $stmt->bind_param("ssiissssssss",
     $data->status, 
     $data->breakdownTimestamp,
     $checklistJson,
-    $requiredPartsJson
-    $data->wo_type // Bind the new wo_type variable
+    $requiredPartsJson,
+    $data->wo_type // The new field is now included here.
 );
 
 if ($stmt->execute()) {
@@ -46,7 +50,7 @@ if ($stmt->execute()) {
     echo json_encode(["message" => "Work Order created successfully."]);
 } else {
     http_response_code(500);
-    echo json_encode(["message" => "Failed to create Work Order."]);
+    echo json_encode(["message" => "Failed to create Work Order.", "error" => $stmt->error]);
 }
 
 $stmt->close();
