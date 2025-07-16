@@ -984,20 +984,6 @@ function attachPageSpecificEventListeners(page) {
                 container.innerHTML = `<p class="text-red-500">Error generating report: ${error.message}</p>`;
             }
         });
-    } else if (page === 'pmSchedules') {
-        document.getElementById('addPmScheduleBtn')?.addEventListener('click', () => showPmScheduleModal());
-        document.getElementById('generatePmWoBtn')?.addEventListener('click', async () => { /* ... (generation logic) */ });
-
-        document.querySelectorAll('.view-pm-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const scheduleId = parseInt(e.currentTarget.dataset.id);
-                const schedule = state.cache.pmSchedules.find(s => s.id === scheduleId);
-                showPmScheduleDetailModal(schedule);
-            });
-        });
-
-        document.querySelectorAll('.edit-pm-btn').forEach(btn => { /* ... (edit logic) */ });
-        document.querySelectorAll('.delete-pm-btn').forEach(btn => { /* ... (delete logic) */ });
     }
 }
 
@@ -1124,7 +1110,24 @@ function attachGlobalEventListeners() {
             },
             "remove-checklist-item-btn": () => {
                 button.closest('.checklist-item').remove();
-            }
+            },
+            "view-pm-btn": () => {
+                const schedule = state.cache.pmSchedules.find(s => s.id === id);
+                showPmScheduleDetailModal(schedule);
+            },
+            "edit-pm-btn": () => {
+                const schedule = state.cache.pmSchedules.find(s => s.id === id);
+                showPmScheduleModal(schedule);
+            },
+            "delete-pm-btn": () => {
+                if(confirm("Are you sure you want to delete this PM Schedule?")) {
+                    api.deletePmSchedule(id).then(() => {
+                        showTemporaryMessage("Schedule deleted successfully.");
+                        state.cache.pmSchedules = state.cache.pmSchedules.filter(s => s.id !== id);
+                        renderMainContent();
+                    });
+                }
+            },
         };
 
         for (const cls in actions) {
