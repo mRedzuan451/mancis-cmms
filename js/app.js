@@ -437,20 +437,24 @@ async function handleCompleteWorkOrderFormSubmit(e) {
     };
 
     try {
-        showTemporaryMessage("Running in debug mode...");
+        // This now calls the API and proceeds with the normal success actions.
+        await api.updateWorkOrder(woId, updatedData);
         
-        // --- THIS IS THE CHANGE ---
-        // We call the API and then log the entire result to the console.
-        const debugResult = await api.updateWorkOrder(woId, updatedData);
-        console.log('--- WORK ORDER COMPLETION DEBUG LOG ---');
-        console.log(debugResult);
-
-        showTemporaryMessage("Debug log has been printed to the console (F12). Please check it.", false, 5000);
+        // Log the activity.
+        await logActivity("Work Order Completed", `Completed WO: ${wo.title} (ID: ${woId})`);
+        
+        // Refresh the data cache.
+        state.cache.workOrders = await api.getWorkOrders();
+        
+        // Close the modal and re-render the UI.
+        document.getElementById('completeWorkOrderModal').style.display = 'none';
+        renderMainContent();
+        
+        // Show a success message to the user.
+        showTemporaryMessage("Work Order marked as complete!");
 
     } catch (error) {
-        // This will catch the "Unexpected token '<'" error from the original issue.
-        showTemporaryMessage(`An error occurred. ${error.message}`, true);
-        console.error("The server returned an invalid response, likely a PHP error. Please check the server's error logs if available.", error);
+        showTemporaryMessage(`Failed to complete Work Order. ${error.message}`, true);
     }
 }
 
