@@ -36,10 +36,8 @@ foreach ($schedules as $schedule) {
 
     // 2. Determine if the WO is due
     if ($last_gen_date_str === null) {
-        // If it has never run and its start date is today or in the past, it's due.
         $is_due = true;
     } else {
-        // If it has run before, calculate the next due date.
         $next_due_date = new DateTime($last_gen_date_str);
         switch ($schedule['frequency']) {
             case 'Weekly': $next_due_date->modify('+1 week'); break;
@@ -52,29 +50,44 @@ foreach ($schedules as $schedule) {
         }
     }
 
+    // 3. If it's due, generate the WO and update the schedule
     if ($is_due) {
         $conn->begin_transaction();
         try {
-            // A new WO is due, so create it.
-            $new_due_date = (new DateTime())->modify('+7 days')->format('Y-m-d'); // Set due date 7 days from now
-            
+            // --- THIS ENTIRE BLOCK IS THE FIX ---
+
+            // Define all values for the new work order
+            $new_due_date = (new DateTime())->modify('+7 days')->format('Y-m-d');
+            $wo_priority = 'Medium';
+            $wo_status = 'Open';
+            $wo_type = 'PM';
             $checklistJson = json_encode($schedule['checklist']);
             $requiredPartsJson = json_encode($schedule['requiredParts']);
 
             $stmt_insert = $conn->prepare(
                 "INSERT INTO workorders (title, description, assetId, assignedTo, task, dueDate, priority, frequency, status, checklist, requiredParts, wo_type) 
-                 VALUES (?, ?, ?, ?, ?, ?, 'Medium', ?, 'Open', ?, ?, 'PM')"
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
             );
-            $stmt_insert->bind_param("ssiissssss", // Note: The type string is now 'ssiissssss'
-                $schedule['title'], $schedule['description'], $schedule['assetId'], 
-                $schedule['assignedTo'], $schedule['task'], $new_due_date, 
+
+            // Bind all 12 parameters correctly
+            $stmt_insert->bind_param("ssiissssssss", 
+                $schedule['title'], 
+                $schedule['description'], 
+                $schedule['assetId'], 
+                $schedule['assignedTo'], 
+                $schedule['task'], 
+                $new_due_date,
+                $wo_priority, 
                 $schedule['frequency'], 
-                $checklistJson, // Use the new JSON string variables
-                $requiredPartsJson // Use the new JSON string variables
+                $wo_status,
+                $checklistJson, 
+                $requiredPartsJson,
+                $wo_type
             );
             $stmt_insert->execute();
             $stmt_insert->close();
             
+            // This part remains the same
             $stmt_update = $conn->prepare("UPDATE pm_schedules SET last_generated_date = ? WHERE id = ?");
             $stmt_update->bind_param("si", $today_str, $schedule['id']);
             $stmt_update->execute();
