@@ -1,7 +1,7 @@
 <?php
 // backend/get_pm_schedules.php
 require_once 'auth_check.php';
-authorize(['Admin', 'Manager', 'Supervisor']);
+authorize(['Admin', 'Manager', 'Supervisor', 'Engineer', 'Technician']);
 
 header("Content-Type: application/json; charset=UTF-8");
 
