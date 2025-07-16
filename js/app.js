@@ -82,9 +82,9 @@ async function handlePmScheduleFormSubmit(e) {
     e.preventDefault();
     const scheduleId = document.getElementById("pmScheduleId").value;
     const isEditing = !!scheduleId;
+
     const scheduleData = {
         title: document.getElementById("pmTitle").value,
-        // ADD THIS LINE
         schedule_start_date: document.getElementById("pmStartDate").value,
         assetId: parseInt(document.getElementById("pmAsset").value),
         task: document.getElementById("pmTask").value,
@@ -92,8 +92,12 @@ async function handlePmScheduleFormSubmit(e) {
         frequency: document.getElementById("pmFrequency").value,
         assignedTo: parseInt(document.getElementById("pmAssignedTo").value),
         checklist: [],
-        requiredParts: []
+        requiredParts: [],
+        // --- ADD THIS LINE ---
+        // Read the checkbox value (1 for true, 0 for false)
+        is_active: document.getElementById('pmIsActive').checked ? 1 : 0
     };
+    
     try {
         if (isEditing) {
             await api.updatePmSchedule(parseInt(scheduleId), scheduleData);
@@ -106,7 +110,7 @@ async function handlePmScheduleFormSubmit(e) {
         document.getElementById("pmScheduleModal").style.display = "none";
         renderMainContent();
         showTemporaryMessage('PM Schedule saved successfully!');
-    }  catch (error) {
+    } catch (error) {
         showTemporaryMessage(`Failed to save schedule. ${error.message}`, true);
     }
 }

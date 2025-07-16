@@ -1206,11 +1206,13 @@ export function showPmScheduleModal(schedule = null) {
     // --- THIS IS THE FIX ---
     // This line was missing. It defines the modalTitle variable.
     const modalTitle = document.querySelector("#pmScheduleModal h2");
+    const isActiveCheckbox = document.getElementById('pmIsActive');
 
     // Set default values for creating a new schedule
     document.getElementById("pmScheduleId").value = "";
     modalTitle.textContent = "New PM Schedule";
     document.getElementById("pmStartDate").value = new Date().toISOString().split('T')[0];
+    isActiveCheckbox.checked = true; // Default to active for new schedules
     
     // Populate dropdowns for both modes
     const assets = state.cache.assets.filter(can.view);
@@ -1229,6 +1231,7 @@ export function showPmScheduleModal(schedule = null) {
         document.getElementById("pmAssignedTo").value = schedule.assignedTo;
         document.getElementById("pmTask").value = schedule.task;
         document.getElementById("pmDescription").value = schedule.description;
+        isActiveCheckbox.checked = !!schedule.is_active;
     }
 
     document.getElementById('pmScheduleModal').style.display = 'flex';
