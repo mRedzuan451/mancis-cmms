@@ -53,7 +53,21 @@ foreach ($schedules as $schedule) {
     if ($is_due) {
         $conn->begin_transaction();
         try {
-            $new_due_date = (new DateTime())->modify('+7 days')->format('Y-m-d');
+            // --- THIS ENTIRE BLOCK IS THE FIX ---
+            // Dynamically calculate a reasonable due date based on the frequency.
+            // This gives the team some lead time to complete the task.
+            $dueDateBuffer = '+7 days'; // Default for Weekly and Monthly tasks
+            switch ($schedule['frequency']) {
+                case 'Quarterly':
+                    $dueDateBuffer = '+14 days';
+                    break;
+                case 'Yearly':
+                    $dueDateBuffer = '+30 days';
+                    break;
+            }
+            $new_due_date = (new DateTime())->modify($dueDateBuffer)->format('Y-m-d');
+
+            // The rest of the logic remains the same.
             $wo_priority = 'Medium';
             $wo_status = 'Open';
             $wo_type = 'PM';
