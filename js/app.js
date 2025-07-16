@@ -969,23 +969,29 @@ function attachPageSpecificEventListeners(page) {
                 container.innerHTML = `<p class="text-red-500">Error generating report: ${error.message}</p>`;
             }
         });
-    } else if (page === 'pmSchedules') {
+    } else // js/app.js -> inside attachPageSpecificEventListeners()
+
+    if (page === 'pmSchedules') {
         document.getElementById('addPmScheduleBtn')?.addEventListener('click', () => showPmScheduleModal());
 
         document.getElementById('generatePmWoBtn')?.addEventListener('click', async () => {
             if (!confirm("Are you sure you want to generate new PM work orders? This will check all active schedules and create tasks for any that are due.")) {
                 return;
             }
+
             showTemporaryMessage("Generating PM work orders, please wait...");
             try {
+                // This now calls the production script and shows the result message.
                 const result = await api.generatePmWorkOrders();
-                console.log('--- PM Generation Debug Log ---');
-                console.table(result); // console.table() provides a nice, readable format.
-                
-                showTemporaryMessage("Debug log has been printed to the console (F12).");
+                showTemporaryMessage(result.message);
+
+                // Refresh data to show the updated "Last Generated" dates and new WOs.
+                state.cache.pmSchedules = await api.getPmSchedules();
+                state.cache.workOrders = await api.getWorkOrders();
+                renderMainContent(); // Re-render the PM schedules page.
 
             } catch (error) {
-                showTemporaryMessage(`An error occurred. ${error.message}`, true);
+                showTemporaryMessage(`Failed to generate work orders. ${error.message}`, true);
             }
         });
 
