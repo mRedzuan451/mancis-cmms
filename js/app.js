@@ -84,6 +84,7 @@ async function handlePmScheduleFormSubmit(e) {
     const scheduleId = document.getElementById("pmScheduleId").value;
     const isEditing = !!scheduleId;
 
+    // Gather all the data from the form fields
     const scheduleData = {
         title: document.getElementById("pmTitle").value,
         schedule_start_date: document.getElementById("pmStartDate").value,
@@ -92,25 +93,30 @@ async function handlePmScheduleFormSubmit(e) {
         description: document.getElementById("pmDescription").value,
         frequency: document.getElementById("pmFrequency").value,
         assignedTo: parseInt(document.getElementById("pmAssignedTo").value),
-        checklist: [],
-        requiredParts: [],
-        // --- ADD THIS LINE ---
-        // Read the checkbox value (1 for true, 0 for false)
+        checklist: [],      // Note: Checklist/Parts logic for this modal is not yet built
+        requiredParts: [],  // Note: Checklist/Parts logic for this modal is not yet built
         is_active: document.getElementById('pmIsActive').checked ? 1 : 0
     };
-    
+
     try {
         if (isEditing) {
+            // If we are editing, call the update API
             await api.updatePmSchedule(parseInt(scheduleId), scheduleData);
             await logActivity("PM Schedule Updated", `Updated: ${scheduleData.title}`);
         } else {
+            // Otherwise, call the create API
             await api.createPmSchedule(scheduleData);
             await logActivity("PM Schedule Created", `Created: ${scheduleData.title}`);
         }
+
+        // Refresh the cache with the new data
         state.cache.pmSchedules = await api.getPmSchedules();
+        
+        // Close the modal and re-render the page
         document.getElementById("pmScheduleModal").style.display = "none";
         renderMainContent();
         showTemporaryMessage('PM Schedule saved successfully!');
+
     } catch (error) {
         showTemporaryMessage(`Failed to save schedule. ${error.message}`, true);
     }
