@@ -979,12 +979,13 @@ function attachPageSpecificEventListeners(page) {
             showTemporaryMessage("Generating PM work orders, please wait...");
             try {
                 const result = await api.generatePmWorkOrders();
-                showTemporaryMessage(result.message);
-                state.cache.pmSchedules = await api.getPmSchedules();
-                state.cache.workOrders = await api.getWorkOrders();
-                renderMainContent();
+                console.log('--- PM Generation Debug Log ---');
+                console.table(result); // console.table() provides a nice, readable format.
+                
+                showTemporaryMessage("Debug log has been printed to the console (F12).");
+
             } catch (error) {
-                showTemporaryMessage(`Failed to generate work orders. ${error.message}`, true);
+                showTemporaryMessage(`An error occurred. ${error.message}`, true);
             }
         });
 
