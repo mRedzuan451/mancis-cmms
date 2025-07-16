@@ -870,6 +870,58 @@ function attachPageSpecificEventListeners(page) {
         document.querySelector('#addCabinetForm')?.addEventListener('submit', handleLocationFormSubmit);
         document.querySelector('#addShelfForm')?.addEventListener('submit', handleLocationFormSubmit);
         document.querySelector('#addBoxForm')?.addEventListener('submit', handleLocationFormSubmit);
+    } else if (page === 'pmSchedules') {
+        // Listener for the "Add PM Schedule" button
+        document.getElementById('addPmScheduleBtn')?.addEventListener('click', () => showPmScheduleModal());
+
+        // Listener for the "Generate PM Work Orders" button
+        document.getElementById('generatePmWoBtn')?.addEventListener('click', async () => {
+            if (!confirm("Are you sure you want to generate new PM work orders?")) {
+                return;
+            }
+            showTemporaryMessage("Generating PM work orders, please wait...");
+            try {
+                const result = await api.generatePmWorkOrders();
+                showTemporaryMessage(result.message);
+                // Refresh data to show the updates
+                state.cache.pmSchedules = await api.getPmSchedules();
+                state.cache.workOrders = await api.getWorkOrders();
+                renderMainContent();
+            } catch (error) {
+                showTemporaryMessage(`Failed to generate work orders. ${error.message}`, true);
+            }
+        });
+
+        // Listeners for the action buttons on each row
+        document.querySelectorAll('.view-pm-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const scheduleId = parseInt(e.currentTarget.dataset.id);
+                const schedule = state.cache.pmSchedules.find(s => s.id === scheduleId);
+                showPmScheduleDetailModal(schedule);
+            });
+        });
+        document.querySelectorAll('.edit-pm-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const scheduleId = parseInt(e.currentTarget.dataset.id);
+                const schedule = state.cache.pmSchedules.find(s => s.id === scheduleId);
+                showPmScheduleModal(schedule);
+            });
+        });
+        document.querySelectorAll('.delete-pm-btn').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                const scheduleId = parseInt(e.currentTarget.dataset.id);
+                if (confirm("Are you sure you want to delete this PM Schedule?")) {
+                    try {
+                        await api.deletePmSchedule(scheduleId);
+                        showTemporaryMessage("Schedule deleted successfully.");
+                        state.cache.pmSchedules = state.cache.pmSchedules.filter(s => s.id !== scheduleId);
+                        renderMainContent();
+                    } catch (error) {
+                        showTemporaryMessage("Failed to delete schedule.", true);
+                    }
+                }
+            });
+        });
     } else if (page === 'inventoryReport') {
         const dateRangeSelect = document.getElementById('dateRangeSelect');
         const startDateInput = document.getElementById('startDate');
