@@ -68,12 +68,17 @@ try {
     $checklistJson = json_encode($data->checklist);
     $requiredPartsJson = json_encode($data->requiredParts);
 
-    $stmt = $conn->prepare("UPDATE workorders SET title=?, description=?, assetId=?, assignedTo=?, task=?, dueDate=?, priority=?, frequency=?, status=?, breakdownTimestamp=?, checklist=?, requiredParts=?, completionNotes=?, completedDate=? WHERE id=?");
-    $stmt->bind_param("ssiissssssssssi", 
+    $data->wo_type = $data->wo_type ?? 'CM';
+
+    $stmt = $conn->prepare("UPDATE workorders SET title=?, description=?, assetId=?, assignedTo=?, task=?, dueDate=?, priority=?, frequency=?, status=?, breakdownTimestamp=?, checklist=?, requiredParts=?, completionNotes=?, completedDate=?, wo_type=? WHERE id=?");
+    
+    $stmt->bind_param("ssiisssssssssssi", 
         $data->title, $data->description, $data->assetId, $data->assignedTo, 
         $data->task, $data->dueDate, $data->priority, $data->frequency, 
         $data->status, $data->breakdownTimestamp, $checklistJson, 
-        $requiredPartsJson, $data->completionNotes, $data->completedDate, $data->wo_type, $id
+        $requiredPartsJson, $data->completionNotes, $data->completedDate, 
+        $data->wo_type, // This variable is now guaranteed to exist.
+        $id
     );
 
     if ($stmt->execute()) {

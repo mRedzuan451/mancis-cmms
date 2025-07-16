@@ -9,7 +9,7 @@ $servername = "localhost"; $username = "root"; $password = ""; $dbname = "mancis
 $conn = new mysqli($servername, $username, $password, $dbname);
 if ($conn->connect_error) { die("Connection failed: " . $conn->connect_error); }
 
-$sql = "SELECT * FROM workorders ORDER BY dueDate DESC";
+$sql = "SELECT id, title, description, assetId, assignedTo, task, dueDate, priority, frequency, status, breakdownTimestamp, checklist, requiredParts, completionNotes, completedDate, wo_type FROM workorders ORDER BY dueDate DESC";
 $result = $conn->query($sql);
 
 $output_array = array();
@@ -19,18 +19,12 @@ if ($result && $result->num_rows > 0) {
         $row['assetId'] = intval($row['assetId']);
         $row['assignedTo'] = intval($row['assignedTo']);
         
-        // Decode JSON fields from text into arrays
-        $row['checklist'] = json_decode($row['checklist'], true); // true for associative array
+        $row['checklist'] = json_decode($row['checklist'], true);
         $row['requiredParts'] = json_decode($row['requiredParts'], true);
 
-        // Ensure they are arrays even if null/empty
-        if (!is_array($row['checklist'])) {
-            $row['checklist'] = [];
-        }
-        if (!is_array($row['requiredParts'])) {
-            $row['requiredParts'] = [];
-        }
-
+        if (!is_array($row['checklist'])) $row['checklist'] = [];
+        if (!is_array($row['requiredParts'])) $row['requiredParts'] = [];
+        
         $output_array[] = $row;
     }
 }
