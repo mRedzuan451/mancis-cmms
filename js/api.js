@@ -176,5 +176,15 @@ export const api = {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
     }),
+    updatePmSchedule: (id, data) => request(`update_pm_schedule.php`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, ...data })
+    }),
+    deletePmSchedule: (id) => request(`delete_pm_schedule.php`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id })
+    }),
     generatePmWorkOrders: () => request('generate_pm_work_orders.php', { method: 'POST' }),
 };

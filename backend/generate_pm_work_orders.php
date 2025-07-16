@@ -58,19 +58,23 @@ foreach ($schedules as $schedule) {
             // A new WO is due, so create it.
             $new_due_date = (new DateTime())->modify('+7 days')->format('Y-m-d'); // Set due date 7 days from now
             
+            $checklistJson = json_encode($schedule['checklist']);
+            $requiredPartsJson = json_encode($schedule['requiredParts']);
+
             $stmt_insert = $conn->prepare(
                 "INSERT INTO workorders (title, description, assetId, assignedTo, task, dueDate, priority, frequency, status, checklist, requiredParts, wo_type) 
                  VALUES (?, ?, ?, ?, ?, ?, 'Medium', ?, 'Open', ?, ?, 'PM')"
             );
-            $stmt_insert->bind_param("ssiisssss", 
+            $stmt_insert->bind_param("ssiissssss", // Note: The type string is now 'ssiissssss'
                 $schedule['title'], $schedule['description'], $schedule['assetId'], 
                 $schedule['assignedTo'], $schedule['task'], $new_due_date, 
-                $schedule['frequency'], $schedule['checklist'], $schedule['requiredParts']
+                $schedule['frequency'], 
+                $checklistJson, // Use the new JSON string variables
+                $requiredPartsJson // Use the new JSON string variables
             );
             $stmt_insert->execute();
             $stmt_insert->close();
             
-            // Now, update the schedule's last_generated_date to today
             $stmt_update = $conn->prepare("UPDATE pm_schedules SET last_generated_date = ? WHERE id = ?");
             $stmt_update->bind_param("si", $today_str, $schedule['id']);
             $stmt_update->execute();
@@ -81,7 +85,6 @@ foreach ($schedules as $schedule) {
             
         } catch (Exception $e) {
             $conn->rollback();
-            // Log this error or handle it as needed, but continue to the next schedule
             error_log("Failed to generate PM for schedule ID " . $schedule['id'] . ": " . $e->getMessage());
         }
     }

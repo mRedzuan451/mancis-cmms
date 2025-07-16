@@ -1176,15 +1176,21 @@ export function renderPmSchedulesPage() {
             <th class="p-2 text-left">Asset</th>
             <th class="p-2 text-left">Frequency</th>
             <th class="p-2 text-left">Last Generated</th>
-          </tr></thead>
+            <th class="p-2 text-left">Status</th>
+            <th class="p-2 text-left">Actions</th> </tr></thead>
           <tbody>
-            ${schedules.map(s => {
+            ${(state.cache.pmSchedules || []).map(s => {
                 const assetName = state.cache.assets.find(a => a.id === s.assetId)?.name || 'N/A';
                 return `<tr class="border-b hover:bg-gray-50">
                     <td class="p-2">${s.title}</td>
                     <td class="p-2">${assetName}</td>
                     <td class="p-2">${s.frequency}</td>
                     <td class="p-2">${s.last_generated_date || 'Never'}</td>
+                    <td class="p-2">${s.is_active ? '<span class="text-green-600">Active</span>' : '<span class="text-gray-500">Inactive</span>'}</td>
+                    <td class="p-2 space-x-2">
+                        <button class="edit-pm-btn text-yellow-500 hover:text-yellow-700" data-id="${s.id}" title="Edit"><i class="fas fa-edit"></i></button>
+                        <button class="delete-pm-btn text-red-500 hover:text-red-700" data-id="${s.id}" title="Delete"><i class="fas fa-trash"></i></button>
+                    </td>
                 </tr>`
             }).join('')}
           </tbody>
