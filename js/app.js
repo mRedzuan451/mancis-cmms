@@ -961,7 +961,28 @@ function attachPageSpecificEventListeners(page) {
             }
         });
     } else if (page === 'pmSchedules') {
-    document.getElementById('addPmScheduleBtn')?.addEventListener('click', showPmScheduleModal);
+        document.getElementById('addPmScheduleBtn')?.addEventListener('click', showPmScheduleModal);
+
+        // ADD THIS NEW EVENT LISTENER
+        document.getElementById('generatePmWoBtn')?.addEventListener('click', async () => {
+            if (!confirm("Are you sure you want to generate new PM work orders? This will check all active schedules and create tasks for any that are due.")) {
+                return;
+            }
+
+            showTemporaryMessage("Generating PM work orders, please wait...");
+            try {
+                const result = await api.generatePmWorkOrders();
+                showTemporaryMessage(result.message);
+
+                // Refresh data to show the updated "Last Generated" dates and new WOs
+                state.cache.pmSchedules = await api.getPmSchedules();
+                state.cache.workOrders = await api.getWorkOrders();
+                renderMainContent(); // Re-render the PM schedules page
+
+            } catch (error) {
+                showTemporaryMessage(`Failed to generate work orders. ${error.message}`, true);
+            }
+        });
     }
 }
 

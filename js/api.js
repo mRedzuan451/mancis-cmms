@@ -176,4 +176,5 @@ export const api = {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
     }),
+    generatePmWorkOrders: () => request('generate_pm_work_orders.php', { method: 'POST' }),
 };
