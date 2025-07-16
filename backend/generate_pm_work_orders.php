@@ -11,9 +11,11 @@ if ($conn->connect_error) { die("Connection failed: " . $conn->connect_error); }
 
 $generated_count = 0;
 $today = new DateTime();
+// --- THIS IS THE FIX ---
+// Normalize today's date to midnight to ensure accurate date-only comparisons.
+$today->setTime(0, 0, 0); 
 $today_str = $today->format('Y-m-d');
 
-// Get all active PM schedules
 $schedules_result = $conn->query("SELECT * FROM pm_schedules WHERE is_active = 1");
 if (!$schedules_result) {
     http_response_code(500);
@@ -24,9 +26,10 @@ if (!$schedules_result) {
 $schedules = $schedules_result->fetch_all(MYSQLI_ASSOC);
 
 foreach ($schedules as $schedule) {
+    // Also normalize the schedule start date to midnight
     $schedule_start_date = new DateTime($schedule['schedule_start_date']);
+    $schedule_start_date->setTime(0,0,0);
 
-    // 1. Skip if the schedule's start date hasn't been reached yet.
     if ($today < $schedule_start_date) {
         continue;
     }
@@ -34,11 +37,11 @@ foreach ($schedules as $schedule) {
     $is_due = false;
     $last_gen_date_str = $schedule['last_generated_date'];
 
-    // 2. Determine if the WO is due
     if ($last_gen_date_str === null) {
         $is_due = true;
     } else {
         $next_due_date = new DateTime($last_gen_date_str);
+        $next_due_date->setTime(0,0,0); // Also normalize this date
         switch ($schedule['frequency']) {
             case 'Weekly': $next_due_date->modify('+1 week'); break;
             case 'Monthly': $next_due_date->modify('+1 month'); break;
@@ -50,13 +53,9 @@ foreach ($schedules as $schedule) {
         }
     }
 
-    // 3. If it's due, generate the WO and update the schedule
     if ($is_due) {
         $conn->begin_transaction();
         try {
-            // --- THIS ENTIRE BLOCK IS THE FIX ---
-
-            // Define all values for the new work order
             $new_due_date = (new DateTime())->modify('+7 days')->format('Y-m-d');
             $wo_priority = 'Medium';
             $wo_status = 'Open';
@@ -68,26 +67,15 @@ foreach ($schedules as $schedule) {
                 "INSERT INTO workorders (title, description, assetId, assignedTo, task, dueDate, priority, frequency, status, checklist, requiredParts, wo_type) 
                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
             );
-
-            // Bind all 12 parameters correctly
             $stmt_insert->bind_param("ssiissssssss", 
-                $schedule['title'], 
-                $schedule['description'], 
-                $schedule['assetId'], 
-                $schedule['assignedTo'], 
-                $schedule['task'], 
-                $new_due_date,
-                $wo_priority, 
-                $schedule['frequency'], 
-                $wo_status,
-                $checklistJson, 
-                $requiredPartsJson,
-                $wo_type
+                $schedule['title'], $schedule['description'], $schedule['assetId'], 
+                $schedule['assignedTo'], $schedule['task'], $new_due_date,
+                $wo_priority, $schedule['frequency'], $wo_status,
+                $checklistJson, $requiredPartsJson, $wo_type
             );
             $stmt_insert->execute();
             $stmt_insert->close();
             
-            // This part remains the same
             $stmt_update = $conn->prepare("UPDATE pm_schedules SET last_generated_date = ? WHERE id = ?");
             $stmt_update->bind_param("si", $today_str, $schedule['id']);
             $stmt_update->execute();
