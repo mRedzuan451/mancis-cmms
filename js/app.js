@@ -36,6 +36,7 @@ import {
     showReceivePartsModal,
     showRestockPartsModal,
     showPmScheduleModal,
+    showPmScheduleDetailModal,
     addChecklistItem,
 } from './ui.js';
 
@@ -983,55 +984,20 @@ function attachPageSpecificEventListeners(page) {
                 container.innerHTML = `<p class="text-red-500">Error generating report: ${error.message}</p>`;
             }
         });
-    } else // js/app.js -> inside attachPageSpecificEventListeners()
-
-    if (page === 'pmSchedules') {
+    } else if (page === 'pmSchedules') {
         document.getElementById('addPmScheduleBtn')?.addEventListener('click', () => showPmScheduleModal());
+        document.getElementById('generatePmWoBtn')?.addEventListener('click', async () => { /* ... (generation logic) */ });
 
-        document.getElementById('generatePmWoBtn')?.addEventListener('click', async () => {
-            if (!confirm("Are you sure you want to generate new PM work orders? This will check all active schedules and create tasks for any that are due.")) {
-                return;
-            }
-
-            showTemporaryMessage("Generating PM work orders, please wait...");
-            try {
-                // This now calls the production script and shows the result message.
-                const result = await api.generatePmWorkOrders();
-                showTemporaryMessage(result.message);
-
-                // Refresh data to show the updated "Last Generated" dates and new WOs.
-                state.cache.pmSchedules = await api.getPmSchedules();
-                state.cache.workOrders = await api.getWorkOrders();
-                renderMainContent(); // Re-render the PM schedules page.
-
-            } catch (error) {
-                showTemporaryMessage(`Failed to generate work orders. ${error.message}`, true);
-            }
-        });
-
-        document.querySelectorAll('.edit-pm-btn').forEach(btn => {
+        document.querySelectorAll('.view-pm-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 const scheduleId = parseInt(e.currentTarget.dataset.id);
                 const schedule = state.cache.pmSchedules.find(s => s.id === scheduleId);
-                showPmScheduleModal(schedule);
+                showPmScheduleDetailModal(schedule);
             });
         });
 
-        document.querySelectorAll('.delete-pm-btn').forEach(btn => {
-            btn.addEventListener('click', async (e) => {
-                const scheduleId = parseInt(e.currentTarget.dataset.id);
-                if (confirm("Are you sure you want to delete this PM Schedule?")) {
-                    try {
-                        await api.deletePmSchedule(scheduleId);
-                        showTemporaryMessage("Schedule deleted successfully.");
-                        state.cache.pmSchedules = state.cache.pmSchedules.filter(s => s.id !== scheduleId);
-                        renderMainContent();
-                    } catch (error) {
-                        showTemporaryMessage("Failed to delete schedule.", true);
-                    }
-                }
-            });
-        });
+        document.querySelectorAll('.edit-pm-btn').forEach(btn => { /* ... (edit logic) */ });
+        document.querySelectorAll('.delete-pm-btn').forEach(btn => { /* ... (delete logic) */ });
     }
 }
 

@@ -197,3 +197,34 @@ export function printReport(title, content) {
 
     printWindow.focus();
 }
+
+/**
+ * Calculates the next due date for a PM Schedule.
+ * @param {object} schedule The PM schedule object.
+ * @returns {string} The formatted next due date (YYYY-MM-DD).
+ */
+export function calculateNextPmDueDate(schedule) {
+  if (!schedule) return 'N/A';
+
+  const startDate = new Date(schedule.schedule_start_date + 'T00:00:00');
+  
+  if (!schedule.last_generated_date) {
+    // If never generated, the first due date is the start date.
+    return schedule.schedule_start_date;
+  }
+
+  const lastDate = new Date(schedule.last_generated_date + 'T00:00:00');
+  let nextDueDate = lastDate;
+
+  switch (schedule.frequency) {
+    case 'Weekly':   nextDueDate.setDate(lastDate.getDate() + 7); break;
+    case 'Monthly':  nextDueDate.setMonth(lastDate.getMonth() + 1); break;
+    case 'Quarterly':nextDueDate.setMonth(lastDate.getMonth() + 3); break;
+    case 'Yearly':   nextDueDate.setFullYear(lastDate.getFullYear() + 1); break;
+    default: return 'N/A';
+  }
+
+  // Return whichever date is later: the calculated next due date or the schedule start date.
+  const finalDueDate = nextDueDate > startDate ? nextDueDate : startDate;
+  return finalDueDate.toISOString().split('T')[0];
+}
