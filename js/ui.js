@@ -1202,6 +1202,7 @@ export function renderPmSchedulesPage() {
 export function showPmScheduleModal() {
     const form = document.getElementById("pmScheduleForm");
     form.reset();
+    const modalTitle = document.querySelector("#pmScheduleModal h2");
 
     // Set default values for creating a new schedule
     document.getElementById("pmScheduleId").value = "";
