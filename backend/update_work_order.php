@@ -47,11 +47,22 @@ try {
         error_log("Required parts for WO ID: $id -> " . print_r($requiredParts, true));
 
         if (!empty($requiredParts)) {
+            $log_details = "Consumed parts for WO #$id: ";
+            $details_array = [];
+            
+            // --- THIS IS THE FIX ---
+            // This loop now checks if the part data is valid before using it.
             foreach ($requiredParts as $part) {
+                // Check for malformed part data and skip it if found.
+                if (!isset($part['partId']) || !isset($part['quantity'])) {
+                    error_log("Skipping malformed required part entry for WO ID $id: " . print_r($part, true));
+                    continue; 
+                }
+
                 $partId = intval($part['partId']);
                 $qty_to_deduct = intval($part['quantity']);
-                error_log("Deducting $qty_to_deduct x Part ID $partId for WO ID: $id");
 
+                // The rest of the logic inside the loop remains the same.
                 $stmt_update_part = $conn->prepare("UPDATE parts SET quantity = quantity - ? WHERE id = ? AND quantity >= ?");
                 $stmt_update_part->bind_param("iii", $qty_to_deduct, $partId, $qty_to_deduct);
                 $stmt_update_part->execute();
@@ -60,8 +71,18 @@ try {
                     throw new Exception("Not enough stock for Part ID: $partId, or part not found.");
                 }
                 $stmt_update_part->close();
+                $details_array[] = "$qty_to_deduct x PartID $partId";
             }
-            // ... (Logging to the DB is omitted from debug version to simplify)
+            
+            // Only create a log if parts were actually processed.
+            if (!empty($details_array)) {
+                $log_user = $_SESSION['user_fullname'];
+                $log_details .= implode(', ', $details_array) . ".";
+                $log_stmt = $conn->prepare("INSERT INTO logs (user, action, details) VALUES (?, 'Parts Consumed', ?)");
+                $log_stmt->bind_param("ss", $log_user, $log_details);
+                $log_stmt->execute();
+                $log_stmt->close();
+            }
         }
     }
 
