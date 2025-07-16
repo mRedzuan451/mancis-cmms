@@ -15,6 +15,7 @@ import {
     renderLocationsPage,
     renderActivityLogPage,
     renderPartsRequestPage,
+    renderPmSchedulesPage,
     renderInventoryReportPage,
     generateTableRows,
     showAssetModal,
@@ -34,6 +35,7 @@ import {
     showStorageRequestModal,
     showReceivePartsModal,
     showRestockPartsModal,
+    showPmScheduleModal,
     addChecklistItem,
 } from './ui.js';
 
@@ -113,10 +115,11 @@ async function loadInitialData() {
 
         // Conditionally add promises based on user role
         if (role === 'Admin') {
-            promises.push(api.getAssets(), api.getParts(), api.getUsers(), api.getWorkOrders(), api.getLogs());
+            // ADD api.getPmSchedules() to this line
+            promises.push(api.getAssets(), api.getParts(), api.getUsers(), api.getWorkOrders(), api.getLogs(), api.getPmSchedules());
         } else if (role !== 'Clerk') {
-            // For Manager, Supervisor, Engineer, Technician
-            promises.push(api.getAssets(), api.getParts(), api.getUsers(), api.getWorkOrders());
+            // ADD api.getPmSchedules() to this line as well
+            promises.push(api.getAssets(), api.getParts(), api.getUsers(), api.getWorkOrders(), api.getPmSchedules());
         }
 
         const results = await Promise.all(promises);
@@ -133,11 +136,13 @@ async function loadInitialData() {
             state.cache.users = results[5];
             state.cache.workOrders = results[6];
             state.cache.logs = results[7];
+            state.cache.pmSchedules = results[8]; // Assign the new data
         } else if (role !== 'Clerk') {
             state.cache.assets = results[3];
             state.cache.parts = results[4];
             state.cache.users = results[5];
             state.cache.workOrders = results[6];
+            state.cache.pmSchedules = results[7]; // Assign the new data
         }
 
     } catch (error) {

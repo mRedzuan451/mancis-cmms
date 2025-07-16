@@ -17,5 +17,9 @@ export const state = {
     locations: {},
     logs: [],
     receivedParts: [],
+    pmSchedules: [],
+    locations: {},
+    logs: [],
+    receivedParts: [],
   }
 };
