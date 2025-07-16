@@ -82,13 +82,15 @@ async function handlePmScheduleFormSubmit(e) {
     e.preventDefault();
     const scheduleData = {
         title: document.getElementById("pmTitle").value,
+        // ADD THIS LINE
+        schedule_start_date: document.getElementById("pmStartDate").value,
         assetId: parseInt(document.getElementById("pmAsset").value),
         task: document.getElementById("pmTask").value,
         description: document.getElementById("pmDescription").value,
         frequency: document.getElementById("pmFrequency").value,
         assignedTo: parseInt(document.getElementById("pmAssignedTo").value),
-        checklist: [], // Add logic for checklist if needed
-        requiredParts: [] // Add logic for parts if needed
+        checklist: [],
+        requiredParts: []
     };
     try {
         await api.createPmSchedule(scheduleData);

@@ -24,23 +24,30 @@ if (!$schedules_result) {
 $schedules = $schedules_result->fetch_all(MYSQLI_ASSOC);
 
 foreach ($schedules as $schedule) {
+    $schedule_start_date = new DateTime($schedule['schedule_start_date']);
+
+    // 1. Skip if the schedule's start date hasn't been reached yet.
+    if ($today < $schedule_start_date) {
+        continue;
+    }
+
     $is_due = false;
     $last_gen_date_str = $schedule['last_generated_date'];
 
+    // 2. Determine if the WO is due
     if ($last_gen_date_str === null) {
-        // If it has never been generated, it's due now.
+        // If it has never run and its start date is today or in the past, it's due.
         $is_due = true;
     } else {
-        // Calculate the next due date based on the last generation and frequency
-        $last_gen_date = new DateTime($last_gen_date_str);
+        // If it has run before, calculate the next due date.
+        $next_due_date = new DateTime($last_gen_date_str);
         switch ($schedule['frequency']) {
-            case 'Weekly': $last_gen_date->modify('+1 week'); break;
-            case 'Monthly': $last_gen_date->modify('+1 month'); break;
-            case 'Quarterly': $last_gen_date->modify('+3 months'); break;
-            case 'Yearly': $last_gen_date->modify('+1 year'); break;
+            case 'Weekly': $next_due_date->modify('+1 week'); break;
+            case 'Monthly': $next_due_date->modify('+1 month'); break;
+            case 'Quarterly': $next_due_date->modify('+3 months'); break;
+            case 'Yearly': $next_due_date->modify('+1 year'); break;
         }
-        // If today is on or after the next due date, it's due.
-        if ($today >= $last_gen_date) {
+        if ($today >= $next_due_date) {
             $is_due = true;
         }
     }

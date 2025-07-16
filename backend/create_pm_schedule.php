@@ -14,9 +14,11 @@ $data = json_decode(file_get_contents("php://input"));
 $checklistJson = json_encode($data->checklist);
 $requiredPartsJson = json_encode($data->requiredParts);
 
-$stmt = $conn->prepare("INSERT INTO pm_schedules (title, assetId, task, description, frequency, assignedTo, checklist, requiredParts) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
-$stmt->bind_param("sisssiss",
+$stmt = $conn->prepare("INSERT INTO pm_schedules (title, schedule_start_date, assetId, task, description, frequency, assignedTo, checklist, requiredParts) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+// Add 's' for the new date string
+$stmt->bind_param("ssisssiss",
     $data->title,
+    $data->schedule_start_date, // Bind the new field
     $data->assetId,
     $data->task,
     $data->description,
