@@ -73,7 +73,7 @@ try {
         $data->title, $data->description, $data->assetId, $data->assignedTo, 
         $data->task, $data->dueDate, $data->priority, $data->frequency, 
         $data->status, $data->breakdownTimestamp, $checklistJson, 
-        $requiredPartsJson, $data->completionNotes, $data->completedDate, $id
+        $requiredPartsJson, $data->completionNotes, $data->completedDate, $data->wo_type, $id
     );
 
     if ($stmt->execute()) {

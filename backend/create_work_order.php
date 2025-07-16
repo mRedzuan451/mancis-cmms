@@ -38,6 +38,7 @@ $stmt->bind_param("ssiissssssss",
     $data->breakdownTimestamp,
     $checklistJson,
     $requiredPartsJson
+    $data->wo_type // Bind the new wo_type variable
 );
 
 if ($stmt->execute()) {

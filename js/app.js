@@ -307,7 +307,8 @@ async function handleWorkOrderFormSubmit(e) {
         frequency: document.getElementById("woFrequency").value,
         status: document.getElementById("woStatus").value,
         checklist: checklistItems,
-        requiredParts: requiredParts
+        requiredParts: requiredParts,
+        wo_type: 'CM' 
     };
 
     try {
@@ -749,14 +750,32 @@ function attachPageSpecificEventListeners(page) {
         });
     } else if (page === 'workOrders') {
         document.getElementById("addWorkOrderBtn")?.addEventListener("click", showWorkOrderModal);
-        document.getElementById("workOrderSearch")?.addEventListener("input", (e) => {
-            const searchTerm = e.target.value.toLowerCase();
-            const filtered = state.cache.workOrders.filter(can.view).filter(wo => {
-                const assetName = state.cache.assets.find(a => a.id === parseInt(wo.assetId))?.name || "";
-                return wo.title.toLowerCase().includes(searchTerm) || assetName.toLowerCase().includes(searchTerm);
+        
+        // --- ADD THIS BLOCK FOR TAB FILTERING ---
+        document.querySelectorAll('.wo-type-tab').forEach(tab => {
+            tab.addEventListener('click', (e) => {
+                const selectedType = e.target.dataset.type;
+
+                // Update tab styles
+                document.querySelectorAll('.wo-type-tab').forEach(t => {
+                    t.classList.remove('text-blue-600', 'border-blue-500');
+                    t.classList.add('text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300');
+                });
+                e.target.classList.add('text-blue-600', 'border-blue-500');
+                e.target.classList.remove('text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300');
+
+                // Filter the work orders and re-render the table body
+                const allWorkOrders = state.cache.workOrders.filter(can.view);
+                const filteredWOs = selectedType === 'All' 
+                    ? allWorkOrders
+                    : allWorkOrders.filter(wo => wo.wo_type === selectedType);
+                
+                document.getElementById('workOrderTableBody').innerHTML = generateTableRows("workOrders", filteredWOs);
             });
-            document.getElementById("workOrderTableBody").innerHTML = generateTableRows("workOrders", filtered);
         });
+        
+        // This search listener code remains the same
+        document.getElementById("workOrderSearch")?.addEventListener("input", (e) => { /* ... */ });
     } else if (page === 'workOrderCalendar') {
         document.getElementById('prevMonthBtn')?.addEventListener('click', () => {
             state.calendarDate.setMonth(state.calendarDate.getMonth() - 1);

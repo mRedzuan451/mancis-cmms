@@ -106,21 +106,31 @@ export function renderPartsPage() {
 }
 
 export function renderWorkOrdersPage() {
+    // Note: We now pass the full, unfiltered list to generateTableRows
     const workOrders = state.cache.workOrders.filter(can.view);
 
     const header = renderPageHeader("Work Order Management", [
-        '<button id="refreshDataBtn" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded"><i class="fas fa-sync-alt mr-2"></i>Refresh</button>',
-        '<button id="addWorkOrderBtn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded"><i class="fas fa-plus mr-2"></i>Create Work Order</button>'
+        '<button id="addWorkOrderBtn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded"><i class="fas fa-plus mr-2"></i>Create Corrective WO</button>'
     ]);
 
     return `
       ${header}
+      
+      <div class="mb-4 border-b border-gray-200">
+          <nav class="-mb-px flex space-x-8" aria-label="Tabs">
+              <button class="wo-type-tab whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-blue-600 border-blue-500" data-type="All">All Work Orders</button>
+              <button class="wo-type-tab whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300" data-type="CM">Corrective (CM)</button>
+              <button class="wo-type-tab whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300" data-type="PM">Preventive (PM)</button>
+          </nav>
+      </div>
+
       <div class="bg-white p-4 rounded-lg shadow">
           <input type="text" id="workOrderSearch" class="w-full mb-4 px-3 py-2 border rounded" placeholder="Search by title or asset name...">
           <div class="overflow-x-auto">
               <table class="w-full" id="workOrderTable">
                   <thead><tr class="border-b">
                       <th class="p-2 text-left cursor-pointer" data-sort="title">Title <i class="fas fa-sort"></i></th>
+                      <th class="p-2 text-left cursor-pointer" data-sort="wo_type">Type <i class="fas fa-sort"></i></th>
                       <th class="p-2 text-left cursor-pointer" data-sort="assetId">Asset <i class="fas fa-sort"></i></th>
                       <th class="p-2 text-left cursor-pointer" data-sort="dueDate">Due Date <i class="fas fa-sort"></i></th>
                       <th class="p-2 text-left cursor-pointer" data-sort="priority">Priority <i class="fas fa-sort"></i></th>
@@ -426,6 +436,7 @@ export function generateTableRows(type, data) {
             return `
               <tr class="border-b hover:bg-gray-50">
                   <td class="p-2">${wo.title}</td>
+                  <td class="p-2"><span class="font-mono text-xs px-2 py-1 rounded ${wo.wo_type === 'PM' ? 'bg-purple-200 text-purple-800' : 'bg-orange-200 text-orange-800'}">${wo.wo_type}</span></td>
                   <td class="p-2">${assetName}</td>
                   <td class="p-2">${wo.dueDate}</td>
                   <td class="p-2 font-bold ${priorityColor}">${wo.priority}</td>
