@@ -1199,9 +1199,12 @@ export function renderPmSchedulesPage() {
     `;
 }
 
-export function showPmScheduleModal() {
+export function showPmScheduleModal(schedule = null) {
     const form = document.getElementById("pmScheduleForm");
     form.reset();
+    
+    // --- THIS IS THE FIX ---
+    // This line was missing. It defines the modalTitle variable.
     const modalTitle = document.querySelector("#pmScheduleModal h2");
 
     // Set default values for creating a new schedule
@@ -1226,7 +1229,6 @@ export function showPmScheduleModal() {
         document.getElementById("pmAssignedTo").value = schedule.assignedTo;
         document.getElementById("pmTask").value = schedule.task;
         document.getElementById("pmDescription").value = schedule.description;
-        // You would also add logic here to re-create checklist and required parts items if needed.
     }
 
     document.getElementById('pmScheduleModal').style.display = 'flex';
