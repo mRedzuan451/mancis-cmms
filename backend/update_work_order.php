@@ -1,7 +1,11 @@
 <?php
-require_once 'auth_check.php';
+// backend/update_work_order.php (Enhanced Debugging Version)
 
-// Authorize who can update work orders.
+// --- Force error reporting to be visible ---
+ini_set('display_errors', 1);
+error_reporting(E_ALL);
+
+require_once 'auth_check.php';
 authorize(['Admin', 'Manager', 'Supervisor', 'Engineer', 'Technician']);
 
 header("Content-Type: application/json; charset=UTF-8");
@@ -11,8 +15,14 @@ $servername = "localhost"; $username = "root"; $password = ""; $dbname = "mancis
 $conn = new mysqli($servername, $username, $password, $dbname);
 if ($conn->connect_error) { die("Connection failed: " . $conn->connect_error); }
 
+// Log that the script has started
+error_log("--- Starting update_work_order.php ---");
+
 $data = json_decode(file_get_contents("php://input"));
 $id = isset($_GET['id']) ? intval($_GET['id']) : 0;
+
+// Log the received data
+error_log("Received data for WO ID: $id -> " . print_r($data, true));
 
 if ($id <= 0) {
     http_response_code(400);
@@ -21,28 +31,27 @@ if ($id <= 0) {
 }
 
 $conn->begin_transaction();
+error_log("Transaction started for WO ID: $id");
 
 try {
-    // If the status is being set to 'Completed', handle part consumption first.
-    if ($data->status === 'Completed') {
-        // Fetch the required parts for this work order.
+    if (isset($data->status) && $data->status === 'Completed') {
+        error_log("Status is 'Completed'. Starting parts consumption for WO ID: $id");
+        
         $stmt_get = $conn->prepare("SELECT requiredParts FROM workorders WHERE id = ?");
         $stmt_get->bind_param("i", $id);
         $stmt_get->execute();
         $wo_result = $stmt_get->get_result()->fetch_assoc();
         $stmt_get->close();
         
-        $requiredParts = json_decode($wo_result['requiredParts'], true);
+        $requiredParts = isset($wo_result['requiredParts']) ? json_decode($wo_result['requiredParts'], true) : [];
+        error_log("Required parts for WO ID: $id -> " . print_r($requiredParts, true));
 
         if (!empty($requiredParts)) {
-            $log_details = "Consumed parts for WO #$id: ";
-            $details_array = [];
-            
             foreach ($requiredParts as $part) {
                 $partId = intval($part['partId']);
                 $qty_to_deduct = intval($part['quantity']);
+                error_log("Deducting $qty_to_deduct x Part ID $partId for WO ID: $id");
 
-                // Deduct quantity from the parts table.
                 $stmt_update_part = $conn->prepare("UPDATE parts SET quantity = quantity - ? WHERE id = ? AND quantity >= ?");
                 $stmt_update_part->bind_param("iii", $qty_to_deduct, $partId, $qty_to_deduct);
                 $stmt_update_part->execute();
@@ -51,38 +60,32 @@ try {
                     throw new Exception("Not enough stock for Part ID: $partId, or part not found.");
                 }
                 $stmt_update_part->close();
-                $details_array[] = "$qty_to_deduct x PartID $partId";
             }
-            
-            // Log the consumption activity for auditing.
-            $log_user = $_SESSION['user_fullname'];
-            $log_details .= implode(', ', $details_array) . ".";
-            $log_stmt = $conn->prepare("INSERT INTO logs (user, action, details) VALUES (?, 'Parts Consumed', ?)");
-            $log_stmt->bind_param("ss", $log_user, $log_details);
-            $log_stmt->execute();
-            $log_stmt->close();
+            // ... (Logging to the DB is omitted from debug version to simplify)
         }
     }
 
-    // Now, update the work order itself.
+    error_log("Preparing to update main WO details for WO ID: $id");
     $checklistJson = json_encode($data->checklist);
     $requiredPartsJson = json_encode($data->requiredParts);
-
     $data->wo_type = $data->wo_type ?? 'CM';
 
-    $stmt = $conn->prepare("UPDATE workorders SET title=?, description=?, assetId=?, assignedTo=?, task=?, dueDate=?, priority=?, frequency=?, status=?, breakdownTimestamp=?, checklist=?, requiredParts=?, completionNotes=?, completedDate=?, wo_type=? WHERE id=?");
+    $stmt = $conn->prepare(
+        "UPDATE workorders SET title=?, description=?, assetId=?, assignedTo=?, task=?, dueDate=?, priority=?, frequency=?, status=?, 
+        breakdownTimestamp=?, checklist=?, requiredParts=?, completionNotes=?, completedDate=?, wo_type=? WHERE id=?"
+    );
     
     $stmt->bind_param("ssiisssssssssssi", 
         $data->title, $data->description, $data->assetId, $data->assignedTo, 
         $data->task, $data->dueDate, $data->priority, $data->frequency, 
         $data->status, $data->breakdownTimestamp, $checklistJson, 
         $requiredPartsJson, $data->completionNotes, $data->completedDate, 
-        $data->wo_type, // This variable is now guaranteed to exist.
-        $id
+        $data->wo_type, $id
     );
 
     if ($stmt->execute()) {
-        $conn->commit(); // Commit transaction after all operations succeed.
+        error_log("Main WO UPDATE successful for WO ID: $id. Committing transaction.");
+        $conn->commit();
         http_response_code(200);
         echo json_encode(["message" => "Work Order updated successfully."]);
     } else {
@@ -90,10 +93,12 @@ try {
     }
 
 } catch (Exception $e) {
-    $conn->rollback(); // Rollback transaction on any error.
+    error_log("!!! EXCEPTION CAUGHT for WO ID: $id. Rolling back. Error: " . $e->getMessage());
+    $conn->rollback();
     http_response_code(500);
     echo json_encode(["message" => "Failed to update Work Order: " . $e->getMessage()]);
 }
 
 $conn->close();
+error_log("--- Finished update_work_order.php ---");
 ?>
