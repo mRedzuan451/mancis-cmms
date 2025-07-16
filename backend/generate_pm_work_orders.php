@@ -1,5 +1,5 @@
 <?php
-// backend/generate_pm_work_orders.php (DEBUGGING VERSION)
+// backend/generate_pm_work_orders.php (Final Version)
 require_once 'auth_check.php';
 authorize(['Admin', 'Manager', 'Supervisor']);
 
@@ -9,11 +9,10 @@ $servername = "localhost"; $username = "root"; $password = ""; $dbname = "mancis
 $conn = new mysqli($servername, $username, $password, $dbname);
 if ($conn->connect_error) { die("Connection failed: " . $conn->connect_error); }
 
-// --- START DEBUGGING SETUP ---
-$debug_log = []; // We will store our debug messages here.
+$generated_count = 0;
 $today = new DateTime();
 $today->setTime(0, 0, 0); 
-// --- END DEBUGGING SETUP ---
+$today_str = $today->format('Y-m-d');
 
 $schedules_result = $conn->query("SELECT * FROM pm_schedules WHERE is_active = 1");
 if (!$schedules_result) {
@@ -25,56 +24,71 @@ if (!$schedules_result) {
 $schedules = $schedules_result->fetch_all(MYSQLI_ASSOC);
 
 foreach ($schedules as $schedule) {
-    $schedule_id = $schedule['id'];
-    $current_log = ["schedule_id" => $schedule_id, "title" => $schedule['title']];
-
     $schedule_start_date = new DateTime($schedule['schedule_start_date']);
     $schedule_start_date->setTime(0,0,0);
-    
-    $current_log['check_1_start_date'] = "Comparing Today (" . $today->format('Y-m-d') . ") with Schedule Start Date (" . $schedule_start_date->format('Y-m-d') . ")";
 
     if ($today < $schedule_start_date) {
-        $current_log['check_1_result'] = "SKIPPED - Start date has not been reached.";
-        $debug_log[] = $current_log;
         continue;
     }
-    $current_log['check_1_result'] = "OK - Start date has been reached.";
 
     $is_due = false;
     $last_gen_date_str = $schedule['last_generated_date'];
-    $current_log['check_2_last_generated'] = "Last generated date is: " . ($last_gen_date_str ?? 'NULL');
 
     if ($last_gen_date_str === null) {
         $is_due = true;
-        $current_log['check_2_result'] = "IS DUE - Reason: Never been generated before.";
     } else {
         $next_due_date = new DateTime($last_gen_date_str);
         $next_due_date->setTime(0,0,0);
-        
-        $current_log['next_due_calculation'] = "Calculating next due date from " . $next_due_date->format('Y-m-d') . " with frequency '" . $schedule['frequency'] . "'";
-        
         switch ($schedule['frequency']) {
             case 'Weekly': $next_due_date->modify('+1 week'); break;
             case 'Monthly': $next_due_date->modify('+1 month'); break;
             case 'Quarterly': $next_due_date->modify('+3 months'); break;
             case 'Yearly': $next_due_date->modify('+1 year'); break;
         }
-        $current_log['next_due_date'] = $next_due_date->format('Y-m-d');
-        
         if ($today >= $next_due_date) {
             $is_due = true;
-            $current_log['check_2_result'] = "IS DUE - Reason: Today is on or after the calculated next due date.";
-        } else {
-            $current_log['check_2_result'] = "NOT DUE - Reason: Today is before the calculated next due date.";
         }
     }
-    
-    $current_log['final_decision'] = $is_due ? "Would generate WO." : "Would NOT generate WO.";
-    $debug_log[] = $current_log;
+
+    if ($is_due) {
+        $conn->begin_transaction();
+        try {
+            $new_due_date = (new DateTime())->modify('+7 days')->format('Y-m-d');
+            $wo_priority = 'Medium';
+            $wo_status = 'Open';
+            $wo_type = 'PM';
+            $checklistJson = json_encode($schedule['checklist']);
+            $requiredPartsJson = json_encode($schedule['requiredParts']);
+
+            $stmt_insert = $conn->prepare(
+                "INSERT INTO workorders (title, description, assetId, assignedTo, task, dueDate, priority, frequency, status, checklist, requiredParts, wo_type) 
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+            );
+            $stmt_insert->bind_param("ssiissssssss", 
+                $schedule['title'], $schedule['description'], $schedule['assetId'], 
+                $schedule['assignedTo'], $schedule['task'], $new_due_date,
+                $wo_priority, $schedule['frequency'], $wo_status,
+                $checklistJson, $requiredPartsJson, $wo_type
+            );
+            $stmt_insert->execute();
+            $stmt_insert->close();
+            
+            $stmt_update = $conn->prepare("UPDATE pm_schedules SET last_generated_date = ? WHERE id = ?");
+            $stmt_update->bind_param("si", $today_str, $schedule['id']);
+            $stmt_update->execute();
+            $stmt_update->close();
+            
+            $conn->commit();
+            $generated_count++;
+            
+        } catch (Exception $e) {
+            $conn->rollback();
+            error_log("Failed to generate PM for schedule ID " . $schedule['id'] . ": " . $e->getMessage());
+        }
+    }
 }
 
 $conn->close();
 http_response_code(200);
-// Instead of the count, we now return the entire debug log.
-echo json_encode($debug_log);
+echo json_encode(['message' => "Process complete. Generated $generated_count new PM work orders."]);
 ?>
