@@ -1210,6 +1210,56 @@
       </div>
     </div>
 
+    <div id="pmScheduleModal" class="modal">
+      <div class="modal-content max-h-[90vh] overflow-y-auto">
+        <h2 class="text-xl font-bold mb-4">New PM Schedule</h2>
+        <form id="pmScheduleForm">
+          <input type="hidden" id="pmScheduleId" />
+          <div class="grid grid-cols-2 gap-4">
+            <div class="col-span-2">
+              <label for="pmTitle" class="block text-sm font-medium text-gray-700">Schedule Title</label>
+              <input type="text" id="pmTitle" class="w-full mt-1 px-3 py-2 border rounded" required />
+            </div>
+             <div class="col-span-2">
+              <label for="pmDescription" class="block text-sm font-medium text-gray-700">Description</label>
+              <textarea id="pmDescription" rows="2" class="w-full mt-1 px-3 py-2 border rounded"></textarea>
+            </div>
+            <div>
+              <label for="pmAsset" class="block text-sm font-medium text-gray-700">Asset</label>
+              <select id="pmAsset" class="w-full mt-1 px-3 py-2 border rounded" required></select>
+            </div>
+             <div>
+              <label for="pmFrequency" class="block text-sm font-medium text-gray-700">Frequency</label>
+              <select id="pmFrequency" class="w-full mt-1 px-3 py-2 border rounded" required>
+                <option value="Weekly">Weekly</option>
+                <option value="Monthly">Monthly</option>
+                <option value="Quarterly">Quarterly</option>
+                <option value="Yearly">Yearly</option>
+              </select>
+            </div>
+            <div>
+              <label for="pmAssignedTo" class="block text-sm font-medium text-gray-700">Assign To</label>
+              <select id="pmAssignedTo" class="w-full mt-1 px-3 py-2 border rounded" required></select>
+            </div>
+            <div>
+              <label for="pmTask" class="block text-sm font-medium text-gray-700">Task</label>
+              <select id="pmTask" class="w-full mt-1 px-3 py-2 border rounded" required>
+                 <option value="Cleaning">Cleaning</option>
+                 <option value="Lubrication">Lubrication</option>
+                 <option value="Inspection">Inspection</option>
+                 <option value="Adjustment">Adjustment</option>
+                 <option value="Replacement">Replacement</option>
+              </select>
+            </div>
+          </div>
+          <div class="mt-6 flex justify-end space-x-4">
+            <button type="button" class="bg-gray-300 hover:bg-gray-400 text-black py-2 px-4 rounded" data-close-modal>Cancel</button>
+            <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded">Save Schedule</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
     <div id="transferAssetModal" class="modal">
       <div class="modal-content">
         <h2 class="text-xl font-bold mb-4">Transfer Asset</h2>

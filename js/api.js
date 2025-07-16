@@ -170,4 +170,10 @@ export const api = {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id })
     }),
+    getPmSchedules: () => request('get_pm_schedules.php'),
+    createPmSchedule: (data) => request('create_pm_schedule.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+    }),
 };

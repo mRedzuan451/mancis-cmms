@@ -57,6 +57,7 @@ function renderMainContent() {
         case "inventoryReport":     content = renderInventoryReportPage(); break;
         case "activityLog":         content = renderActivityLogPage(); break;
         case "partRequests":        content = renderPartsRequestPage(); break;
+        case "pmSchedules":         content = renderPmSchedulesPage(); break;
         default:                    content = renderDashboard();
     }
     mainContent.innerHTML = content;
@@ -75,7 +76,29 @@ function render() {
     }
 }
 
-// js/app.js
+async function handlePmScheduleFormSubmit(e) {
+    e.preventDefault();
+    const scheduleData = {
+        title: document.getElementById("pmTitle").value,
+        assetId: parseInt(document.getElementById("pmAsset").value),
+        task: document.getElementById("pmTask").value,
+        description: document.getElementById("pmDescription").value,
+        frequency: document.getElementById("pmFrequency").value,
+        assignedTo: parseInt(document.getElementById("pmAssignedTo").value),
+        checklist: [], // Add logic for checklist if needed
+        requiredParts: [] // Add logic for parts if needed
+    };
+    try {
+        await api.createPmSchedule(scheduleData);
+        await logActivity("PM Schedule Created", `Created schedule: ${scheduleData.title}`);
+        state.cache.pmSchedules = await api.getPmSchedules();
+        document.getElementById("pmScheduleModal").style.display = "none";
+        renderMainContent();
+        showTemporaryMessage('PM Schedule saved successfully!');
+    } catch (error) {
+        showTemporaryMessage(`Failed to save schedule. ${error.message}`, true);
+    }
+}
 
 async function loadInitialData() {
     try {
@@ -812,9 +835,7 @@ function attachPageSpecificEventListeners(page) {
         document.querySelector('#addCabinetForm')?.addEventListener('submit', handleLocationFormSubmit);
         document.querySelector('#addShelfForm')?.addEventListener('submit', handleLocationFormSubmit);
         document.querySelector('#addBoxForm')?.addEventListener('submit', handleLocationFormSubmit);
-    }
-    
-    if (page === 'inventoryReport') {
+    } else if (page === 'inventoryReport') {
         const dateRangeSelect = document.getElementById('dateRangeSelect');
         const startDateInput = document.getElementById('startDate');
         const endDateInput = document.getElementById('endDate');
@@ -934,6 +955,8 @@ function attachPageSpecificEventListeners(page) {
                 container.innerHTML = `<p class="text-red-500">Error generating report: ${error.message}</p>`;
             }
         });
+    } else if (page === 'pmSchedules') {
+    document.getElementById('addPmScheduleBtn')?.addEventListener('click', showPmScheduleModal);
     }
 }
 
@@ -1084,6 +1107,7 @@ function attachGlobalEventListeners() {
     document.getElementById("storageRequestForm").addEventListener("submit", handleStorageRequestFormSubmit);
     document.getElementById("receivePartsForm").addEventListener("submit", handleReceivePartsFormSubmit);
     document.getElementById("restockPartsForm").addEventListener("submit", handleRestockPartsFormSubmit);
+    document.getElementById("pmScheduleForm").addEventListener("submit", handlePmScheduleFormSubmit);
 }
 
 // js/app.js

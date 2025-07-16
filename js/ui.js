@@ -526,7 +526,8 @@ export function renderSidebar() {
         { page: "assets", icon: "fa-box", text: "Assets", roles: ["Admin", "Manager", "Supervisor", "Engineer", "Technician"] },
         { page: "parts", icon: "fa-cogs", text: "Spare Parts", roles: ["Admin", "Manager", "Supervisor", "Engineer", "Technician"] },
         { page: "partRequests", icon: "fa-inbox", text: "Part Requests", roles: ["Admin", "Manager", "Supervisor", "Engineer", "Technician", "Clerk"] },
-        { page: "workOrders", icon: "fa-clipboard-list", text: "Work Orders", roles: ["Admin", "Manager", "Supervisor", "Engineer", "Technician"] },
+        { page: "workOrders", icon: "fa-clipboard-list", text: "Work Orders", roles: ["Admin", "Manager", "Supervisor", "Engineer", "Technician"] }, 
+        { page: "pmSchedules", icon: "fa-calendar-check", text: "PM Schedules", roles: ["Admin", "Manager", "Supervisor"] },
         { page: "workOrderCalendar", icon: "fa-calendar-alt", text: "Calendar", roles: ["Admin", "Manager", "Supervisor", "Engineer", "Technician"] },
         { page: "locations", icon: "fa-map-marker-alt", text: "Locations", roles: ["Admin", "Manager", "Supervisor"] },
         { page: "inventoryReport", icon: "fa-chart-line", text: "Inventory Report", roles: ["Admin", "Manager"] },
@@ -1158,7 +1159,52 @@ export function showEditPartRequestModal(req) {
     modal.style.display = 'flex';
 }
 
-// js/ui.js
+export function renderPmSchedulesPage() {
+    const schedules = state.cache.pmSchedules || [];
+    const header = renderPageHeader("Preventive Maintenance Schedules", [
+        // This button will eventually trigger the generation script
+        '<button id="generatePmWoBtn" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded"><i class="fas fa-cogs mr-2"></i>Generate PM Work Orders</button>',
+        '<button id="addPmScheduleBtn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded"><i class="fas fa-plus mr-2"></i>Add PM Schedule</button>'
+    ]);
+
+    return `
+      ${header}
+      <div class="bg-white p-4 rounded-lg shadow">
+        <table class="w-full">
+          <thead><tr class="border-b">
+            <th class="p-2 text-left">Schedule Title</th>
+            <th class="p-2 text-left">Asset</th>
+            <th class="p-2 text-left">Frequency</th>
+            <th class="p-2 text-left">Last Generated</th>
+          </tr></thead>
+          <tbody>
+            ${schedules.map(s => {
+                const assetName = state.cache.assets.find(a => a.id === s.assetId)?.name || 'N/A';
+                return `<tr class="border-b hover:bg-gray-50">
+                    <td class="p-2">${s.title}</td>
+                    <td class="p-2">${assetName}</td>
+                    <td class="p-2">${s.frequency}</td>
+                    <td class="p-2">${s.last_generated_date || 'Never'}</td>
+                </tr>`
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+    `;
+}
+
+export function showPmScheduleModal() {
+    const form = document.getElementById("pmScheduleForm");
+    form.reset();
+
+    // Populate dropdowns
+    const assets = state.cache.assets.filter(can.view);
+    document.getElementById("pmAsset").innerHTML = '<option value="">Select Asset</option>' + assets.map((a) => `<option value="${a.id}">${a.name}</option>`).join("");
+    const users = state.cache.users.filter((u) => ["Engineer", "Technician", "Supervisor"].includes(u.role) && can.view(u));
+    document.getElementById("pmAssignedTo").innerHTML = '<option value="">Assign To</option>' + users.map((u) => `<option value="${u.id}">${u.fullName}</option>`).join("");
+
+    document.getElementById('pmScheduleModal').style.display = 'flex';
+}
 
 // THIS IS A NEW HELPER FUNCTION
 function renderPageHeader(title, buttons = []) {
