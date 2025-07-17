@@ -1,4 +1,7 @@
 <?php
+
+die("This file is updated."); // Add this line
+
 require_once 'auth_check.php';
 authorize(['Admin', 'Manager', 'Supervisor', 'Engineer', 'Technician']);
 
