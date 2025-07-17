@@ -3,7 +3,7 @@
 import { state } from './config.js';
 import { can } from './auth.js';
 import { api } from './api.js'; // <-- ADD THIS LINE
-import { getFullLocationName, getUserDepartment, showTemporaryMessage, calculateNextPmDueDate } from './utils.js';
+import { getFullLocationName, getUserDepartment, showTemporaryMessage, calculateNextPmDate } from './utils.js';
 
 // Each function that creates a page view is now exported.
 
@@ -1165,7 +1165,7 @@ export function renderPmSchedulesPage() {
         '<button id="generatePmWoBtn" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded"><i class="fas fa-cogs mr-2"></i>Generate PM Work Orders</button>',
         '<button id="addPmScheduleBtn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded"><i class="fas fa-plus mr-2"></i>Add PM Schedule</button>'
     ]);
-
+    
     return `
       ${header}
       <div class="bg-white p-4 rounded-lg shadow">
@@ -1175,19 +1175,27 @@ export function renderPmSchedulesPage() {
             <th class="p-2 text-left">Asset</th>
             <th class="p-2 text-left">Frequency</th>
             <th class="p-2 text-left">Start Date</th>
-            <th class="p-2 text-left">Next Due Date</th>
+            <th class="p-2 text-left">Next PM Date</th>
+            <th class="p-2 text-left">WO Due Date</th>
             <th class="p-2 text-left">Status</th>
             <th class="p-2 text-left">Actions</th>
           </tr></thead>
           <tbody>
             ${schedules.map(s => {
                 const assetName = state.cache.assets.find(a => a.id === s.assetId)?.name || 'N/A';
+                
+                // Determine the due date buffer text based on frequency
+                let dueDateText = "(+7 Days)";
+                if (s.frequency === 'Quarterly') dueDateText = "(+14 Days)";
+                if (s.frequency === 'Yearly') dueDateText = "(+30 Days)";
+
                 return `<tr class="border-b hover:bg-gray-50">
                     <td class="p-2">${s.title}</td>
                     <td class="p-2">${assetName}</td>
                     <td class="p-2">${s.frequency}</td>
                     <td class="p-2">${s.schedule_start_date}</td>
-                    <td class="p-2 font-semibold">${calculateNextPmDueDate(s)}</td>
+                    <td class="p-2 font-semibold">${calculateNextPmDate(s)}</td>
+                    <td class="p-2 text-sm text-gray-600">${dueDateText}</td>
                     <td class="p-2">${s.is_active ? '<span class="text-green-600">Active</span>' : '<span class="text-gray-500">Inactive</span>'}</td>
                     <td class="p-2 space-x-2">
                         <button class="view-pm-btn text-blue-500 hover:text-blue-700" data-id="${s.id}" title="View Details"><i class="fas fa-eye"></i></button>

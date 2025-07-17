@@ -205,7 +205,7 @@ export function printReport(title, content) {
  */
 // js/utils.js
 
-export function calculateNextPmDueDate(schedule) {
+export function calculateNextPmDate(schedule) {
   if (!schedule) return 'N/A';
 
   // The base date for calculation is the LAST time a WO was generated,
