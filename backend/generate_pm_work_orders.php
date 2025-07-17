@@ -75,14 +75,25 @@ foreach ($schedules as $schedule) {
             $requiredPartsJson = json_encode($schedule['requiredParts']);
 
             $stmt_insert = $conn->prepare(
-                "INSERT INTO workorders (title, description, assetId, assignedTo, task, dueDate, priority, frequency, status, checklist, requiredParts, wo_type) 
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+                "INSERT INTO workorders (title, description, assetId, assignedTo, task, dueDate, priority, frequency, status, checklist, requiredParts, wo_type, pm_schedule_id) 
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
             );
-            $stmt_insert->bind_param("ssiissssssss", 
-                $schedule['title'], $schedule['description'], $schedule['assetId'], 
-                $schedule['assignedTo'], $schedule['task'], $new_due_date,
-                $wo_priority, $schedule['frequency'], $wo_status,
-                $checklistJson, $requiredPartsJson, $wo_type
+
+            // The bind_param now has an extra 'i' for the integer ID
+            $stmt_insert->bind_param("ssiissssssssi", 
+                $schedule['title'], 
+                $schedule['description'], 
+                $schedule['assetId'], 
+                $schedule['assignedTo'], 
+                $schedule['task'], 
+                $new_due_date,
+                $wo_priority, 
+                $schedule['frequency'], 
+                $wo_status,
+                $checklistJson, 
+                $requiredPartsJson,
+                $wo_type,
+                $schedule['id'] // Bind the schedule's ID
             );
             $stmt_insert->execute();
             $stmt_insert->close();
