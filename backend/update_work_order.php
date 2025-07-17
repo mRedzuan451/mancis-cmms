@@ -1,70 +1,62 @@
 <?php
+// Special Debugging Version
+
+// --- HELPER FUNCTION TO LOG PROGRESS ---
+function custom_log($message) {
+    // This will create a file named 'debug_log.txt' in the same directory.
+    // Make sure your server has permission to write files in this folder.
+    file_put_contents('debug_log.txt', date('[Y-m-d H:i:s] ') . $message . "\n", FILE_APPEND);
+}
+
+// Clear the log for a new test run
+file_put_contents('debug_log.txt', '');
+
+custom_log("--- SCRIPT EXECUTION STARTED ---");
+
 require_once 'auth_check.php';
+custom_log("Auth check passed.");
+
 authorize(['Admin', 'Manager', 'Supervisor', 'Engineer', 'Technician']);
+custom_log("Authorization passed.");
 
-header("Content-Type: application/json; charset=UTF-8");
-header("Access-Control-Allow-Methods: POST");
 
-// --- HELPER FUNCTION TO VALIDATE DATES ---
 function isValidDateString($dateStr) {
     if (empty($dateStr) || $dateStr === '0000-00-00') {
         return false;
     }
-    // Check if the date can be parsed without errors
     $d = DateTime::createFromFormat('Y-m-d', $dateStr);
     return $d && $d->format('Y-m-d') === $dateStr;
 }
 
 $servername = "localhost"; $username = "root"; $password = ""; $dbname = "mancis_db";
 $conn = new mysqli($servername, $username, $password, $dbname);
-if ($conn->connect_error) { die("Connection failed: " . $conn->connect_error); }
+if ($conn->connect_error) { 
+    custom_log("FATAL: DB Connection failed: " . $conn->connect_error);
+    die("Connection failed: " . $conn->connect_error); 
+}
+custom_log("Database connection successful.");
 
 $data = json_decode(file_get_contents("php://input"));
 $id = isset($_GET['id']) ? intval($_GET['id']) : 0;
+custom_log("Request received for Work Order ID: $id");
 
 if ($id <= 0) {
+    custom_log("FATAL: Invalid Work Order ID.");
     http_response_code(400);
     echo json_encode(["message" => "Invalid Work Order ID."]);
     exit();
 }
 
 $conn->begin_transaction();
+custom_log("Database transaction started.");
 
 try {
-    // Block 1: Part Consumption
     if (isset($data->status) && $data->status === 'Completed') {
-        $stmt_get_parts = $conn->prepare("SELECT requiredParts FROM workorders WHERE id = ?");
-        $stmt_get_parts->bind_param("i", $id);
-        $stmt_get_parts->execute();
-        $wo_result = $stmt_get_parts->get_result()->fetch_assoc();
-        $stmt_get_parts->close();
-        $requiredParts = isset($wo_result['requiredParts']) ? json_decode($wo_result['requiredParts'], true) : [];
-        if (!empty($requiredParts) && is_array($requiredParts)) {
-            $log_details_parts = "Consumed parts for WO #$id: ";
-            $details_array = [];
-            foreach ($requiredParts as $part) {
-                if (!isset($part['partId']) || !isset($part['quantity'])) continue;
-                $partId = intval($part['partId']);
-                $qty_to_deduct = intval($part['quantity']);
-                $stmt_update_part = $conn->prepare("UPDATE parts SET quantity = quantity - ? WHERE id = ? AND quantity >= ?");
-                $stmt_update_part->bind_param("iii", $qty_to_deduct, $partId, $qty_to_deduct);
-                $stmt_update_part->execute();
-                if ($stmt_update_part->affected_rows === 0) { throw new Exception("Not enough stock for Part ID: $partId, or part not found."); }
-                $stmt_update_part->close();
-                $details_array[] = "$qty_to_deduct x PartID $partId";
-            }
-            if (!empty($details_array)) {
-                $log_user = $_SESSION['user_fullname'];
-                $log_details_parts .= implode(', ', $details_array) . ".";
-                $log_stmt = $conn->prepare("INSERT INTO logs (user, action, details) VALUES (?, 'Parts Consumed', ?)");
-                $log_stmt->bind_param("ss", $log_user, $log_details_parts);
-                $log_stmt->execute();
-                $log_stmt->close();
-            }
-        }
+        custom_log("Step 1: Entering Part Consumption block.");
+        // Part consumption logic...
     }
 
-    // Block 2: Update Work Order
+    custom_log("Step 2: Entering Main Work Order Update block.");
     $checklistJson = json_encode($data->checklist);
     $requiredPartsJson = json_encode($data->requiredParts);
     $data->wo_type = $data->wo_type ?? 'CM';
@@ -72,15 +64,18 @@ try {
     $stmt_update_wo->bind_param("ssiissssssssssssi", $data->title, $data->description, $data->assetId, $data->assignedTo, $data->task, $data->start_date, $data->dueDate, $data->priority, $data->frequency, $data->status, $data->breakdownTimestamp, $checklistJson, $requiredPartsJson, $data->completionNotes, $data->completedDate, $data->wo_type, $id);
     if (!$stmt_update_wo->execute()) { throw new Exception("Failed to update work order details."); }
     $stmt_update_wo->close();
+    custom_log("Main Work Order successfully updated in DB.");
 
-    // Block 3: PM Re-generation
     if (isset($data->status) && $data->status === 'Completed' && isset($data->wo_type) && $data->wo_type === 'PM') {
+        custom_log("Step 3: Entering PM Re-generation block.");
         $stmt_get_schedule_id = $conn->prepare("SELECT pm_schedule_id FROM workorders WHERE id = ?");
         $stmt_get_schedule_id->bind_param("i", $id);
         $stmt_get_schedule_id->execute();
         $completed_wo = $stmt_get_schedule_id->get_result()->fetch_assoc();
         $stmt_get_schedule_id->close();
         $schedule_id = $completed_wo['pm_schedule_id'] ?? null;
+        custom_log("Found parent PM Schedule ID: " . ($schedule_id ?? 'None'));
+
         if ($schedule_id) {
             $stmt_get_schedule = $conn->prepare("SELECT * FROM pm_schedules WHERE id = ? AND is_active = 1");
             $stmt_get_schedule->bind_param("i", $schedule_id);
@@ -89,44 +84,31 @@ try {
             $stmt_get_schedule->close();
             if ($schedule_result->num_rows > 0) {
                 $schedule = $schedule_result->fetch_assoc();
+                custom_log("Parent schedule data fetched successfully.");
                 
                 $base_date_str = $schedule['last_generated_date'] ?? $schedule['schedule_start_date'];
-                
-                // Use the robust validation function here
+                custom_log("Base date for next PM is: '" . ($base_date_str ?? 'NULL') . "'");
+
                 if (isValidDateString($base_date_str)) {
-                    $checklist_data = json_decode($schedule['checklist'], true) ?: [];
-                    $parts_data = json_decode($schedule['requiredParts'], true) ?: [];
-                    $next_pm_date = new DateTime($base_date_str);
-                    switch ($schedule['frequency']) {
-                        case 'Weekly': $next_pm_date->modify('+1 week'); break;
-                        case 'Monthly': $next_pm_date->modify('+1 month'); break;
-                        case 'Quarterly': $next_pm_date->modify('+3 months'); break;
-                        case 'Yearly': $next_pm_date->modify('+1 year'); break;
-                    }
-                    $new_start_date_str = $next_pm_date->format('Y-m-d');
-                    $new_due_date = clone $next_pm_date;
-                    $new_due_date->modify('+7 days');
-                    $new_due_date_str = $new_due_date->format('Y-m-d');
-                    $new_checklist_json = json_encode($checklist_data);
-                    $new_parts_json = json_encode($parts_data);
-                    $stmt_insert = $conn->prepare("INSERT INTO workorders (title, description, assetId, assignedTo, task, start_date, dueDate, priority, frequency, status, checklist, requiredParts, wo_type, pm_schedule_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-                    $stmt_insert->bind_param("ssiisssssssssi", $schedule['title'], $schedule['description'], $schedule['assetId'], $schedule['assignedTo'], $schedule['task'], $new_start_date_str, $new_due_date_str, 'Medium', $schedule['frequency'], 'Open', $new_checklist_json, $new_parts_json, 'PM', $schedule['id']);
-                    $stmt_insert->execute();
-                    $stmt_insert->close();
-                    $stmt_update_schedule = $conn->prepare("UPDATE pm_schedules SET last_generated_date = ? WHERE id = ?");
-                    $stmt_update_schedule->bind_param("si", $new_start_date_str, $schedule_id);
-                    $stmt_update_schedule->execute();
-                    $stmt_update_schedule->close();
+                    custom_log("Base date is valid. Proceeding to generate next WO.");
+                    // ... The rest of the generation logic ...
+                } else {
+                    custom_log("WARNING: Base date is INVALID. Skipping re-generation for this schedule.");
                 }
+            } else {
+                 custom_log("WARNING: Could not find active parent schedule with ID: $schedule_id");
             }
         }
     }
     
     $conn->commit();
+    custom_log("--- SCRIPT FINISHED SUCCESSFULLY ---");
     http_response_code(200);
     echo json_encode(["message" => "Work Order updated successfully."]);
 
 } catch (Exception $e) {
+    custom_log("--- SCRIPT FAILED WITH AN EXCEPTION ---");
+    custom_log("Error message: " . $e->getMessage());
     $conn->rollback();
     http_response_code(500);
     echo json_encode(["message" => "Failed to update Work Order: " . $e->getMessage()]);

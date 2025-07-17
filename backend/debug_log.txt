@@ -1,0 +1,15 @@
+[2025-07-17 05:36:30] --- SCRIPT EXECUTION STARTED ---
+[2025-07-17 05:36:30] Auth check passed.
+[2025-07-17 05:36:30] Authorization passed.
+[2025-07-17 05:36:30] Database connection successful.
+[2025-07-17 05:36:30] Request received for Work Order ID: 26
+[2025-07-17 05:36:30] Database transaction started.
+[2025-07-17 05:36:30] Step 1: Entering Part Consumption block.
+[2025-07-17 05:36:30] Step 2: Entering Main Work Order Update block.
+[2025-07-17 05:36:30] Main Work Order successfully updated in DB.
+[2025-07-17 05:36:30] Step 3: Entering PM Re-generation block.
+[2025-07-17 05:36:30] Found parent PM Schedule ID: 25
+[2025-07-17 05:36:30] Parent schedule data fetched successfully.
+[2025-07-17 05:36:30] Base date for next PM is: '2025-07-14'
+[2025-07-17 05:36:30] Base date is valid. Proceeding to generate next WO.
+[2025-07-17 05:36:30] --- SCRIPT FINISHED SUCCESSFULLY ---
