@@ -63,7 +63,7 @@ try {
         }
     }
 
-    // Update the work order itself, now including start_date.
+    // Update the work order itself
     $checklistJson = json_encode($data->checklist);
     $requiredPartsJson = json_encode($data->requiredParts);
     $data->wo_type = $data->wo_type ?? 'CM';
@@ -100,11 +100,15 @@ try {
             $stmt_get_schedule = $conn->prepare("SELECT * FROM pm_schedules WHERE id = ? AND is_active = 1");
             $stmt_get_schedule->bind_param("i", $schedule_id);
             $stmt_get_schedule->execute();
-            $schedule = $stmt_get_schedule->get_result()->fetch_assoc();
+            $schedule_result = $stmt_get_schedule->get_result();
             $stmt_get_schedule->close();
             
-            if ($schedule) {
-                // Calculate next PM date based on frequency
+            if ($schedule_result->num_rows > 0) {
+                $schedule = $schedule_result->fetch_assoc();
+                
+                $checklist_data = json_decode($schedule['checklist'], true) ?: [];
+                $parts_data = json_decode($schedule['requiredParts'], true) ?: [];
+
                 $next_pm_date = new DateTime($schedule['last_generated_date'] ?? $schedule['schedule_start_date']);
                 switch ($schedule['frequency']) {
                     case 'Weekly': $next_pm_date->modify('+1 week'); break;
@@ -113,19 +117,16 @@ try {
                     case 'Yearly': $next_pm_date->modify('+1 year'); break;
                 }
                 
-                // Set the start_date for the new WO to be the calculated next PM date
                 $new_start_date_str = $next_pm_date->format('Y-m-d');
-                // Set the due date a week after the start date
                 $new_due_date = clone $next_pm_date;
                 $new_due_date->modify('+7 days');
                 $new_due_date_str = $new_due_date->format('Y-m-d');
-
+                
                 $new_checklist_json = json_encode($checklist_data);
                 $new_parts_json = json_encode($parts_data);
 
                 $stmt_insert = $conn->prepare("INSERT INTO workorders (title, description, assetId, assignedTo, task, start_date, dueDate, priority, frequency, status, checklist, requiredParts, wo_type, pm_schedule_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
                 
-                // Use the newly encoded JSON strings in the bind statement
                 $stmt_insert->bind_param("ssiisssssssssi", 
                     $schedule['title'], 
                     $schedule['description'], 
@@ -141,10 +142,10 @@ try {
                     $new_parts_json, 
                     'PM', 
                     $schedule['id']
-                );$stmt_insert->execute();
+                );
+                $stmt_insert->execute();
                 $stmt_insert->close();
                 
-                // Update the schedule's last_generated_date to the date this new WO starts
                 $stmt_update_schedule = $conn->prepare("UPDATE pm_schedules SET last_generated_date = ? WHERE id = ?");
                 $stmt_update_schedule->bind_param("si", $new_start_date_str, $schedule_id);
                 $stmt_update_schedule->execute();
