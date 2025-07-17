@@ -445,6 +445,8 @@ async function handleCompleteWorkOrderFormSubmit(e) {
         completedDate: new Date().toISOString().split('T')[0]
     };
 
+    console.log("Data being sent to backend:", updatedData);
+
     try {
         // This now calls the API and proceeds with the normal success actions.
         await api.updateWorkOrder(woId, updatedData);
