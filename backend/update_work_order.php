@@ -120,9 +120,28 @@ try {
                 $new_due_date->modify('+7 days');
                 $new_due_date_str = $new_due_date->format('Y-m-d');
 
+                $new_checklist_json = json_encode($checklist_data);
+                $new_parts_json = json_encode($parts_data);
+
                 $stmt_insert = $conn->prepare("INSERT INTO workorders (title, description, assetId, assignedTo, task, start_date, dueDate, priority, frequency, status, checklist, requiredParts, wo_type, pm_schedule_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-                $stmt_insert->bind_param("ssiisssssssssi", $schedule['title'], $schedule['description'], $schedule['assetId'], $schedule['assignedTo'], $schedule['task'], $new_start_date_str, $new_due_date_str, 'Medium', $schedule['frequency'], 'Open', $schedule['checklist'], $schedule['requiredParts'], 'PM', $schedule['id']);
-                $stmt_insert->execute();
+                
+                // Use the newly encoded JSON strings in the bind statement
+                $stmt_insert->bind_param("ssiisssssssssi", 
+                    $schedule['title'], 
+                    $schedule['description'], 
+                    $schedule['assetId'], 
+                    $schedule['assignedTo'], 
+                    $schedule['task'], 
+                    $new_start_date_str, 
+                    $new_due_date_str, 
+                    'Medium', 
+                    $schedule['frequency'], 
+                    'Open', 
+                    $new_checklist_json, 
+                    $new_parts_json, 
+                    'PM', 
+                    $schedule['id']
+                );$stmt_insert->execute();
                 $stmt_insert->close();
                 
                 // Update the schedule's last_generated_date to the date this new WO starts
