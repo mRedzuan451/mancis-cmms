@@ -18,6 +18,8 @@ if (empty($data->partId) || empty($data->quantity)) {
     exit();
 }
 
+$requestDate = date("Y-m-d");
+
 $partId = intval($data->partId);
 $quantity = intval($data->quantity);
 $requesterId = $_SESSION['user_id']; // Log the request under the user who logged in.
