@@ -1,2 +1,8 @@
 [2025-07-17 06:30:26] --- SCRIPT EXECUTION STARTED ---
 [2025-07-17 06:30:26] Auth check passed.
+[2025-07-17 16:14:17] TRACE 1: addEventToCalendar() received dateString = '2025-07-17'
+[2025-07-17 16:14:17] TRACE 3: Creating DateTime object for date '2025-07-17' in timezone 'Asia/Kuala_Lumpur'.
+[2025-07-17 16:14:17] TRACE 4: Local time successfully created. Full value is: 2025-07-17T09:00:00+0800
+[2025-07-17 16:14:17] TRACE 5: Converting the above time to UTC timezone.
+[2025-07-17 16:14:17] TRACE 6: UTC time is now: 2025-07-17T01:00:00+0000
+[2025-07-17 16:14:17] TRACE 7: Final formatted string for calendar tool is: '20250717T0100'
