@@ -5,7 +5,7 @@ authorize(['Admin', 'Manager', 'Supervisor', 'Engineer', 'Technician']);
 header("Content-Type: application/json; charset=UTF-8");
 header("Access-Control-Allow-Methods: POST");
 
-// --- NEW HELPER FUNCTION TO VALIDATE DATES ---
+// --- HELPER FUNCTION TO VALIDATE DATES ---
 function isValidDateString($dateStr) {
     if (empty($dateStr) || $dateStr === '0000-00-00') {
         return false;
@@ -31,7 +31,7 @@ if ($id <= 0) {
 $conn->begin_transaction();
 
 try {
-    // Block 1: Part Consumption (No changes)
+    // Block 1: Part Consumption
     if (isset($data->status) && $data->status === 'Completed') {
         $stmt_get_parts = $conn->prepare("SELECT requiredParts FROM workorders WHERE id = ?");
         $stmt_get_parts->bind_param("i", $id);
@@ -64,7 +64,7 @@ try {
         }
     }
 
-    // Block 2: Update Work Order (No changes)
+    // Block 2: Update Work Order
     $checklistJson = json_encode($data->checklist);
     $requiredPartsJson = json_encode($data->requiredParts);
     $data->wo_type = $data->wo_type ?? 'CM';
@@ -73,7 +73,7 @@ try {
     if (!$stmt_update_wo->execute()) { throw new Exception("Failed to update work order details."); }
     $stmt_update_wo->close();
 
-    // Block 3: PM Re-generation Logic (THIS BLOCK IS UPDATED)
+    // Block 3: PM Re-generation
     if (isset($data->status) && $data->status === 'Completed' && isset($data->wo_type) && $data->wo_type === 'PM') {
         $stmt_get_schedule_id = $conn->prepare("SELECT pm_schedule_id FROM workorders WHERE id = ?");
         $stmt_get_schedule_id->bind_param("i", $id);
@@ -90,8 +90,9 @@ try {
             if ($schedule_result->num_rows > 0) {
                 $schedule = $schedule_result->fetch_assoc();
                 
-                // Use the new helper function for a much safer check
                 $base_date_str = $schedule['last_generated_date'] ?? $schedule['schedule_start_date'];
+                
+                // Use the robust validation function here
                 if (isValidDateString($base_date_str)) {
                     $checklist_data = json_decode($schedule['checklist'], true) ?: [];
                     $parts_data = json_decode($schedule['requiredParts'], true) ?: [];
