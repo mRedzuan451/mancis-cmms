@@ -1,39 +1,33 @@
 <?php
 /**
- * A helper function to add an event to a calendar.
- *
- * @param string $title The title of the calendar event.
- * @param string $dateString The date of the event in 'YYYY-MM-DD' format from your application.
+ * A helper function to add an event to a calendar (DEBUGGING VERSION).
  */
 function addEventToCalendar($title, $dateString) {
-    // First, validate the incoming date to prevent errors.
+    // This logs the raw date string this function receives from the calling script.
+    custom_log("TRACE 1: addEventToCalendar() received dateString = '$dateString'");
+
     if (empty($title) || empty($dateString) || $dateString === '0000-00-00') {
+        custom_log("TRACE 2: Date is invalid or empty. Aborting calendar event creation.");
         return;
     }
 
     try {
-        // --- THIS IS THE CORRECTED LOGIC ---
-
-        // Step 1: Create a full DateTime object from your date string.
-        // We explicitly state that this date/time is in your local 'Asia/Kuala_Lumpur' timezone.
-        // We will use 9:00 AM as the default time for the event.
+        // This logs the date and timezone it's about to create.
+        custom_log("TRACE 3: Creating DateTime object for date '$dateString' in timezone 'Asia/Kuala_Lumpur'.");
         $local_datetime = new DateTime($dateString . ' 09:00:00', new DateTimeZone('Asia/Kuala_Lumpur'));
+        custom_log("TRACE 4: Local time successfully created. Full value is: " . $local_datetime->format(DateTime::ISO8601));
 
-        // Step 2: Convert the local DateTime object to the universal UTC timezone.
-        // This is the crucial step that removes all ambiguity for the calendar tool.
+        // This logs the UTC conversion step.
+        custom_log("TRACE 5: Converting the above time to UTC timezone.");
         $local_datetime->setTimezone(new DateTimeZone('UTC'));
+        custom_log("TRACE 6: UTC time is now: " . $local_datetime->format(DateTime::ISO8601));
 
-        // Step 3: Format the new UTC time into the 'yyyymmddTHHMM' string
-        // that the calendar tool requires.
+        // This logs the final string that would be sent to the calendar tool.
         $utc_datetime_string = $local_datetime->format('Ymd\THi');
-
-        // This placeholder now uses the correctly converted UTC time.
-        // When you use a real calendar API, you will use the $utc_datetime_string variable.
-        error_log("Calendar Event Sync: Title='$title', Final UTC DateTime String Sent to Tool='$utc_datetime_string'");
+        custom_log("TRACE 7: Final formatted string for calendar tool is: '$utc_datetime_string'");
 
     } catch (Exception $e) {
-        // Log any errors during date processing without crashing the script.
-        error_log("Error during date conversion for calendar: " . $e->getMessage());
+        custom_log("FATAL ERROR in calendar_integration.php: " . $e->getMessage());
     }
 }
 ?>

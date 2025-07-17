@@ -2,6 +2,12 @@
 require_once 'auth_check.php';
 require_once 'calendar_integration.php'; // Include the calendar helper
 
+function custom_log($message) {
+    file_put_contents('debug_log.txt', date('[Y-m-d H:i:s] ') . $message . "\n", FILE_APPEND);
+}
+
+file_put_contents('debug_log.txt', "--- NEW DEBUG LOG ---\n");
+
 authorize(['Admin', 'Manager', 'Supervisor', 'Engineer', 'Technician']);
 
 header("Content-Type: application/json; charset=UTF-8");
@@ -92,6 +98,11 @@ try {
             $stmt_get_schedule->close();
             if ($schedule_result->num_rows > 0) {
                 $schedule = $schedule_result->fetch_assoc();
+
+                // --- We will log the source dates here ---
+                custom_log("DATABASE VALUE: schedule_start_date is '" . ($schedule['schedule_start_date'] ?? 'NULL') . "'");
+                custom_log("DATABASE VALUE: last_generated_date is '" . ($schedule['last_generated_date'] ?? 'NULL') . "'");
+
                 $base_date_str = $schedule['last_generated_date'] ?? $schedule['schedule_start_date'];
                 if (isValidDateString($base_date_str)) {
                     $checklist_data = json_decode($schedule['checklist'], true) ?: [];
