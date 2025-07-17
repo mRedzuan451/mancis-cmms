@@ -1,10 +1,13 @@
 <?php
 require_once 'auth_check.php';
+require_once 'calendar_integration.php'; // Include the calendar helper
+
 authorize(['Admin', 'Manager', 'Supervisor', 'Engineer', 'Technician']);
 
 header("Content-Type: application/json; charset=UTF-8");
 header("Access-Control-Allow-Methods: POST");
 
+// Helper function to validate date strings
 function isValidDateString($dateStr) {
     if (empty($dateStr) || $dateStr === '0000-00-00') {
         return false;
@@ -29,7 +32,7 @@ if ($id <= 0) {
 $conn->begin_transaction();
 
 try {
-    // Block 1: Part Consumption (No changes)
+    // Block 1: Part Consumption
     if (isset($data->status) && $data->status === 'Completed') {
         $stmt_get_parts = $conn->prepare("SELECT requiredParts FROM workorders WHERE id = ?");
         $stmt_get_parts->bind_param("i", $id);
@@ -62,7 +65,7 @@ try {
         }
     }
 
-    // Block 2: Main Work Order Update (No changes)
+    // Block 2: Main Work Order Update
     $checklistJson = json_encode($data->checklist);
     $requiredPartsJson = json_encode($data->requiredParts);
     $data->wo_type = $data->wo_type ?? 'CM';
@@ -71,7 +74,7 @@ try {
     if (!$stmt_update_wo->execute()) { throw new Exception("Failed to update work order details."); }
     $stmt_update_wo->close();
 
-    // Block 3: PM Re-generation (THIS BLOCK IS FIXED)
+    // Block 3: PM Re-generation
     if (isset($data->status) && $data->status === 'Completed' && isset($data->wo_type) && $data->wo_type === 'PM') {
         $stmt_get_schedule_id = $conn->prepare("SELECT pm_schedule_id FROM workorders WHERE id = ?");
         $stmt_get_schedule_id->bind_param("i", $id);
@@ -99,20 +102,21 @@ try {
                         case 'Yearly': $next_pm_date->modify('+1 year'); break;
                     }
                     $new_start_date_str = $next_pm_date->format('Y-m-d');
+                    
+                    // Add the next PM's start date to the calendar
+                    addEventToCalendar("Next PM for: " . $schedule['title'], $new_start_date_str);
+                    
                     $new_due_date = clone $next_pm_date;
                     $new_due_date->modify('+7 days');
                     $new_due_date_str = $new_due_date->format('Y-m-d');
                     $new_checklist_json = json_encode($checklist_data);
                     $new_parts_json = json_encode($parts_data);
 
-                    // --- THIS IS THE FIX ---
-                    // Assign the literal values to variables first.
                     $new_wo_priority = 'Medium';
                     $new_wo_status = 'Open';
                     $new_wo_type = 'PM';
 
                     $stmt_insert = $conn->prepare("INSERT INTO workorders (title, description, assetId, assignedTo, task, start_date, dueDate, priority, frequency, status, checklist, requiredParts, wo_type, pm_schedule_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-                    // Now, use the variables in bind_param().
                     $stmt_insert->bind_param("ssiisssssssssi", 
                         $schedule['title'], $schedule['description'], $schedule['assetId'], $schedule['assignedTo'], $schedule['task'], 
                         $new_start_date_str, $new_due_date_str, $new_wo_priority, $schedule['frequency'], 
