@@ -1,7 +1,4 @@
 <?php
-
-die("This file is updated."); // Add this line
-
 require_once 'auth_check.php';
 authorize(['Admin', 'Manager', 'Supervisor', 'Engineer', 'Technician']);
 
@@ -21,10 +18,11 @@ if ($id <= 0) {
     exit();
 }
 
+// Use a transaction to ensure all database changes succeed or none do.
 $conn->begin_transaction();
 
 try {
-    // Handle part consumption if the status is being set to 'Completed'.
+    // Block 1: Handle part consumption if the status is changing to 'Completed'.
     if (isset($data->status) && $data->status === 'Completed') {
         $stmt_get_parts = $conn->prepare("SELECT requiredParts FROM workorders WHERE id = ?");
         $stmt_get_parts->bind_param("i", $id);
@@ -34,7 +32,7 @@ try {
         
         $requiredParts = isset($wo_result['requiredParts']) ? json_decode($wo_result['requiredParts'], true) : [];
 
-        if (!empty($requiredParts)) {
+        if (!empty($requiredParts) && is_array($requiredParts)) {
             $log_details_parts = "Consumed parts for WO #$id: ";
             $details_array = [];
             
@@ -66,7 +64,7 @@ try {
         }
     }
 
-    // Update the work order itself
+    // Block 2: Update the work order itself with the data from the frontend.
     $checklistJson = json_encode($data->checklist);
     $requiredPartsJson = json_encode($data->requiredParts);
     $data->wo_type = $data->wo_type ?? 'CM';
@@ -85,11 +83,11 @@ try {
     );
     
     if (!$stmt_update_wo->execute()) {
-        throw new Exception("Failed to update work order main details.");
+        throw new Exception("Failed to update work order details.");
     }
     $stmt_update_wo->close();
 
-    // After the WO is updated, check if it was a PM to generate the next one.
+    // Block 3: If the completed WO was a PM, automatically generate the next one.
     if (isset($data->status) && $data->status === 'Completed' && isset($data->wo_type) && $data->wo_type === 'PM') {
         $stmt_get_schedule_id = $conn->prepare("SELECT pm_schedule_id FROM workorders WHERE id = ?");
         $stmt_get_schedule_id->bind_param("i", $id);
@@ -129,22 +127,10 @@ try {
                 $new_parts_json = json_encode($parts_data);
 
                 $stmt_insert = $conn->prepare("INSERT INTO workorders (title, description, assetId, assignedTo, task, start_date, dueDate, priority, frequency, status, checklist, requiredParts, wo_type, pm_schedule_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-                
                 $stmt_insert->bind_param("ssiisssssssssi", 
-                    $schedule['title'], 
-                    $schedule['description'], 
-                    $schedule['assetId'], 
-                    $schedule['assignedTo'], 
-                    $schedule['task'], 
-                    $new_start_date_str, 
-                    $new_due_date_str, 
-                    'Medium', 
-                    $schedule['frequency'], 
-                    'Open', 
-                    $new_checklist_json, 
-                    $new_parts_json, 
-                    'PM', 
-                    $schedule['id']
+                    $schedule['title'], $schedule['description'], $schedule['assetId'], $schedule['assignedTo'], $schedule['task'], 
+                    $new_start_date_str, $new_due_date_str, 'Medium', $schedule['frequency'], 'Open', 
+                    $new_checklist_json, $new_parts_json, 'PM', $schedule['id']
                 );
                 $stmt_insert->execute();
                 $stmt_insert->close();
@@ -157,11 +143,13 @@ try {
         }
     }
     
+    // If all steps succeeded, commit the changes to the database.
     $conn->commit();
     http_response_code(200);
     echo json_encode(["message" => "Work Order updated successfully."]);
 
 } catch (Exception $e) {
+    // If any step failed, roll back all database changes and report the error.
     $conn->rollback();
     http_response_code(500);
     echo json_encode(["message" => "Failed to update Work Order: " . $e->getMessage()]);
