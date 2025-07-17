@@ -1,5 +1,35 @@
 <?php
-// auth_check.php
+// auth_check.php - Enhanced with JSON Error Handling
+
+// --- START: JSON ERROR HANDLER ---
+// This block will catch fatal PHP errors and report them as clean JSON
+// instead of sending back HTML that breaks the frontend.
+register_shutdown_function(function () {
+    $error = error_get_last();
+    if ($error !== null && in_array($error['type'], [E_ERROR, E_CORE_ERROR, E_COMPILE_ERROR, E_USER_ERROR, E_RECOVERABLE_ERROR])) {
+        // If headers have already been sent, we can't do anything.
+        if (headers_sent()) {
+            return;
+        }
+        
+        http_response_code(500); // Internal Server Error
+        header('Content-Type: application/json; charset=UTF-8');
+        
+        echo json_encode([
+            "message" => "A fatal server error occurred. See details.",
+            "error_details" => [
+                "type"    => $error['type'],
+                "message" => $error['message'],
+                "file"    => basename($error['file']), // Use basename for brevity/security
+                "line"    => $error['line']
+            ]
+        ]);
+        
+        exit();
+    }
+});
+// --- END: JSON ERROR HANDLER ---
+
 
 // 1. SET UP CORS AND HANDLE PREFLIGHT REQUEST
 $allowed_origins = ['http://localhost', 'http://127.0.0.1', 'http://192.168.141.42'];
@@ -19,9 +49,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 
 // 2. CONFIGURE THE SESSION COOKIE
 session_set_cookie_params([
-    'lifetime' => 86400,    // Cookie valid for 1 day
+    'lifetime' => 86400,
     'path' => '/',
-    'secure' => false,      // Must be false for HTTP development
+    'secure' => false,
     'httponly' => true,
     'samesite' => 'Lax'
 ]);
@@ -44,13 +74,12 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 function authorize(array $allowedRoles) {
-    // Admins are always authorized
     if (isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'Admin') {
         return;
     }
     
     if (!isset($_SESSION['user_role']) || !in_array($_SESSION['user_role'], $allowedRoles)) {
-        http_response_code(403); // Forbidden
+        http_response_code(403);
         echo json_encode(["message" => "You do not have permission to perform this action."]);
         exit();
     }
