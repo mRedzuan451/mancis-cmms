@@ -432,6 +432,8 @@ async function handleTransferAssetFormSubmit(e) {
     }
 }
 
+// In js/app.js
+
 async function handleCompleteWorkOrderFormSubmit(e) {
     e.preventDefault();
     const woId = parseInt(document.getElementById('completeWorkOrderId').value);
@@ -445,23 +447,16 @@ async function handleCompleteWorkOrderFormSubmit(e) {
         completedDate: new Date().toISOString().split('T')[0]
     };
 
+    // --- ADD THIS LINE TO SEE THE DATA ---
     console.log("Data being sent to backend:", updatedData);
 
     try {
-        // This now calls the API and proceeds with the normal success actions.
         await api.updateWorkOrder(woId, updatedData);
         
-        // Log the activity.
         await logActivity("Work Order Completed", `Completed WO: ${wo.title} (ID: ${woId})`);
-        
-        // Refresh the data cache.
         state.cache.workOrders = await api.getWorkOrders();
-        
-        // Close the modal and re-render the UI.
         document.getElementById('completeWorkOrderModal').style.display = 'none';
         renderMainContent();
-        
-        // Show a success message to the user.
         showTemporaryMessage("Work Order marked as complete!");
 
     } catch (error) {
