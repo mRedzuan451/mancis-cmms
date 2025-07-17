@@ -22,27 +22,18 @@ if (empty($data->title) || empty($data->assetId) || empty($data->dueDate)) {
 $checklistJson = json_encode($data->checklist);
 $requiredPartsJson = json_encode($data->requiredParts);
 
-// This query now includes the 'wo_type' column.
+// This query now includes the 'start_date' column.
 $stmt = $conn->prepare(
-    "INSERT INTO workorders (title, description, assetId, assignedTo, task, dueDate, priority, frequency, status, breakdownTimestamp, checklist, requiredParts, wo_type) 
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+    "INSERT INTO workorders (title, description, assetId, assignedTo, task, start_date, dueDate, priority, frequency, status, breakdownTimestamp, checklist, requiredParts, wo_type) 
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
 );
 
-// The bind_param string is updated to include the new field.
-$stmt->bind_param("ssiisssssssss", 
-    $data->title, 
-    $data->description, 
-    $data->assetId, 
-    $data->assignedTo, 
-    $data->task, 
-    $data->dueDate, 
-    $data->priority, 
-    $data->frequency, 
-    $data->status, 
-    $data->breakdownTimestamp,
-    $checklistJson,
-    $requiredPartsJson,
-    $data->wo_type // The new field is now included here.
+// The bind_param string is updated to include the new date field (s).
+$stmt->bind_param("ssiissssssssss", 
+    $data->title, $data->description, $data->assetId, $data->assignedTo, 
+    $data->task, $data->start_date, $data->dueDate, $data->priority, 
+    $data->frequency, $data->status, $data->breakdownTimestamp,
+    $checklistJson, $requiredPartsJson, $data->wo_type
 );
 
 if ($stmt->execute()) {

@@ -21,7 +21,7 @@ if ($id <= 0) {
 $conn->begin_transaction();
 
 try {
-    // Handle part consumption first if the status is being set to 'Completed'.
+    // Handle part consumption if the status is being set to 'Completed'.
     if (isset($data->status) && $data->status === 'Completed') {
         $stmt_get_parts = $conn->prepare("SELECT requiredParts FROM workorders WHERE id = ?");
         $stmt_get_parts->bind_param("i", $id);
@@ -63,18 +63,18 @@ try {
         }
     }
 
-    // Update the work order itself.
+    // Update the work order itself, now including start_date.
     $checklistJson = json_encode($data->checklist);
     $requiredPartsJson = json_encode($data->requiredParts);
     $data->wo_type = $data->wo_type ?? 'CM';
 
     $stmt_update_wo = $conn->prepare(
-        "UPDATE workorders SET title=?, description=?, assetId=?, assignedTo=?, task=?, dueDate=?, priority=?, frequency=?, status=?, 
+        "UPDATE workorders SET title=?, description=?, assetId=?, assignedTo=?, task=?, start_date=?, dueDate=?, priority=?, frequency=?, status=?, 
         breakdownTimestamp=?, checklist=?, requiredParts=?, completionNotes=?, completedDate=?, wo_type=? WHERE id=?"
     );
-    $stmt_update_wo->bind_param("ssiisssssssssssi", 
+    $stmt_update_wo->bind_param("ssiissssssssssssi", 
         $data->title, $data->description, $data->assetId, $data->assignedTo, 
-        $data->task, $data->dueDate, $data->priority, $data->frequency, 
+        $data->task, $data->start_date, $data->dueDate, $data->priority, $data->frequency, 
         $data->status, $data->breakdownTimestamp, $checklistJson, 
         $requiredPartsJson, $data->completionNotes, $data->completedDate, 
         $data->wo_type,
@@ -104,21 +104,30 @@ try {
             $stmt_get_schedule->close();
             
             if ($schedule) {
-                $next_due_date = new DateTime();
+                // Calculate next PM date based on frequency
+                $next_pm_date = new DateTime($schedule['last_generated_date'] ?? $schedule['schedule_start_date']);
                 switch ($schedule['frequency']) {
-                    case 'Weekly': $next_due_date->modify('+1 week'); break;
-                    case 'Monthly': $next_due_date->modify('+1 month'); break;
-                    case 'Quarterly': $next_due_date->modify('+3 months'); break;
-                    case 'Yearly': $next_due_date->modify('+1 year'); break;
+                    case 'Weekly': $next_pm_date->modify('+1 week'); break;
+                    case 'Monthly': $next_pm_date->modify('+1 month'); break;
+                    case 'Quarterly': $next_pm_date->modify('+3 months'); break;
+                    case 'Yearly': $next_pm_date->modify('+1 year'); break;
                 }
                 
-                $stmt_insert = $conn->prepare("INSERT INTO workorders (title, description, assetId, assignedTo, task, dueDate, priority, frequency, status, checklist, requiredParts, wo_type, pm_schedule_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-                $stmt_insert->bind_param("ssiissssssssi", $schedule['title'], $schedule['description'], $schedule['assetId'], $schedule['assignedTo'], $schedule['task'], $next_due_date->format('Y-m-d'), 'Medium', $schedule['frequency'], 'Open', $schedule['checklist'], $schedule['requiredParts'], 'PM', $schedule['id']);
+                // Set the start_date for the new WO to be the calculated next PM date
+                $new_start_date_str = $next_pm_date->format('Y-m-d');
+                // Set the due date a week after the start date
+                $new_due_date = clone $next_pm_date;
+                $new_due_date->modify('+7 days');
+                $new_due_date_str = $new_due_date->format('Y-m-d');
+
+                $stmt_insert = $conn->prepare("INSERT INTO workorders (title, description, assetId, assignedTo, task, start_date, dueDate, priority, frequency, status, checklist, requiredParts, wo_type, pm_schedule_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                $stmt_insert->bind_param("ssiisssssssssi", $schedule['title'], $schedule['description'], $schedule['assetId'], $schedule['assignedTo'], $schedule['task'], $new_start_date_str, $new_due_date_str, 'Medium', $schedule['frequency'], 'Open', $schedule['checklist'], $schedule['requiredParts'], 'PM', $schedule['id']);
                 $stmt_insert->execute();
                 $stmt_insert->close();
                 
+                // Update the schedule's last_generated_date to the date this new WO starts
                 $stmt_update_schedule = $conn->prepare("UPDATE pm_schedules SET last_generated_date = ? WHERE id = ?");
-                $stmt_update_schedule->bind_param("si", (new DateTime())->format('Y-m-d'), $schedule_id);
+                $stmt_update_schedule->bind_param("si", $new_start_date_str, $schedule_id);
                 $stmt_update_schedule->execute();
                 $stmt_update_schedule->close();
             }

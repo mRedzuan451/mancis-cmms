@@ -350,6 +350,7 @@ async function handleWorkOrderFormSubmit(e) {
         assetId: parseInt(document.getElementById("woAsset").value),
         assignedTo: parseInt(document.getElementById("woAssignedTo").value),
         task: document.getElementById("woTask").value,
+        start_date: document.getElementById("woStartDate").value,
         dueDate: document.getElementById("woDueDate").value,
         breakdownTimestamp: document.getElementById("woBreakdownTime").value || null,
         priority: document.getElementById("woPriority").value,
