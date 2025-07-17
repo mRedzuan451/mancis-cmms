@@ -722,7 +722,6 @@ async function deleteLocation(type, id) {
 function attachPageSpecificEventListeners(page) {
     if (page === 'assets') {
         document.getElementById("addAssetBtn")?.addEventListener("click", () => {
-            // Note: I've updated this call to match the fix from your last request.
             populateLocationDropdown(document.getElementById("assetLocation"), "operational");
             showAssetModal();
         });
@@ -733,7 +732,6 @@ function attachPageSpecificEventListeners(page) {
                 a.name.toLowerCase().includes(searchTerm) ||
                 a.tag.toLowerCase().includes(searchTerm) ||
                 a.category.toLowerCase().includes(searchTerm) ||
-                // --- ADD THIS LINE TO SEARCH BY LOCATION ---
                 getFullLocationName(a.locationId).toLowerCase().includes(searchTerm)
             );
             document.getElementById("assetTableBody").innerHTML = generateTableRows("assets", filtered);
@@ -811,20 +809,15 @@ function attachPageSpecificEventListeners(page) {
     } else if (page === 'workOrders') {
         document.getElementById("addWorkOrderBtn")?.addEventListener("click", showWorkOrderModal);
         
-        // --- ADD THIS BLOCK FOR TAB FILTERING ---
         document.querySelectorAll('.wo-type-tab').forEach(tab => {
             tab.addEventListener('click', (e) => {
                 const selectedType = e.target.dataset.type;
-
-                // Update tab styles
                 document.querySelectorAll('.wo-type-tab').forEach(t => {
                     t.classList.remove('text-blue-600', 'border-blue-500');
                     t.classList.add('text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300');
                 });
                 e.target.classList.add('text-blue-600', 'border-blue-500');
                 e.target.classList.remove('text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300');
-
-                // Filter the work orders and re-render the table body
                 const allWorkOrders = state.cache.workOrders.filter(can.view);
                 const filteredWOs = selectedType === 'All' 
                     ? allWorkOrders
@@ -834,7 +827,6 @@ function attachPageSpecificEventListeners(page) {
             });
         });
         
-        // This search listener code remains the same
         document.getElementById("workOrderSearch")?.addEventListener("input", (e) => { /* ... */ });
     } else if (page === 'workOrderCalendar') {
         document.getElementById('prevMonthBtn')?.addEventListener('click', () => {
@@ -885,7 +877,6 @@ function attachPageSpecificEventListeners(page) {
             try {
                 const result = await api.generatePmWorkOrders();
                 showTemporaryMessage(result.message);
-                // Refresh data to show the updates
                 state.cache.pmSchedules = await api.getPmSchedules();
                 state.cache.workOrders = await api.getWorkOrders();
                 renderMainContent();
@@ -894,36 +885,10 @@ function attachPageSpecificEventListeners(page) {
             }
         });
 
-        // Listeners for the action buttons on each row
-        document.querySelectorAll('.view-pm-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const scheduleId = parseInt(e.currentTarget.dataset.id);
-                const schedule = state.cache.pmSchedules.find(s => s.id === scheduleId);
-                showPmScheduleDetailModal(schedule);
-            });
-        });
-        document.querySelectorAll('.edit-pm-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const scheduleId = parseInt(e.currentTarget.dataset.id);
-                const schedule = state.cache.pmSchedules.find(s => s.id === scheduleId);
-                showPmScheduleModal(schedule);
-            });
-        });
-        document.querySelectorAll('.delete-pm-btn').forEach(btn => {
-            btn.addEventListener('click', async (e) => {
-                const scheduleId = parseInt(e.currentTarget.dataset.id);
-                if (confirm("Are you sure you want to delete this PM Schedule?")) {
-                    try {
-                        await api.deletePmSchedule(scheduleId);
-                        showTemporaryMessage("Schedule deleted successfully.");
-                        state.cache.pmSchedules = state.cache.pmSchedules.filter(s => s.id !== scheduleId);
-                        renderMainContent();
-                    } catch (error) {
-                        showTemporaryMessage("Failed to delete schedule.", true);
-                    }
-                }
-            });
-        });
+        // --- THIS SECTION IS REMOVED ---
+        // The global event listener in attachGlobalEventListeners already handles these buttons.
+        // No need to attach them here again.
+
     } else if (page === 'inventoryReport') {
         const dateRangeSelect = document.getElementById('dateRangeSelect');
         const startDateInput = document.getElementById('startDate');
@@ -976,7 +941,6 @@ function attachPageSpecificEventListeners(page) {
             if (new Date(endDate) <= new Date(startDate)) {
                 showTemporaryMessage("The End Date must be at least one day after the Start Date.", true);
                 return;
-
             }
 
             const container = document.getElementById('reportResultContainer');

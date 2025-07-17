@@ -1259,7 +1259,7 @@ export function showPmScheduleDetailModal(schedule) {
     }
     const asset = state.cache.assets.find(a => a.id === schedule.assetId);
     const assignedUser = state.cache.users.find(u => u.id === schedule.assignedTo);
-    const nextDueDate = calculateNextPmDueDate(schedule);
+    const nextPmDate = calculateNextPmDate(schedule);
 
     contentEl.innerHTML = `
         <p><strong>Title:</strong> ${schedule.title}</p>
@@ -1269,7 +1269,7 @@ export function showPmScheduleDetailModal(schedule) {
         <p><strong>Frequency:</strong> ${schedule.frequency}</p>
         <p><strong>Schedule Start Date:</strong> ${schedule.schedule_start_date}</p>
         <p><strong>Last Generated:</strong> ${schedule.last_generated_date || 'Never'}</p>
-        <p class="font-bold"><strong>Next Due Date:</strong> ${nextDueDate}</p>
+        <p class="font-bold"><strong>Next PM Date:</strong> ${nextPmDate}</p>
         <hr class="my-2">
         <p><strong>Assigned To:</strong> ${assignedUser?.fullName || 'N/A'}</p>
         <p><strong>Task Type:</strong> ${schedule.task}</p>
