@@ -431,18 +431,25 @@ export function generateTableRows(type, data) {
         const woStatusColors = { Open: "bg-blue-200 text-blue-800", "In Progress": "bg-yellow-200 text-yellow-800", "On Hold": "bg-orange-200 text-orange-800", Delay: "bg-red-200 text-red-800", Completed: "bg-green-200 text-green-800" };
         return data.map((wo) => {
             const assetName = state.cache.assets.find((a) => a.id === parseInt(wo.assetId))?.name || "N/A";
-            const priorityColor = { High: "text-red-600", Medium: "text-yellow-600", Low: "text-blue-600" }[wo.priority];
             const statusColorClass = woStatusColors[wo.status] || "bg-gray-200 text-gray-800";
             return `
               <tr class="border-b hover:bg-gray-50">
                   <td class="p-2">${wo.title}</td>
-                  <td class="p-2"><span class="font-mono ...">${wo.wo_type}</span></td>
+                  <td class="p-2"><span class="font-mono px-2 py-1 text-xs rounded bg-gray-100">${wo.wo_type}</span></td>
                   <td class="p-2">${assetName}</td>
                   <td class="p-2">${wo.start_date || 'N/A'}</td>
                   <td class="p-2">${wo.dueDate}</td>
-                  <td class="p-2"><span class="px-2 ...">${wo.status}</span></td>
-                  <td class="p-2 space-x-2">
-                      </td>
+                  <td class="p-2"><span class="px-2 py-1 text-xs font-semibold rounded-full ${statusColorClass}">${wo.status}</span></td>
+                  <td class="p-2 space-x-2 whitespace-nowrap">
+                      <button class="view-wo-btn text-blue-500 hover:text-blue-700" data-id="${wo.id}" title="View Details"><i class="fas fa-eye"></i></button>
+                      ${wo.status !== 'Completed' ? `
+                          <button class="edit-wo-btn text-yellow-500 hover:text-yellow-700" data-id="${wo.id}" title="Edit"><i class="fas fa-edit"></i></button>
+                          <button class="complete-wo-btn text-green-500 hover:text-green-700" data-id="${wo.id}" title="Complete"><i class="fas fa-check-circle"></i></button>
+                      ` : ''}
+                      ${state.currentUser.role === 'Admin' ? `
+                          <button class="delete-wo-btn text-red-500 hover:text-red-700" data-id="${wo.id}" title="Delete"><i class="fas fa-trash"></i></button>
+                      ` : ''}
+                  </td>
               </tr>`;
           }).join("");
       case "users":
