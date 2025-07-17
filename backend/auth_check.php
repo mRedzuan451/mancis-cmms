@@ -1,4 +1,9 @@
 <?php
+
+function custom_log($message) {
+    // This will create or append to a file named 'debug_log.txt'
+    file_put_contents('debug_log.txt', date('[Y-m-d H:i:s] ') . $message . "\n", FILE_APPEND);
+}
 // auth_check.php - Enhanced with JSON Error Handling
 
 // --- START: JSON ERROR HANDLER ---
