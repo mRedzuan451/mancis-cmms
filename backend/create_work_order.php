@@ -1,7 +1,7 @@
 <?php
-// backend/create_work_order.php (Corrected Version)
-
 require_once 'auth_check.php';
+require_once 'calendar_integration.php'; // Include the calendar helper
+
 authorize(['Admin', 'Manager', 'Supervisor', 'Engineer', 'Technician']);
 
 header("Content-Type: application/json; charset=UTF-8");
@@ -13,37 +13,46 @@ if ($conn->connect_error) { die("Connection failed: " . $conn->connect_error); }
 
 $data = json_decode(file_get_contents("php://input"));
 
-if (empty($data->title) || empty($data->assetId) || empty($data->dueDate)) {
+if (empty($data->title) || empty($data->assetId) || empty($data->dueDate) || empty($data->start_date)) {
     http_response_code(400);
-    echo json_encode(["message" => "Incomplete data. Title, Asset, and Due Date are required."]);
+    echo json_encode(["message" => "Incomplete data. Title, Asset, Start Date, and Due Date are required."]);
     exit();
 }
 
-$checklistJson = json_encode($data->checklist);
-$requiredPartsJson = json_encode($data->requiredParts);
+$conn->begin_transaction();
 
-// This query now includes the 'start_date' column.
-$stmt = $conn->prepare(
-    "INSERT INTO workorders (title, description, assetId, assignedTo, task, start_date, dueDate, priority, frequency, status, breakdownTimestamp, checklist, requiredParts, wo_type) 
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
-);
+try {
+    $checklistJson = json_encode($data->checklist);
+    $requiredPartsJson = json_encode($data->requiredParts);
+    $wo_type = $data->wo_type ?? 'CM';
 
-// The bind_param string is updated to include the new date field (s).
-$stmt->bind_param("ssiissssssssss", 
-    $data->title, $data->description, $data->assetId, $data->assignedTo, 
-    $data->task, $data->start_date, $data->dueDate, $data->priority, 
-    $data->frequency, $data->status, $data->breakdownTimestamp,
-    $checklistJson, $requiredPartsJson, $data->wo_type
-);
+    $stmt = $conn->prepare(
+        "INSERT INTO workorders (title, description, assetId, assignedTo, task, start_date, dueDate, priority, frequency, status, breakdownTimestamp, checklist, requiredParts, wo_type) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+    );
+    $stmt->bind_param("ssiissssssssss", 
+        $data->title, $data->description, $data->assetId, $data->assignedTo, 
+        $data->task, $data->start_date, $data->dueDate, $data->priority, 
+        $data->frequency, $data->status, $data->breakdownTimestamp,
+        $checklistJson, $requiredPartsJson, $wo_type
+    );
 
-if ($stmt->execute()) {
+    $stmt->execute();
+    $new_wo_id = $stmt->insert_id;
+    $stmt->close();
+    
+    // Add the start date of the new work order to the calendar
+    addEventToCalendar($data->title, $data->start_date);
+
+    $conn->commit();
     http_response_code(201);
-    echo json_encode(["message" => "Work Order created successfully."]);
-} else {
+    echo json_encode(["message" => "Work Order created successfully.", "id" => $new_wo_id]);
+
+} catch (Exception $e) {
+    $conn->rollback();
     http_response_code(500);
-    echo json_encode(["message" => "Failed to create Work Order.", "error" => $stmt->error]);
+    echo json_encode(["message" => "Failed to create Work Order.", "error" => $e->getMessage()]);
 }
 
-$stmt->close();
 $conn->close();
 ?>

@@ -2,6 +2,7 @@
 // backend/generate_pm_work_orders.php
 
 require_once 'auth_check.php';
+require_once 'calendar_integration.php'; // Include the new helper
 authorize(['Admin', 'Manager', 'Supervisor']);
 
 header("Content-Type: application/json; charset=UTF-8");
@@ -67,6 +68,8 @@ foreach ($schedules as $schedule) {
             $wo_type = 'PM';
             $checklistJson = $schedule['checklist'] ? json_encode($schedule['checklist']) : '[]';
             $requiredPartsJson = $schedule['requiredParts'] ? json_encode($schedule['requiredParts']) : '[]';
+
+            addEventToCalendar($schedule['title'], $new_start_date_str);
 
             // --- FIX 3: Add `start_date` to the INSERT query ---
             $stmt_insert = $conn->prepare(
