@@ -687,6 +687,10 @@ export function showPartModal(partId = null) {
     document.getElementById("partModal").style.display = "flex";
 }
 
+// In js/ui.js
+
+// In js/ui.js
+
 export function showWorkOrderModal(woId = null) {
     const form = document.getElementById("workOrderForm");
     form.reset();
@@ -714,6 +718,11 @@ export function showWorkOrderModal(woId = null) {
             document.getElementById("woAsset").value = wo.assetId;
             document.getElementById("woAssignedTo").value = wo.assignedTo;
             document.getElementById("woTask").value = wo.task;
+            
+            // --- THIS IS THE FIX ---
+            // This line was missing. It populates the start date field when editing.
+            document.getElementById("woStartDate").value = wo.start_date;
+            
             document.getElementById("woDueDate").value = wo.dueDate;
             document.getElementById("woBreakdownTime").value = wo.breakdownTimestamp || "";
             document.getElementById("woPriority").value = wo.priority;
