@@ -18,11 +18,10 @@ if ($id <= 0) {
     exit();
 }
 
-// Use a transaction to ensure all database changes succeed or none do.
 $conn->begin_transaction();
 
 try {
-    // Block 1: Handle part consumption if the status is changing to 'Completed'.
+    // Block 1: Handle part consumption (no changes here)
     if (isset($data->status) && $data->status === 'Completed') {
         $stmt_get_parts = $conn->prepare("SELECT requiredParts FROM workorders WHERE id = ?");
         $stmt_get_parts->bind_param("i", $id);
@@ -38,7 +37,6 @@ try {
             
             foreach ($requiredParts as $part) {
                 if (!isset($part['partId']) || !isset($part['quantity'])) continue;
-                
                 $partId = intval($part['partId']);
                 $qty_to_deduct = intval($part['quantity']);
 
@@ -64,7 +62,7 @@ try {
         }
     }
 
-    // Block 2: Update the work order itself with the data from the frontend.
+    // Block 2: Update the work order itself (no changes here)
     $checklistJson = json_encode($data->checklist);
     $requiredPartsJson = json_encode($data->requiredParts);
     $data->wo_type = $data->wo_type ?? 'CM';
@@ -81,13 +79,12 @@ try {
         $data->wo_type,
         $id
     );
-    
     if (!$stmt_update_wo->execute()) {
         throw new Exception("Failed to update work order details.");
     }
     $stmt_update_wo->close();
 
-    // Block 3: If the completed WO was a PM, automatically generate the next one.
+    // Block 3: PM Re-generation Logic (THIS BLOCK IS UPDATED)
     if (isset($data->status) && $data->status === 'Completed' && isset($data->wo_type) && $data->wo_type === 'PM') {
         $stmt_get_schedule_id = $conn->prepare("SELECT pm_schedule_id FROM workorders WHERE id = ?");
         $stmt_get_schedule_id->bind_param("i", $id);
@@ -107,49 +104,53 @@ try {
             if ($schedule_result->num_rows > 0) {
                 $schedule = $schedule_result->fetch_assoc();
                 
-                $checklist_data = json_decode($schedule['checklist'], true) ?: [];
-                $parts_data = json_decode($schedule['requiredParts'], true) ?: [];
+                // --- THIS IS THE FIX ---
+                // Determine the base date for calculation. If both last_generated and start_date are missing, skip this record.
+                $base_date_str = $schedule['last_generated_date'] ?? $schedule['schedule_start_date'];
 
-                $next_pm_date = new DateTime($schedule['last_generated_date'] ?? $schedule['schedule_start_date']);
-                switch ($schedule['frequency']) {
-                    case 'Weekly': $next_pm_date->modify('+1 week'); break;
-                    case 'Monthly': $next_pm_date->modify('+1 month'); break;
-                    case 'Quarterly': $next_pm_date->modify('+3 months'); break;
-                    case 'Yearly': $next_pm_date->modify('+1 year'); break;
+                if (!empty($base_date_str)) {
+                    $checklist_data = json_decode($schedule['checklist'], true) ?: [];
+                    $parts_data = json_decode($schedule['requiredParts'], true) ?: [];
+
+                    $next_pm_date = new DateTime($base_date_str);
+                    switch ($schedule['frequency']) {
+                        case 'Weekly': $next_pm_date->modify('+1 week'); break;
+                        case 'Monthly': $next_pm_date->modify('+1 month'); break;
+                        case 'Quarterly': $next_pm_date->modify('+3 months'); break;
+                        case 'Yearly': $next_pm_date->modify('+1 year'); break;
+                    }
+                    
+                    $new_start_date_str = $next_pm_date->format('Y-m-d');
+                    $new_due_date = clone $next_pm_date;
+                    $new_due_date->modify('+7 days');
+                    $new_due_date_str = $new_due_date->format('Y-m-d');
+                    
+                    $new_checklist_json = json_encode($checklist_data);
+                    $new_parts_json = json_encode($parts_data);
+
+                    $stmt_insert = $conn->prepare("INSERT INTO workorders (title, description, assetId, assignedTo, task, start_date, dueDate, priority, frequency, status, checklist, requiredParts, wo_type, pm_schedule_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                    $stmt_insert->bind_param("ssiisssssssssi", 
+                        $schedule['title'], $schedule['description'], $schedule['assetId'], $schedule['assignedTo'], $schedule['task'], 
+                        $new_start_date_str, $new_due_date_str, 'Medium', $schedule['frequency'], 'Open', 
+                        $new_checklist_json, $new_parts_json, 'PM', $schedule['id']
+                    );
+                    $stmt_insert->execute();
+                    $stmt_insert->close();
+                    
+                    $stmt_update_schedule = $conn->prepare("UPDATE pm_schedules SET last_generated_date = ? WHERE id = ?");
+                    $stmt_update_schedule->bind_param("si", $new_start_date_str, $schedule_id);
+                    $stmt_update_schedule->execute();
+                    $stmt_update_schedule->close();
                 }
-                
-                $new_start_date_str = $next_pm_date->format('Y-m-d');
-                $new_due_date = clone $next_pm_date;
-                $new_due_date->modify('+7 days');
-                $new_due_date_str = $new_due_date->format('Y-m-d');
-                
-                $new_checklist_json = json_encode($checklist_data);
-                $new_parts_json = json_encode($parts_data);
-
-                $stmt_insert = $conn->prepare("INSERT INTO workorders (title, description, assetId, assignedTo, task, start_date, dueDate, priority, frequency, status, checklist, requiredParts, wo_type, pm_schedule_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-                $stmt_insert->bind_param("ssiisssssssssi", 
-                    $schedule['title'], $schedule['description'], $schedule['assetId'], $schedule['assignedTo'], $schedule['task'], 
-                    $new_start_date_str, $new_due_date_str, 'Medium', $schedule['frequency'], 'Open', 
-                    $new_checklist_json, $new_parts_json, 'PM', $schedule['id']
-                );
-                $stmt_insert->execute();
-                $stmt_insert->close();
-                
-                $stmt_update_schedule = $conn->prepare("UPDATE pm_schedules SET last_generated_date = ? WHERE id = ?");
-                $stmt_update_schedule->bind_param("si", $new_start_date_str, $schedule_id);
-                $stmt_update_schedule->execute();
-                $stmt_update_schedule->close();
             }
         }
     }
     
-    // If all steps succeeded, commit the changes to the database.
     $conn->commit();
     http_response_code(200);
     echo json_encode(["message" => "Work Order updated successfully."]);
 
 } catch (Exception $e) {
-    // If any step failed, roll back all database changes and report the error.
     $conn->rollback();
     http_response_code(500);
     echo json_encode(["message" => "Failed to update Work Order: " . $e->getMessage()]);
