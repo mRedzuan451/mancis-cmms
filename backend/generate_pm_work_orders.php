@@ -11,6 +11,8 @@ $servername = "localhost"; $username = "root"; $password = ""; $dbname = "mancis
 $conn = new mysqli($servername, $username, $password, $dbname);
 if ($conn->connect_error) { die("Connection failed: " . $conn->connect_error); }
 
+date_default_timezone_set('Asia/Kuala_Lumpur');
+
 $generated_count = 0;
 $today = new DateTime();
 $today->setTime(0, 0, 0);

@@ -7,6 +7,8 @@ authorize(['Admin', 'Manager', 'Supervisor', 'Engineer', 'Technician']);
 header("Content-Type: application/json; charset=UTF-8");
 header("Access-Control-Allow-Methods: POST");
 
+date_default_timezone_set('Asia/Kuala_Lumpur');
+
 // Helper function to validate date strings
 function isValidDateString($dateStr) {
     if (empty($dateStr) || $dateStr === '0000-00-00') {

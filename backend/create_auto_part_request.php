@@ -2,6 +2,8 @@
 require_once 'auth_check.php';
 // Any logged-in user can trigger this check, so no specific role is needed.
 
+date_default_timezone_set('Asia/Kuala_Lumpur');
+
 header("Content-Type: application/json; charset=UTF-8");
 
 $servername = "localhost"; $username = "root"; $password = ""; $dbname = "mancis_db";
