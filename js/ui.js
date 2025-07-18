@@ -76,81 +76,72 @@ export function renderAssetsPage() {
 export function renderPartsPage() {
     const parts = state.cache.parts.filter(can.view);
     
+    // Add the "Delete Selected" button
     const header = renderPageHeader("Spare Parts Management", [
-        '<button id="refreshDataBtn" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded"><i class="fas fa-sync-alt mr-2"></i>Refresh</button>',
-        '<button id="printPartListBtn" class="bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-2 px-4 rounded"><i class="fas fa-print mr-2"></i>Print List</button>',
-        '<button id="addPartBtn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded"><i class="fas fa-plus mr-2"></i>Add Part</button>'
+        '<button id="deleteSelectedBtn" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded hidden"><i class="fas fa-trash-alt mr-2"></i>Delete Selected</button>',
+        '<button id="refreshDataBtn" class="bg-gray-500 ..."><i class="fas fa-sync-alt mr-2"></i>Refresh</button>',
+        '<button id="printPartListBtn" class="bg-indigo-500 ..."><i class="fas fa-print mr-2"></i>Print List</button>',
+        '<button id="addPartBtn" class="bg-blue-500 ..."><i class="fas fa-plus mr-2"></i>Add Part</button>'
     ]);
     
     return `
       ${header}
       <div class="bg-white p-4 rounded-lg shadow">
-          <input type="text" id="partSearch" class="w-full mb-4 px-3 py-2 border rounded" placeholder="Search by name, SKU, category, or maker...">
+          <input type="text" id="partSearch" class="w-full mb-4 px-3 py-2 border rounded" placeholder="Search...">
           <div class="overflow-x-auto">
               <table class="w-full" id="partTable">
                   <thead><tr class="border-b">
+                      <th class="p-2 w-4"><input type="checkbox" id="selectAllCheckbox"></th>
                       <th class="p-2 text-left cursor-pointer" data-sort="name">Part Name <i class="fas fa-sort"></i></th>
                       <th class="p-2 text-left cursor-pointer" data-sort="sku">SKU <i class="fas fa-sort"></i></th>
-                      <th class="p-2 text-left cursor-pointer" data-sort="category">Category <i class="fas fa-sort"></i></th>
-                      <th class="p-2 text-left cursor-pointer" data-sort="supplier">Supplier <i class="fas fa-sort"></i></th>
                       <th class="p-2 text-left cursor-pointer" data-sort="quantity">Quantity <i class="fas fa-sort"></i></th>
-                      <th class="p-2 text-left cursor-pointer" data-sort="price">Price <i class="fas fa-sort"></i></th>
                       <th class="p-2 text-left">Actions</th>
                   </tr></thead>
-                  <tbody id="partTableBody">
-                      ${generateTableRows("parts", parts)}
-                  </tbody>
+                  <tbody id="partTableBody">${generateTableRows("parts", parts)}</tbody>
               </table>
           </div>
-      </div>
-  `;
+      </div>`;
 }
 
 export function renderWorkOrdersPage() {
-    // Note: We now pass the full, unfiltered list to generateTableRows
     const workOrders = state.cache.workOrders.filter(can.view);
 
+    // Add the "Delete Selected" button
     const header = renderPageHeader("Work Order Management", [
-        '<button id="addWorkOrderBtn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded"><i class="fas fa-plus mr-2"></i>Create Corrective WO</button>'
+        '<button id="deleteSelectedBtn" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded hidden"><i class="fas fa-trash-alt mr-2"></i>Delete Selected</button>',
+        '<button id="addWorkOrderBtn" class="bg-blue-500 ..."><i class="fas fa-plus mr-2"></i>Create Corrective WO</button>'
     ]);
 
     return `
       ${header}
-      
       <div class="mb-4 border-b border-gray-200">
           <nav class="-mb-px flex space-x-8" aria-label="Tabs">
-              <button class="wo-type-tab whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-blue-600 border-blue-500" data-type="All">All Work Orders</button>
-              <button class="wo-type-tab whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300" data-type="CM">Corrective (CM)</button>
-              <button class="wo-type-tab whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300" data-type="PM">Preventive (PM)</button>
-          </nav>
+            </nav>
       </div>
-
       <div class="bg-white p-4 rounded-lg shadow">
-          <input type="text" id="workOrderSearch" class="w-full mb-4 px-3 py-2 border rounded" placeholder="Search by title or asset name...">
+          <input type="text" id="workOrderSearch" class="w-full mb-4 px-3 py-2 border rounded" placeholder="Search...">
           <div class="overflow-x-auto">
               <table class="w-full" id="workOrderTable">
                   <thead><tr class="border-b">
+                      <th class="p-2 w-4"><input type="checkbox" id="selectAllCheckbox"></th>
                       <th class="p-2 text-left cursor-pointer" data-sort="title">Title <i class="fas fa-sort"></i></th>
-                      <th class="p-2 text-left cursor-pointer" data-sort="wo_type">Type <i class="fas fa-sort"></i></th>
                       <th class="p-2 text-left cursor-pointer" data-sort="assetId">Asset <i class="fas fa-sort"></i></th>
-                      <th class="p-2 text-left cursor-pointer" data-sort="start_date">Start Date <i class="fas fa-sort"></i></th>
-                      <th class="p-2 text-left cursor-pointer" data-sort="dueDate">Due Date <i class="fas fa-sort"></i></th>
                       <th class="p-2 text-left cursor-pointer" data-sort="status">Status <i class="fas fa-sort"></i></th>
                       <th class="p-2 text-left">Actions</th>
                   </tr></thead>
-                  <tbody id="workOrderTableBody">
-                      ${generateTableRows("workOrders", workOrders)}
-                  </tbody>
+                  <tbody id="workOrderTableBody">${generateTableRows("workOrders", workOrders)}</tbody>
               </table>
           </div>
-      </div>
-  `;
+      </div>`;
 }
 
 export function renderUserManagementPage() {
     const users = state.cache.users;
+    
+    // Add the "Delete Selected" button
     const header = renderPageHeader("User Management", [
-        '<button id="refreshDataBtn" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded"><i class="fas fa-sync-alt mr-2"></i>Refresh</button>'
+        '<button id="deleteSelectedBtn" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded hidden"><i class="fas fa-trash-alt mr-2"></i>Delete Selected</button>',
+        '<button id="refreshDataBtn" class="bg-gray-500 ..."><i class="fas fa-sync-alt mr-2"></i>Refresh</button>'
     ]);
 
     return `
@@ -159,19 +150,16 @@ export function renderUserManagementPage() {
           <div class="overflow-x-auto">
               <table class="w-full" id="userTable">
                   <thead><tr class="border-b">
+                      <th class="p-2 w-4"><input type="checkbox" id="selectAllCheckbox"></th>
                       <th class="p-2 text-left">Full Name</th>
                       <th class="p-2 text-left">Username</th>
                       <th class="p-2 text-left">Role</th>
-                      <th class="p-2 text-left">Department</th>
                       <th class="p-2 text-left">Actions</th>
                   </tr></thead>
-                  <tbody>
-                      ${generateTableRows("users", users)}
-                  </tbody>
+                  <tbody>${generateTableRows("users", users)}</tbody>
               </table>
           </div>
-      </div>
-  `;
+      </div>`;
 }
 
 export function renderWorkOrderCalendar() {
@@ -427,12 +415,10 @@ export function generateTableRows(type, data) {
       case "parts":
         return data.map((part) => `
               <tr class="border-b hover:bg-gray-50 ${parseInt(part.quantity) <= parseInt(part.minQuantity) ? "bg-red-100" : ""}">
+                  <td class="p-2"><input type="checkbox" class="row-checkbox" data-id="${part.id}"></td>
                   <td class="p-2">${part.name}</td>
                   <td class="p-2">${part.sku}</td>
-                  <td class="p-2">${part.category || "N/A"}</td>
-                  <td class="p-2">${part.supplier || "N/A"}</td>
                   <td class="p-2">${part.quantity} ${parseInt(part.quantity) <= parseInt(part.minQuantity) ? '<span class="text-red-600 font-bold">(Low)</span>' : ""}</td>
-                  <td class="p-2">${part.price ? `${part.currency || ""} ${parseFloat(part.price).toFixed(2)}` : "N/A"}</td>
                   <td class="p-2 space-x-2">
                       <button class="view-part-btn text-blue-500 hover:text-blue-700" data-id="${part.id}" title="View Details"><i class="fas fa-eye"></i></button>
                       <button class="edit-part-btn text-yellow-500 hover:text-yellow-700" data-id="${part.id}" title="Edit"><i class="fas fa-edit"></i></button>
@@ -446,11 +432,9 @@ export function generateTableRows(type, data) {
             const statusColorClass = woStatusColors[wo.status] || "bg-gray-200 text-gray-800";
             return `
               <tr class="border-b hover:bg-gray-50">
+                  <td class="p-2"><input type="checkbox" class="row-checkbox" data-id="${wo.id}"></td>
                   <td class="p-2">${wo.title}</td>
-                  <td class="p-2"><span class="font-mono px-2 py-1 text-xs rounded bg-gray-100">${wo.wo_type}</span></td>
-                  <td class="p-2">${assetName}</td>
-                  <td class="p-2">${wo.start_date || 'N/A'}</td>
-                  <td class="p-2">${wo.dueDate}</td>
+                  <td class="p-2">${state.cache.assets.find((a) => a.id === parseInt(wo.assetId))?.name || "N/A"}</td>
                   <td class="p-2"><span class="px-2 py-1 text-xs font-semibold rounded-full ${statusColorClass}">${wo.status}</span></td>
                   <td class="p-2 space-x-2 whitespace-nowrap">
                       <button class="view-wo-btn text-blue-500 hover:text-blue-700" data-id="${wo.id}" title="View Details"><i class="fas fa-eye"></i></button>
@@ -469,6 +453,7 @@ export function generateTableRows(type, data) {
         const showAdminActions = state.currentUser.role === 'Admin';
         return data.map((user) => `
               <tr class="border-b hover:bg-gray-50">
+                  <td class="p-2"><input type="checkbox" class="row-checkbox" data-id="${user.id}"></td>
                   <td class="p-2">${user.fullName}</td>
                   <td class="p-2">${user.username}</td>
                   <td class="p-2">${user.role}</td>

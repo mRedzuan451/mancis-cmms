@@ -714,23 +714,25 @@ async function handleMassDelete(type) {
 // --- EVENT LISTENER ATTACHMENT ---
 
 function attachPageSpecificEventListeners(page) {
-    if (page === 'assets') {
+    // This helper function sets up the checkbox and "Delete Selected" button logic for a given page
+    const setupCheckboxLogic = (pageType) => {
         const selectAllCheckbox = document.getElementById('selectAllCheckbox');
         const rowCheckboxes = document.querySelectorAll('.row-checkbox');
         const deleteSelectedBtn = document.getElementById('deleteSelectedBtn');
 
+        // This function shows or hides the "Delete Selected" button
         const toggleDeleteButton = () => {
             const anyChecked = document.querySelector('.row-checkbox:checked');
-            deleteSelectedBtn.classList.toggle('hidden', !anyChecked);
+            deleteSelectedBtn?.classList.toggle('hidden', !anyChecked);
         };
 
+        // Event listener for the "select all" checkbox in the header
         selectAllCheckbox?.addEventListener('change', (e) => {
-            rowCheckboxes.forEach(checkbox => {
-                checkbox.checked = e.target.checked;
-            });
+            rowCheckboxes.forEach(checkbox => checkbox.checked = e.target.checked);
             toggleDeleteButton();
         });
 
+        // Event listeners for each individual row's checkbox
         rowCheckboxes.forEach(checkbox => {
             checkbox.addEventListener('change', () => {
                 if (!checkbox.checked) {
@@ -740,17 +742,35 @@ function attachPageSpecificEventListeners(page) {
             });
         });
         
-        deleteSelectedBtn?.addEventListener('click', () => handleMassDelete('assets'));
+        // Event listener for the "Delete Selected" button
+        deleteSelectedBtn?.addEventListener('click', () => handleMassDelete(pageType));
+    };
 
-        // Re-add existing listeners for this page
+    // Apply the checkbox logic to all pages that have a table list
+    if (['assets', 'parts', 'workOrders', 'userManagement'].includes(page)) {
+        // 'userManagement' page type corresponds to the 'users' data type for deletion
+        const itemType = page === 'userManagement' ? 'users' : page;
+        setupCheckboxLogic(itemType);
+    }
+    
+    // Attach any other event listeners that are specific to a certain page
+    if (page === 'assets') {
         document.getElementById("addAssetBtn")?.addEventListener("click", () => showAssetModal());
-        document.getElementById("assetSearch")?.addEventListener("input", (e) => { /* ... */ });
-        document.getElementById("printAssetListBtn")?.addEventListener("click", () => { /* ... */ });
-
+        document.getElementById("assetSearch")?.addEventListener("input", (e) => {
+            const searchTerm = e.target.value.toLowerCase();
+            const filtered = state.cache.assets.filter(can.view).filter(a =>
+                a.name.toLowerCase().includes(searchTerm) ||
+                a.tag.toLowerCase().includes(searchTerm) ||
+                a.category.toLowerCase().includes(searchTerm) ||
+                getFullLocationName(a.locationId).toLowerCase().includes(searchTerm)
+            );
+            document.getElementById("assetTableBody").innerHTML = generateTableRows("assets", filtered);
+        });
+        document.getElementById("printAssetListBtn")?.addEventListener("click", () => { /* Print logic */ });
     } else if (page === 'parts') {
-         document.getElementById("addPartBtn")?.addEventListener("click", () => showPartModal());
-         document.getElementById("partSearch")?.addEventListener("input", (e) => { /* ... */ });
-        document.getElementById("printPartListBtn")?.addEventListener("click", () => { /* ... */ });
+        document.getElementById("addPartBtn")?.addEventListener("click", () => showPartModal());
+        document.getElementById("partSearch")?.addEventListener("input", (e) => { /* Search logic */ });
+        document.getElementById("printPartListBtn")?.addEventListener("click", () => { /* Print logic */ });
     } else if (page === 'workOrders') {
         document.getElementById("addWorkOrderBtn")?.addEventListener("click", showWorkOrderModal);
         document.querySelectorAll('.wo-type-tab').forEach(tab => {
@@ -779,15 +799,6 @@ function attachPageSpecificEventListeners(page) {
         document.getElementById('storageRequestBtn')?.addEventListener('click', showStorageRequestModal);
         document.getElementById('receivePartsBtn')?.addEventListener('click', showReceivePartsModal);
         document.getElementById('restockPartsBtn')?.addEventListener('click', showRestockPartsModal);
-        document.getElementById('printPurchaseListBtn')?.addEventListener('click', () => { /* ... */ });
-    } else if (page === 'locations') {
-        document.querySelector('#addDivisionForm')?.addEventListener('submit', handleLocationFormSubmit);
-        document.querySelector('#addDepartmentForm')?.addEventListener('submit', handleLocationFormSubmit);
-        document.querySelector('#addSubLineForm')?.addEventListener('submit', handleLocationFormSubmit);
-        document.querySelector('#addProductionLineForm')?.addEventListener('submit', handleLocationFormSubmit);
-        document.querySelector('#addCabinetForm')?.addEventListener('submit', handleLocationFormSubmit);
-        document.querySelector('#addShelfForm')?.addEventListener('submit', handleLocationFormSubmit);
-        document.querySelector('#addBoxForm')?.addEventListener('submit', handleLocationFormSubmit);
     } else if (page === 'pmSchedules') {
         document.getElementById('addPmScheduleBtn')?.addEventListener('click', () => showPmScheduleModal());
         document.getElementById('generatePmWoBtn')?.addEventListener('click', async () => {
@@ -801,8 +812,16 @@ function attachPageSpecificEventListeners(page) {
                 showTemporaryMessage(`Failed to generate work orders. ${error.message}`, true);
             }
         });
+    } else if (page === 'locations') {
+        document.querySelector('#addDivisionForm')?.addEventListener('submit', handleLocationFormSubmit);
+        document.querySelector('#addDepartmentForm')?.addEventListener('submit', handleLocationFormSubmit);
+        document.querySelector('#addSubLineForm')?.addEventListener('submit', handleLocationFormSubmit);
+        document.querySelector('#addProductionLineForm')?.addEventListener('submit', handleLocationFormSubmit);
+        document.querySelector('#addCabinetForm')?.addEventListener('submit', handleLocationFormSubmit);
+        document.querySelector('#addShelfForm')?.addEventListener('submit', handleLocationFormSubmit);
+        document.querySelector('#addBoxForm')?.addEventListener('submit', handleLocationFormSubmit);
     } else if (page === 'inventoryReport') {
-        // ... (event listeners for inventory report)
+        document.getElementById('reportForm')?.addEventListener('submit', (e) => { /* Report generation logic */ });
     }
 }
 
