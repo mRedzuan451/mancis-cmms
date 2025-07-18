@@ -7,6 +7,8 @@ $servername = "localhost"; $username = "root"; $password = ""; $dbname = "mancis
 $conn = new mysqli($servername, $username, $password, $dbname);
 if ($conn->connect_error) { die("Connection failed: " . $conn->connect_error); }
 
+authorize('part_request_view', $conn);
+
 $user_role = $_SESSION['user_role'];
 $user_id = $_SESSION['user_id'];
 $user_department_id = $_SESSION['user_department_id'];

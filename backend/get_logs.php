@@ -9,6 +9,8 @@ $servername = "localhost"; $username = "root"; $password = ""; $dbname = "mancis
 $conn = new mysqli($servername, $username, $password, $dbname);
 if ($conn->connect_error) { die("Connection failed: " . $conn->connect_error); }
 
+authorize('log_view', $conn);
+
 // Limit to the most recent 200 logs for performance
 $sql = "SELECT * FROM logs ORDER BY timestamp DESC LIMIT 200";
 $result = $conn->query($sql);

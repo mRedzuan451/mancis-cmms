@@ -1,33 +1,19 @@
 <?php
-
 require_once 'auth_check.php';
 
-// Turn on error reporting for debugging
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
-
-header("Access-Control-Allow-Origin: *");
 header("Content-Type: application/json; charset=UTF-8");
 
-$servername = "localhost"; 
-$username = "root"; 
-$password = ""; 
-$dbname = "mancis_db";
-
-// Create connection
+$servername = "localhost"; $username = "root"; $password = ""; $dbname = "mancis_db";
 $conn = new mysqli($servername, $username, $password, $dbname);
 
-// **DEBUGGING STEP 1: Check connection**
 if ($conn->connect_error) {
-    // If you see this, the connection details are wrong.
     http_response_code(500);
-    echo json_encode([
-        "message" => "Connection Failed",
-        "error" => $conn->connect_error
-    ]);
-    exit(); // Stop the script
+    echo json_encode(["message" => "Connection Failed", "error" => $conn->connect_error]);
+    exit();
 }
+
+// The authorize() call has been added for security.
+authorize('user_view', $conn);
 
 // Select all fields EXCEPT the password for security
 $sql = "SELECT id, fullName, employeeId, username, role, divisionId, departmentId FROM users ORDER BY fullName ASC";

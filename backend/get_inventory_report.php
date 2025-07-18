@@ -1,14 +1,14 @@
 <?php
-// backend/get_inventory_report.php
-
 require_once 'auth_check.php';
-authorize(['Admin', 'Manager']);
 
 header("Content-Type: application/json; charset=UTF-8");
 
 $servername = "localhost"; $username = "root"; $password = ""; $dbname = "mancis_db";
 $conn = new mysqli($servername, $username, $password, $dbname);
 if ($conn->connect_error) { die("Connection failed: " . $conn->connect_error); }
+
+// The authorize() call has been updated to the new permission system.
+authorize('report_view', $conn);
 
 $startDate = isset($_GET['startDate']) ? $_GET['startDate'] . ' 00:00:00' : date('Y-m-d') . ' 00:00:00';
 $endDate = isset($_GET['endDate']) ? $_GET['endDate'] . ' 23:59:59' : date('Y-m-d') . ' 23:59:59';

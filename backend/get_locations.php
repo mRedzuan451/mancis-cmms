@@ -9,6 +9,8 @@ $servername = "localhost"; $username = "root"; $password = ""; $dbname = "mancis
 $conn = new mysqli($servername, $username, $password, $dbname);
 if ($conn->connect_error) { die("Connection failed: " . $conn->connect_error); }
 
+authorize('location_management', $conn);
+
 function fetch_table($conn, $tableName) {
     $sql = "SELECT * FROM " . $tableName;
     $result = $conn->query($sql);

@@ -28,6 +28,8 @@ if ($conn->connect_error) {
     exit();
 }
 
+authorize('part_request_view', $conn);
+
 $sql = "SELECT * FROM receivedparts ORDER BY receivedDate DESC";
 $result = $conn->query($sql);
 
