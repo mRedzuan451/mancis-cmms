@@ -1208,31 +1208,35 @@ export function renderPmSchedulesPage() {
           <tbody>
             ${schedules.map(s => {
                 const assetName = state.cache.assets.find(a => a.id === s.assetId)?.name || 'N/A';
-                
-                // --- THIS IS THE FIX ---
-                // Find the currently open PM work order for this schedule.
                 const openWoForSchedule = openWorkOrders.find(wo => wo.pm_schedule_id === s.id);
 
                 let nextStartDate = 'N/A';
                 let nextDueDate = 'N/A';
 
                 if (openWoForSchedule) {
-                    // If an open WO exists, use its dates directly.
                     nextStartDate = openWoForSchedule.start_date;
                     nextDueDate = openWoForSchedule.dueDate;
                 } else {
-                    // If no open WO is found, fall back to calculating the theoretical next date.
                     nextStartDate = calculateNextPmDate(s); 
-                    // Create a temporary date object to calculate the due date
-                    const tempDate = new Date(nextStartDate + 'T00:00:00');
-                    tempDate.setDate(tempDate.getDate()+7); // Assume +7 days as a default
-                    nextDueDate = tempDate.toISOString().split('T')[0];
+                    
+                    // --- THIS IS THE FIX ---
+                    // Only attempt to calculate a due date if the start date is a valid date.
+                    if (nextStartDate !== 'N/A') {
+                        const tempDate = new Date(nextStartDate + 'T00:00:00');
+                        // Use the custom buffer if it exists, otherwise default to 7 days
+                        const buffer = s.due_date_buffer || 7; 
+                        tempDate.setDate(tempDate.getDate() + buffer);
+                        nextDueDate = tempDate.toISOString().split('T')[0];
+                    }
                 }
+
+                // Format the frequency for display
+                const frequencyText = `${s.frequency_interval} ${s.frequency_unit}(s)`;
 
                 return `<tr class="border-b hover:bg-gray-50">
                     <td class="p-2">${s.title}</td>
                     <td class="p-2">${assetName}</td>
-                    <td class="p-2">${s.frequency}</td>
+                    <td class="p-2">${frequencyText}</td>
                     <td class="p-2 font-semibold">${nextStartDate}</td>
                     <td class="p-2 font-semibold">${nextDueDate}</td>
                     <td class="p-2">${s.is_active ? '<span class="text-green-600">Active</span>' : '<span class="text-gray-500">Inactive</span>'}</td>
