@@ -129,6 +129,22 @@ async function loadAndRender() {
     await checkForNotifications();
 }
 
+async function refreshAllDataAndRender() {
+    const isModalOpen = !!document.querySelector('.modal[style*="display: flex"]');
+    if (isModalOpen) {
+        console.log("Refresh skipped: a modal is open.");
+        return;
+    }
+    console.log("Refreshing data...");
+    showTemporaryMessage("Refreshing data...");
+    try {
+        await loadInitialData();
+        renderMainContent();
+        console.log("Data refreshed successfully.");
+    } catch (error) {
+        showTemporaryMessage("Failed to refresh data.", true);
+    }
+}
 
 // --- ACTION HANDLERS (Forms, Deletes, etc.) ---
 
