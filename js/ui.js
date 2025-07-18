@@ -45,9 +45,9 @@ export function renderDashboard() {
 export function renderAssetsPage() {
     const assets = state.cache.assets.filter(can.view);
 
-    // Use the new helper function to create the header
+    // Add the new "Delete Selected" button to the header
     const header = renderPageHeader("Asset Management", [
-        // Add the new Refresh button here
+        '<button id="deleteSelectedBtn" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded hidden"><i class="fas fa-trash-alt mr-2"></i>Delete Selected</button>',
         '<button id="refreshDataBtn" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded"><i class="fas fa-sync-alt mr-2"></i>Refresh</button>',
         '<button id="printAssetListBtn" class="bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-2 px-4 rounded"><i class="fas fa-print mr-2"></i>Print List</button>',
         '<button id="addAssetBtn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded"><i class="fas fa-plus mr-2"></i>Add Asset</button>'
@@ -60,6 +60,7 @@ export function renderAssetsPage() {
           <div class="overflow-x-auto">
               <table class="w-full" id="assetTable">
                   <thead><tr class="border-b">
+                      <th class="p-2 w-4"><input type="checkbox" id="selectAllCheckbox"></th>
                       <th class="p-2 text-left cursor-pointer" data-sort="name">Name <i class="fas fa-sort"></i></th>
                       <th class="p-2 text-left cursor-pointer" data-sort="tag">Tag <i class="fas fa-sort"></i></th>
                       <th class="p-2 text-left cursor-pointer" data-sort="locationId">Location <i class="fas fa-sort"></i></th>
@@ -410,16 +411,17 @@ export function generateTableRows(type, data) {
       case "assets":
         return data.map((asset) => `
               <tr class="border-b hover:bg-gray-50">
+                  <td class="p-2"><input type="checkbox" class="row-checkbox" data-id="${asset.id}"></td>
                   <td class="p-2">${asset.name}</td>
                   <td class="p-2">${asset.tag}</td>
                   <td class="p-2">${getFullLocationName(asset.locationId)}</td>
-                  <td class="p-2"><span class="px-2 py-1 text-xs font-semibold rounded-full ${asset.status === "Active" ? "bg-green-200 text-green-800" : asset.status === "Decommissioned" ? "bg-gray-200 text-gray-800" : "bg-yellow-200 text-yellow-800"}">${asset.status}</span></td>
+                  <td class="p-2"><span class="px-2 py-1 text-xs font-semibold rounded-full ${asset.status === "Active" ? "bg-green-200 text-green-800" : "..."}">${asset.status}</span></td>
                   <td class="p-2 space-x-2">
-                      <button class="view-asset-btn text-blue-500 hover:text-blue-700" data-id="${asset.id}" title="View Details"><i class="fas fa-eye"></i></button>
-                      <button class="edit-asset-btn text-yellow-500 hover:text-yellow-700" data-id="${asset.id}" title="Edit"><i class="fas fa-edit"></i></button>
-                      <button class="transfer-asset-btn text-purple-500 hover:text-purple-700" data-id="${asset.id}" title="Transfer"><i class="fas fa-truck"></i></button>
-                      <button class="delete-asset-btn text-red-500 hover:text-red-700" data-id="${asset.id}" title="Delete"><i class="fas fa-trash"></i></button>
-                      ${asset.status !== "Decommissioned" ? `<button class="dispose-asset-btn text-gray-500 hover:text-gray-700" data-id="${asset.id}" title="Dispose"><i class="fas fa-ban"></i></button>` : ""}
+                      <button class="view-asset-btn text-blue-500 ..." data-id="${asset.id}"><i class="fas fa-eye"></i></button>
+                      <button class="edit-asset-btn text-yellow-500 ..." data-id="${asset.id}"><i class="fas fa-edit"></i></button>
+                      <button class="transfer-asset-btn text-purple-500 ..." data-id="${asset.id}"><i class="fas fa-truck"></i></button>
+                      <button class="delete-asset-btn text-red-500 ..." data-id="${asset.id}"><i class="fas fa-trash"></i></button>
+                      ${asset.status !== "Decommissioned" ? `<button class="dispose-asset-btn text-gray-500 ..." data-id="${asset.id}"><i class="fas fa-ban"></i></button>` : ""}
                   </td>
               </tr>`).join("");
       case "parts":

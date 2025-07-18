@@ -672,26 +672,81 @@ async function handlePmScheduleFormSubmit(e) {
     }
 }
 
+async function handleMassDelete(type) {
+    const selectedCheckboxes = document.querySelectorAll('.row-checkbox:checked');
+    const idsToDelete = Array.from(selectedCheckboxes).map(cb => parseInt(cb.dataset.id));
+
+    if (idsToDelete.length === 0) {
+        showTemporaryMessage("No items selected for deletion.", true);
+        return;
+    }
+
+    if (!confirm(`Are you sure you want to delete ${idsToDelete.length} selected item(s)? This action cannot be undone.`)) {
+        return;
+    }
+
+    showTemporaryMessage(`Deleting ${idsToDelete.length} item(s)...`);
+
+    try {
+        const deletePromises = idsToDelete.map(id => {
+            switch (type) {
+                case 'assets': return api.deleteAsset(id);
+                case 'parts': return api.deletePart(id);
+                // Add other types here as you implement them
+                default: return Promise.reject(new Error("Invalid type for mass delete."));
+            }
+        });
+
+        await Promise.all(deletePromises);
+
+        await logActivity(`Mass Delete Executed`, `Deleted ${idsToDelete.length} item(s) of type: ${type}`);
+        
+        // Refresh data after deletion
+        await refreshAllDataAndRender();
+        showTemporaryMessage(`${idsToDelete.length} item(s) deleted successfully.`);
+        
+    } catch (error) {
+        showTemporaryMessage(`An error occurred during mass deletion. ${error.message}`, true);
+    }
+}
+
 
 // --- EVENT LISTENER ATTACHMENT ---
 
 function attachPageSpecificEventListeners(page) {
     if (page === 'assets') {
-        document.getElementById("addAssetBtn")?.addEventListener("click", () => {
-            populateLocationDropdown(document.getElementById("assetLocation"), "operational");
-            showAssetModal();
+        const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+        const rowCheckboxes = document.querySelectorAll('.row-checkbox');
+        const deleteSelectedBtn = document.getElementById('deleteSelectedBtn');
+
+        const toggleDeleteButton = () => {
+            const anyChecked = document.querySelector('.row-checkbox:checked');
+            deleteSelectedBtn.classList.toggle('hidden', !anyChecked);
+        };
+
+        selectAllCheckbox?.addEventListener('change', (e) => {
+            rowCheckboxes.forEach(checkbox => {
+                checkbox.checked = e.target.checked;
+            });
+            toggleDeleteButton();
         });
-        document.getElementById("assetSearch")?.addEventListener("input", (e) => {
-            const searchTerm = e.target.value.toLowerCase();
-            const filtered = state.cache.assets.filter(can.view).filter(a =>
-                a.name.toLowerCase().includes(searchTerm) ||
-                a.tag.toLowerCase().includes(searchTerm) ||
-                a.category.toLowerCase().includes(searchTerm) ||
-                getFullLocationName(a.locationId).toLowerCase().includes(searchTerm)
-            );
-            document.getElementById("assetTableBody").innerHTML = generateTableRows("assets", filtered);
+
+        rowCheckboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', () => {
+                if (!checkbox.checked) {
+                    selectAllCheckbox.checked = false;
+                }
+                toggleDeleteButton();
+            });
         });
+        
+        deleteSelectedBtn?.addEventListener('click', () => handleMassDelete('assets'));
+
+        // Re-add existing listeners for this page
+        document.getElementById("addAssetBtn")?.addEventListener("click", () => showAssetModal());
+        document.getElementById("assetSearch")?.addEventListener("input", (e) => { /* ... */ });
         document.getElementById("printAssetListBtn")?.addEventListener("click", () => { /* ... */ });
+
     } else if (page === 'parts') {
          document.getElementById("addPartBtn")?.addEventListener("click", () => showPartModal());
          document.getElementById("partSearch")?.addEventListener("input", (e) => { /* ... */ });
