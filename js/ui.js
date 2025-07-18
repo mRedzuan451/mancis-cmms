@@ -1306,6 +1306,11 @@ export function showPmScheduleDetailModal(schedule) {
     }
     const asset = state.cache.assets.find(a => a.id === schedule.assetId);
     const assignedUser = state.cache.users.find(u => u.id === schedule.assignedTo);
+    
+    // --- THIS IS THE FIX ---
+    // Use the new flexible frequency fields to create the display text.
+    const frequencyText = `${schedule.frequency_interval} ${schedule.frequency_unit}(s)`;
+    // Call the updated function to correctly calculate the next PM date.
     const nextPmDate = calculateNextPmDate(schedule);
 
     contentEl.innerHTML = `
@@ -1313,7 +1318,7 @@ export function showPmScheduleDetailModal(schedule) {
         <p><strong>Asset:</strong> ${asset?.name || 'N/A'}</p>
         <p><strong>Status:</strong> ${schedule.is_active ? 'Active' : 'Inactive'}</p>
         <hr class="my-2">
-        <p><strong>Frequency:</strong> ${schedule.frequency}</p>
+        <p><strong>Frequency:</strong> ${frequencyText}</p>
         <p><strong>Schedule Start Date:</strong> ${schedule.schedule_start_date}</p>
         <p><strong>Last Generated:</strong> ${schedule.last_generated_date || 'Never'}</p>
         <p class="font-bold"><strong>Next PM Date:</strong> ${nextPmDate}</p>
