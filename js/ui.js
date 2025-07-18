@@ -1228,7 +1228,7 @@ export function renderPmSchedulesPage() {
                     nextStartDate = calculateNextPmDate(s); 
                     // Create a temporary date object to calculate the due date
                     const tempDate = new Date(nextStartDate + 'T00:00:00');
-                    tempDate.setDate(tempDate.getDate() + 7); // Assume +7 days as a default
+                    tempDate.setDate(tempDate.getDate()+7); // Assume +7 days as a default
                     nextDueDate = tempDate.toISOString().split('T')[0];
                 }
 
