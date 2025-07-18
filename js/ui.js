@@ -1183,78 +1183,7 @@ export function showEditPartRequestModal(req) {
 
 // In js/ui.js
 
-export function renderPmSchedulesPage() {
-    const schedules = state.cache.pmSchedules || [];
-    const openWorkOrders = state.cache.workOrders.filter(wo => wo.status === 'Open' && wo.wo_type === 'PM');
-
-    // --- This block adds the correct sorting logic ---
-    // It sorts the schedules by the next start date in descending order (latest on top).
-    schedules.sort((a, b) => {
-        const dateA_str = a.last_generated_date || a.schedule_start_date || '1970-01-01';
-        const dateB_str = b.last_generated_date || b.schedule_start_date || '1970-01-01';
-        const dateA = new Date(dateA_str);
-        const dateB = new Date(dateB_str);
-        return dateB - dateA; // Sorts descending
-    });
-
-    const header = renderPageHeader("Preventive Maintenance Schedules", [
-        '<button id="generatePmWoBtn" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded"><i class="fas fa-cogs mr-2"></i>Generate PM Work Orders</button>',
-        '<button id="addPmScheduleBtn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded"><i class="fas fa-plus mr-2"></i>Add PM Schedule</button>'
-    ]);
-    
-    return `
-      ${header}
-      <div class="bg-white p-4 rounded-lg shadow">
-        <table class="w-full">
-          <thead><tr class="border-b">
-            <th class="p-2 text-left">Schedule Title</th>
-            <th class="p-2 text-left">Asset</th>
-            <th class="p-2 text-left">Frequency</th>
-            <th class="p-2 text-left">Next Start Date</th>
-            <th class="p-2 text-left">Next Due Date</th>
-            <th class="p-2 text-left">Status</th>
-            <th class="p-2 text-left">Actions</th>
-          </tr></thead>
-          <tbody>
-            ${schedules.map(s => {
-                const assetName = state.cache.assets.find(a => a.id === s.assetId)?.name || 'N/A';
-                const openWoForSchedule = openWorkOrders.find(wo => wo.pm_schedule_id === s.id);
-                let nextStartDate = 'N/A';
-                let nextDueDate = 'N/A';
-
-                if (openWoForSchedule) {
-                    nextStartDate = openWoForSchedule.start_date;
-                    nextDueDate = openWoForSchedule.dueDate;
-                } else {
-                    nextStartDate = calculateNextPmDate(s);
-                    if (nextStartDate !== 'N/A') {
-                        const tempDate = new Date(nextStartDate + 'T00:00:00');
-                        const buffer = s.due_date_buffer || 7; 
-                        tempDate.setDate(tempDate.getDate() + buffer);
-                        nextDueDate = tempDate.toISOString().split('T')[0];
-                    }
-                }
-                const frequencyText = `${s.frequency_interval} ${s.frequency_unit}(s)`;
-
-                return `<tr class="border-b hover:bg-gray-50">
-                    <td class="p-2">${s.title}</td>
-                    <td class="p-2">${assetName}</td>
-                    <td class="p-2">${frequencyText}</td>
-                    <td class="p-2 font-semibold">${nextStartDate}</td>
-                    <td class="p-2 font-semibold">${nextDueDate}</td>
-                    <td class="p-2">${s.is_active ? '<span class="text-green-600">Active</span>' : '<span class="text-gray-500">Inactive</span>'}</td>
-                    <td class="p-2 space-x-2">
-                        <button class="view-pm-btn text-blue-500 hover:text-blue-700" data-id="${s.id}" title="View Details"><i class="fas fa-eye"></i></button>
-                        <button class="edit-pm-btn text-yellow-500 hover:text-yellow-700" data-id="${s.id}" title="Edit"><i class="fas fa-edit"></i></button>
-                        <button class="delete-pm-btn text-red-500 hover:text-red-700" data-id="${s.id}" title="Delete"><i class="fas fa-trash"></i></button>
-                    </td>
-                </tr>`
-            }).join('')}
-          </tbody>
-        </table>
-      </div>
-    `;
-}
+renderPmSchedulesPage
 
 // This function now correctly handles the new flexible frequency and due date buffer fields.
 export function showPmScheduleModal(schedule = null) {
