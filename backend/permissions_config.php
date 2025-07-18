@@ -1,7 +1,6 @@
 <?php
 
 // This is the master list of all permissions available in the system.
-// The "key" is used in the code, and the "label" is displayed in the UI.
 $permissions = [
     'asset_view'   => 'View Assets',
     'asset_create' => 'Create Assets',
@@ -36,9 +35,8 @@ $permissions = [
     'log_view'            => 'View Activity Log',
 ];
 
-
+// --- THIS IS THE FIX ---
 // This defines the DEFAULT set of permissions for each role.
-// An Admin can override these for individual users.
 $role_permissions = [
     'Admin' => array_keys($permissions), // Admins get all permissions
 
@@ -47,7 +45,9 @@ $role_permissions = [
         'part_view', 'part_create', 'part_edit',
         'wo_view', 'wo_create', 'wo_edit',
         'part_request_view', 'part_request_create', 'part_request_approve', 'part_request_delete',
+        'pm_schedule_view', 'pm_schedule_create', 'pm_schedule_delete',
         'user_view',
+        'location_management',
         'report_view',
     ],
 
@@ -56,7 +56,9 @@ $role_permissions = [
         'part_view', 'part_create', 'part_edit',
         'wo_view', 'wo_create', 'wo_edit',
         'part_request_view', 'part_request_create', 'part_request_approve',
+        'pm_schedule_view', 'pm_schedule_create',
         'user_view',
+        'location_management',
     ],
 
     'Engineer' => [
@@ -64,6 +66,7 @@ $role_permissions = [
         'part_view', 'part_edit',
         'wo_view', 'wo_edit',
         'part_request_view', 'part_request_create',
+        'pm_schedule_view',
     ],
 
     'Technician' => [
@@ -77,5 +80,4 @@ $role_permissions = [
         'part_request_view', 'part_request_create',
     ],
 ];
-
 ?>
