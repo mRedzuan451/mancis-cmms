@@ -350,22 +350,23 @@ async function handleEditUserFormSubmit(e) {
     const userId = parseInt(document.getElementById('editUserId').value);
     const newRole = document.getElementById('editUserRole').value;
 
-    // 1. Gather all checkbox states into an object
     const permissions = {};
     document.querySelectorAll('#userPermissionsContainer input[type="checkbox"]').forEach(checkbox => {
         permissions[checkbox.dataset.key] = checkbox.checked;
     });
 
     try {
-        // 2. Update the role first
-        await api.updateUserRole({ userId, role: newRole });
-        
-        // 3. Update the individual permission overrides
-        await api.updateUserPermissions({ userId, permissions });
+        // --- THIS IS THE FIX ---
+        // We now send the role and permissions together in a single API call.
+        await api.updateUserPermissions({ 
+            userId, 
+            role: newRole, 
+            permissions 
+        });
 
         await logActivity("User Permissions Updated", `Updated roles and permissions for user ID ${userId}`);
         
-        // 4. Refresh data and UI
+        // Refresh data and UI
         state.cache.users = await api.getUsers();
         document.getElementById('editUserModal').style.display = 'none';
         renderMainContent();
