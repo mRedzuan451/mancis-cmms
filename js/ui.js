@@ -79,9 +79,9 @@ export function renderPartsPage() {
     // Add the "Delete Selected" button
     const header = renderPageHeader("Spare Parts Management", [
         '<button id="deleteSelectedBtn" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded hidden"><i class="fas fa-trash-alt mr-2"></i>Delete Selected</button>',
-        '<button id="refreshDataBtn" class="bg-gray-500 ..."><i class="fas fa-sync-alt mr-2"></i>Refresh</button>',
-        '<button id="printPartListBtn" class="bg-indigo-500 ..."><i class="fas fa-print mr-2"></i>Print List</button>',
-        '<button id="addPartBtn" class="bg-blue-500 ..."><i class="fas fa-plus mr-2"></i>Add Part</button>'
+        '<button id="refreshDataBtn" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded"><i class="fas fa-sync-alt mr-2"></i>Refresh</button>',
+        '<button id="printPartListBtn" class="bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-2 px-4 rounded"><i class="fas fa-print mr-2"></i>Print List</button>',
+        '<button id="addPartBtn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded"><i class="fas fa-plus mr-2"></i>Add Asset</button>'
     ]);
     
     return `
