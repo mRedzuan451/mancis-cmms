@@ -720,35 +720,28 @@ function attachPageSpecificEventListeners(page) {
         const rowCheckboxes = document.querySelectorAll('.row-checkbox');
         const deleteSelectedBtn = document.getElementById('deleteSelectedBtn');
 
-        // This function shows or hides the "Delete Selected" button
         const toggleDeleteButton = () => {
             const anyChecked = document.querySelector('.row-checkbox:checked');
             deleteSelectedBtn?.classList.toggle('hidden', !anyChecked);
         };
 
-        // Event listener for the "select all" checkbox in the header
         selectAllCheckbox?.addEventListener('change', (e) => {
             rowCheckboxes.forEach(checkbox => checkbox.checked = e.target.checked);
             toggleDeleteButton();
         });
 
-        // Event listeners for each individual row's checkbox
         rowCheckboxes.forEach(checkbox => {
             checkbox.addEventListener('change', () => {
-                if (!checkbox.checked) {
-                    selectAllCheckbox.checked = false;
-                }
+                if (!checkbox.checked) selectAllCheckbox.checked = false;
                 toggleDeleteButton();
             });
         });
         
-        // Event listener for the "Delete Selected" button
         deleteSelectedBtn?.addEventListener('click', () => handleMassDelete(pageType));
     };
 
     // Apply the checkbox logic to all pages that have a table list
     if (['assets', 'parts', 'workOrders', 'userManagement'].includes(page)) {
-        // 'userManagement' page type corresponds to the 'users' data type for deletion
         const itemType = page === 'userManagement' ? 'users' : page;
         setupCheckboxLogic(itemType);
     }
@@ -766,11 +759,79 @@ function attachPageSpecificEventListeners(page) {
             );
             document.getElementById("assetTableBody").innerHTML = generateTableRows("assets", filtered);
         });
-        document.getElementById("printAssetListBtn")?.addEventListener("click", () => { /* Print logic */ });
+        
+        // --- Print Logic for Assets ---
+        document.getElementById("printAssetListBtn")?.addEventListener("click", () => {
+            const assetsToPrint = state.cache.assets.filter(can.view);
+            const title = "Asset List Report";
+            let content = `<h1>${title}</h1><p>Generated on: ${new Date().toLocaleString()}</p>`;
+            content += `
+                <table border="1" style="width:100%; border-collapse: collapse;">
+                    <thead>
+                        <tr>
+                            <th style="padding: 5px; text-align: left;">Name</th>
+                            <th style="padding: 5px; text-align: left;">Tag</th>
+                            <th style="padding: 5px; text-align: left;">Location</th>
+                            <th style="padding: 5px; text-align: left;">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${assetsToPrint.map(asset => `
+                            <tr>
+                                <td style="padding: 5px;">${asset.name}</td>
+                                <td style="padding: 5px;">${asset.tag}</td>
+                                <td style="padding: 5px;">${getFullLocationName(asset.locationId)}</td>
+                                <td style="padding: 5px;">${asset.status}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>`;
+            printReport(title, content);
+        });
+
     } else if (page === 'parts') {
         document.getElementById("addPartBtn")?.addEventListener("click", () => showPartModal());
-        document.getElementById("partSearch")?.addEventListener("input", (e) => { /* Search logic */ });
-        document.getElementById("printPartListBtn")?.addEventListener("click", () => { /* Print logic */ });
+        
+        // --- Search Logic for Parts ---
+        document.getElementById("partSearch")?.addEventListener("input", (e) => {
+            const searchTerm = e.target.value.toLowerCase();
+            const filtered = state.cache.parts.filter(can.view).filter(p =>
+                p.name.toLowerCase().includes(searchTerm) ||
+                p.sku.toLowerCase().includes(searchTerm) ||
+                p.category.toLowerCase().includes(searchTerm)
+            );
+            document.getElementById("partTableBody").innerHTML = generateTableRows("parts", filtered);
+        });
+
+        // --- Print Logic for Parts ---
+        document.getElementById("printPartListBtn")?.addEventListener("click", () => {
+            const partsToPrint = state.cache.parts.filter(can.view);
+            const title = "Spare Part Inventory Report";
+            let content = `<h1>${title}</h1><p>Generated on: ${new Date().toLocaleString()}</p>`;
+            content += `
+                <table border="1" style="width:100%; border-collapse: collapse;">
+                    <thead>
+                        <tr>
+                            <th style="padding: 5px; text-align: left;">Part Name</th>
+                            <th style="padding: 5px; text-align: left;">SKU</th>
+                            <th style="padding: 5px; text-align: right;">Quantity</th>
+                            <th style="padding: 5px; text-align: left;">Location</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${partsToPrint.map(part => `
+                            <tr>
+                                <td style="padding: 5px;">${part.name}</td>
+                                <td style="padding: 5px;">${part.sku}</td>
+                                <td style="padding: 5px; text-align: right;">${part.quantity}</td>
+                                <td style="padding: 5px;">${getFullLocationName(part.locationId)}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>`;
+            printReport(title, content);
+        });
+
     } else if (page === 'workOrders') {
         document.getElementById("addWorkOrderBtn")?.addEventListener("click", showWorkOrderModal);
         document.querySelectorAll('.wo-type-tab').forEach(tab => {
@@ -781,6 +842,7 @@ function attachPageSpecificEventListeners(page) {
                 const allWorkOrders = state.cache.workOrders.filter(can.view);
                 const filteredWOs = selectedType === 'All' 
                     ? allWorkOrders
+                    // Corrected to include wo_type in search logic as well.
                     : allWorkOrders.filter(wo => wo.wo_type === selectedType);
                 document.getElementById('workOrderTableBody').innerHTML = generateTableRows("workOrders", filteredWOs);
             });
@@ -821,7 +883,63 @@ function attachPageSpecificEventListeners(page) {
         document.querySelector('#addShelfForm')?.addEventListener('submit', handleLocationFormSubmit);
         document.querySelector('#addBoxForm')?.addEventListener('submit', handleLocationFormSubmit);
     } else if (page === 'inventoryReport') {
-        document.getElementById('reportForm')?.addEventListener('submit', (e) => { /* Report generation logic */ });
+        // --- Report Generation Logic ---
+        document.getElementById('reportForm')?.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+            if (new Date(endDate) < new Date(startDate)) {
+                showTemporaryMessage("End Date cannot be before Start Date.", true);
+                return;
+            }
+            const container = document.getElementById('reportResultContainer');
+            container.innerHTML = '<p>Generating report, please wait...</p>';
+            try {
+                const reportData = await api.getInventoryReport({ startDate, endDate });
+                let grandTotalValue = 0;
+                let tableHTML = `
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-xl font-bold">Report for ${startDate} to ${endDate}</h2>
+                        <button id="printReportBtn" class="bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-2 px-4 rounded"><i class="fas fa-print mr-2"></i>Print Report</button>
+                    </div>
+                    <table class="w-full">
+                        <thead><tr class="border-b">
+                            <th class="p-2 text-left">Part Name (SKU)</th>
+                            <th class="p-2 text-right">Starting Qty</th>
+                            <th class="p-2 text-right text-green-600">Stock In</th>
+                            <th class="p-2 text-right text-red-600">Stock Out</th>
+                            <th class="p-2 text-right font-bold">Ending Qty</th>
+                            <th class="p-2 text-right">Total Value</th>
+                        </tr></thead><tbody>`;
+                
+                reportData.forEach(item => {
+                    grandTotalValue += item.total_value;
+                    tableHTML += `
+                        <tr class="border-b hover:bg-gray-50">
+                            <td class="p-2">${item.name} (${item.sku})</td>
+                            <td class="p-2 text-right">${item.starting_qty}</td>
+                            <td class="p-2 text-right text-green-600">+${item.stock_in}</td>
+                            <td class="p-2 text-right text-red-600">-${item.stock_out}</td>
+                            <td class="p-2 text-right font-bold">${item.ending_qty}</td>
+                            <td class="p-2 text-right">RM ${item.total_value.toFixed(2)}</td>
+                        </tr>`;
+                });
+                tableHTML += `</tbody><tfoot>
+                        <tr class="border-t-2 font-bold">
+                            <td class="p-2 text-right" colspan="5">Grand Total Value of Stock</td>
+                            <td class="p-2 text-right">RM ${grandTotalValue.toFixed(2)}</td>
+                        </tr>
+                    </tfoot></table>`;
+                
+                container.innerHTML = tableHTML;
+                
+                document.getElementById('printReportBtn').addEventListener('click', () => {
+                    printReport(`Inventory Report: ${startDate} to ${endDate}`, container.innerHTML);
+                });
+            } catch (error) {
+                container.innerHTML = `<p class="text-red-500">Error generating report: ${error.message}</p>`;
+            }
+        });
     }
 }
 
