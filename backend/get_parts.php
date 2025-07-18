@@ -1,5 +1,6 @@
 <?php
 require_once 'auth_check.php';
+authorize('part_view');
 
 header("Content-Type: application/json; charset=UTF-8");
 
