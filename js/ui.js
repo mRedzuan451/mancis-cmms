@@ -207,16 +207,13 @@ export function renderWorkOrderCalendar() {
     const today = new Date();
     for (let day = 1; day <= daysInMonth; day++) {
         const isToday = today.getFullYear() === year && today.getMonth() === month && today.getDate() === day;
-
-        // --- THIS IS THE FIX ---
-        // Instead of converting to a Date object and then to a UTC string,
-        // we build the 'YYYY-MM-DD' string directly to avoid timezone shifts.
-        const monthStr = String(month + 1).padStart(2, '0'); // month is 0-indexed, so add 1
+        const monthStr = String(month + 1).padStart(2, '0');
         const dayStr = String(day).padStart(2, '0');
         const dateStr = `${year}-${monthStr}-${dayStr}`;
 
-        // The filter now compares identical string formats, which is reliable.
-        const wosOnThisDay = workOrders.filter((wo) => wo.dueDate === dateStr);
+        // --- THIS IS THE FIX ---
+        // The filter now compares against 'start_date' instead of 'dueDate'.
+        const wosOnThisDay = workOrders.filter((wo) => wo.start_date === dateStr);
         
         const hasEvents = wosOnThisDay.length > 0;
         calendarHtml += `

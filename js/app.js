@@ -1080,7 +1080,7 @@ function attachGlobalEventListeners() {
 
         if (target.closest('.calendar-day')?.dataset.date) {
              const date = target.closest('.calendar-day').dataset.date;
-             const wosOnDay = state.cache.workOrders.filter(wo => wo.dueDate === date && can.view(wo));
+             const wosOnDay = state.cache.workOrders.filter(wo => wo.start_date === date && can.view(wo));
              showCalendarDetailModal(date, wosOnDay);
              return;
         }
