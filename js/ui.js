@@ -1209,7 +1209,7 @@ export function renderPmSchedulesPage() {
             <th class="p-2 text-left">Asset</th>
             <th class="p-2 text-left">Frequency</th>
             <th class="p-2 text-left">Next Start Date</th>
-            <th class="p-2 text-left">Next Due Date</th>
+            <th class="p-2 text-left">Next PM Date</th>
             <th class="p-2 text-left">Status</th>
             <th class="p-2 text-left">Actions</th>
           </tr></thead>
@@ -1224,11 +1224,7 @@ export function renderPmSchedulesPage() {
                     nextStartDate = openWoForSchedule.start_date;
                     nextDueDate = openWoForSchedule.dueDate;
                 } else {
-                    // --- THIS IS THE FIX ---
-                    // For a schedule with no open WO, the "Next Start Date" is its starting date.
-                    // We no longer call calculateNextPmDate() here, which was calculating too far ahead.
-                    nextStartDate = s.last_generated_date || s.schedule_start_date;
-                    
+                    nextStartDate = calculateNextPmDate(s);
                     if (nextStartDate && nextStartDate !== 'N/A') {
                         const tempDate = new Date(nextStartDate + 'T00:00:00');
                         const buffer = s.due_date_buffer || 7; 
