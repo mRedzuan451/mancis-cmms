@@ -1,7 +1,7 @@
 <?php
 /**
  * A helper function to add an event to a calendar.
- * This is the final, correct version.
+ * This is the final, correct version using the unambiguous ISO 8601 format.
  */
 function addEventToCalendar($title, $dateString) {
     if (empty($title) || empty($dateString) || $dateString === '0000-00-00') {
@@ -14,12 +14,12 @@ function addEventToCalendar($title, $dateString) {
         $local_datetime = new DateTime($dateString . ' 09:00:00', new DateTimeZone('Asia/Kuala_Lumpur'));
 
         // Step 2: Format the date into the full ISO 8601 standard.
-        // This format (e.g., "2025-07-21T09:00:00+08:00") is unambiguous.
+        // The output string will look like "2025-07-21T09:00:00+0800".
+        // This is the correct, unambiguous format that all modern calendar systems understand.
         $iso_datetime_string = $local_datetime->format(DateTime::ISO8601);
         
-        // Step 3: Send this unambiguous string to your calendar service API.
-        // The cURL example from before would now use $iso_datetime_string in its payload.
-        // For now, we will log the correctly formatted string.
+        // Step 3: Log the correctly formatted string. When you connect to a real
+        // calendar API, you will send the $iso_datetime_string in your request.
         error_log("Calendar Event Sync: Title='$title', ISO 8601 DateTime='$iso_datetime_string'");
 
     } catch (Exception $e) {

@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Calendar Tool Test</title>
+    <style>
+        body { font-family: sans-serif; padding: 2em; line-height: 1.6; }
+        input, button { font-size: 1em; padding: 0.5em; }
+        textarea { width: 100%; height: 200px; font-family: monospace; margin-top: 1em; }
+    </style>
+</head>
+<body>
+    <h1>Calendar Tool Test</h1>
+    <p>This page will generate the exact commands to send to the AI to test how the calendar tool handles different date formats.</p>
+
+    <label for="testDate">Select a test date:</label>
+    <input type="date" id="testDate">
+    <button onclick="generateCommands()">Generate Commands</button>
+
+    <hr style="margin: 2em 0;">
+
+    <h2>Commands to Run:</h2>
+    <p>Copy the entire content of the box below and paste it back to the AI.</p>
+    <textarea id="output" readonly></textarea>
+
+    <script>
+        // Set a default date for the input field
+        document.getElementById('testDate').value = '2025-07-21';
+
+        function generateCommands() {
+            const dateInput = document.getElementById('testDate').value;
+            if (!dateInput) {
+                alert('Please select a date.');
+                return;
+            }
+
+            const localDate = new Date(dateInput + 'T09:00:00');
+            const output = [];
+
+            // --- Test 1: The format that SHOULD work (ISO 8601) ---
+            // Creates a string like "2025-07-21T09:00:00+08:00"
+            const timezoneOffset = -localDate.getTimezoneOffset();
+            const offsetHours = String(Math.floor(timezoneOffset / 60)).padStart(2, '0');
+            const offsetMinutes = String(timezoneOffset % 60).padStart(2, '0');
+            const sign = timezoneOffset >= 0 ? '+' : '-';
+            const isoString = `${dateInput}T09:00:00${sign}${offsetHours}:${offsetMinutes}`;
+            output.push(
+                `# Test 1: Full ISO 8601 format with timezone\n` +
+                `print(generic_calendar.create_event(summary='Test 1 (ISO Format)', start_iso_datetime='${isoString}'))`
+            );
+
+
+            // --- Test 2: Pre-converted UTC time ---
+            // Creates a string like "2025-07-21T01:00:00Z"
+            const utcString = localDate.toISOString();
+            output.push(
+                `# Test 2: UTC time in ISO format\n` +
+                `print(generic_calendar.create_event(summary='Test 2 (UTC Format)', start_iso_datetime='${utcString}'))`
+            );
+
+            // --- Test 3: The Ambiguous Format (from our previous attempts) ---
+            const y = localDate.getFullYear();
+            const m = String(localDate.getMonth() + 1).padStart(2, '0');
+            const d = String(localDate.getDate()).padStart(2, '0');
+            const ambiguousString = `${y}${m}${d}T0900`;
+            output.push(
+                `# Test 3: Ambiguous format without timezone\n` +
+                `print(generic_calendar.create(title='Test 3 (Ambiguous Format)', start_datetime='${ambiguousString}'))`
+            );
+
+
+            document.getElementById('output').value = output.join('\n\n');
+        }
+    </script>
+</body>
+</html>
