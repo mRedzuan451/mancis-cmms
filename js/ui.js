@@ -1187,11 +1187,11 @@ export function renderPmSchedulesPage() {
     const schedules = state.cache.pmSchedules || [];
     const openWorkOrders = state.cache.workOrders.filter(wo => wo.status === 'Open' && wo.wo_type === 'PM');
 
-    // --- THIS IS THE FIX for sorting ---
-    // Sort the schedules by the next start date in descending order (latest on top).
+    // --- This block adds the correct sorting logic ---
+    // It sorts the schedules by the next start date in descending order (latest on top).
     schedules.sort((a, b) => {
-        const dateA_str = a.last_generated_date || a.schedule_start_date || '0';
-        const dateB_str = b.last_generated_date || b.schedule_start_date || '0';
+        const dateA_str = a.last_generated_date || a.schedule_start_date || '1970-01-01';
+        const dateB_str = b.last_generated_date || b.schedule_start_date || '1970-01-01';
         const dateA = new Date(dateA_str);
         const dateB = new Date(dateB_str);
         return dateB - dateA; // Sorts descending
@@ -1219,7 +1219,6 @@ export function renderPmSchedulesPage() {
             ${schedules.map(s => {
                 const assetName = state.cache.assets.find(a => a.id === s.assetId)?.name || 'N/A';
                 const openWoForSchedule = openWorkOrders.find(wo => wo.pm_schedule_id === s.id);
-
                 let nextStartDate = 'N/A';
                 let nextDueDate = 'N/A';
 

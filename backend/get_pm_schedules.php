@@ -8,7 +8,7 @@ $servername = "localhost"; $username = "root"; $password = ""; $dbname = "mancis
 $conn = new mysqli($servername, $username, $password, $dbname);
 if ($conn->connect_error) { die("Connection failed: " . $conn->connect_error); }
 
-// The query now selects all the necessary columns
+// This query now selects all the necessary columns to prevent 'N/A' issues.
 $sql = "SELECT id, title, schedule_start_date, assetId, task, description, frequency_interval, frequency_unit, due_date_buffer, assignedTo, is_active, last_generated_date FROM pm_schedules ORDER BY id DESC";
 $result = $conn->query($sql);
 
