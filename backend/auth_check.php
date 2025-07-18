@@ -76,12 +76,10 @@ if (!isset($_SESSION['user_id'])) {
 
 // --- THIS IS THE NEW, UPGRADED AUTHORIZE FUNCTION ---
 function authorize($permission_key) {
-    // Admins are always authorized, this is a fail-safe.
     if (isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'Admin') {
-        return;
+        return; // Admins are always authorized
     }
 
-    // Connect to the database to check permissions
     $servername = "localhost"; $username = "root"; $password = ""; $dbname = "mancis_db";
     $conn = new mysqli($servername, $username, $password, $dbname);
     if ($conn->connect_error) { 
@@ -90,15 +88,13 @@ function authorize($permission_key) {
         exit();
     }
     
-    // Include the new checker function
     require_once 'permission_checker.php';
     
-    // Get the currently logged-in user's complete permissions
     $currentUserPermissions = getEffectivePermissions($_SESSION['user_id'], $conn);
     $conn->close();
 
     // Check if the user has the required permission
-    if (empty($currentUserPermissions[$permission_key])) { // Checks if the key is missing or false
+    if (empty($currentUserPermissions[$permission_key])) {
         http_response_code(403); // Forbidden
         echo json_encode(["message" => "You do not have permission to perform this action."]);
         exit();

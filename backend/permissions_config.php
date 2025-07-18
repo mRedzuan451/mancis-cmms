@@ -23,12 +23,17 @@ $permissions = [
     'part_request_approve'  => 'Approve/Reject Part Requests',
     'part_request_delete'   => 'Delete Part Requests',
 
+    'pm_schedule_view'    => 'View PM Schedules',
+    'pm_schedule_create'  => 'Create/Edit PM Schedules',
+    'pm_schedule_delete'  => 'Delete PM Schedules',
+
     'user_view'    => 'View Users',
     'user_edit'    => 'Edit User Roles & Permissions',
     'user_delete'  => 'Delete Users',
 
-    'report_view'  => 'View Reports',
-    'log_view'     => 'View Activity Log',
+    'location_management' => 'Manage Locations (Add/Delete)',
+    'report_view'         => 'View Reports',
+    'log_view'            => 'View Activity Log',
 ];
 
 
