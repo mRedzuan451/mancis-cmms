@@ -1,3 +1,1 @@
 --- NEW DEBUG LOG ---
-[2025-07-18 08:23:20] DATABASE VALUE: schedule_start_date is '2025-07-14'
-[2025-07-18 08:23:20] DATABASE VALUE: last_generated_date is '2025-07-14'

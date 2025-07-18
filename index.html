@@ -1230,6 +1230,22 @@
               <input type="date" id="pmStartDate" class="w-full mt-1 px-3 py-2 border rounded" required />
             </div>
             
+            <div>
+              <label for="pmFrequencyInterval" class="block text-sm font-medium text-gray-700">Frequency</label>
+              <div class="flex items-center mt-1">
+                <input type="number" id="pmFrequencyInterval" value="1" min="1" class="w-1/3 px-3 py-2 border rounded-l" required>
+                <select id="pmFrequencyUnit" class="w-2/3 px-3 py-2 border-t border-b border-r rounded-r bg-gray-50">
+                  <option value="Day">Day(s)</option>
+                  <option value="Week" selected>Week(s)</option>
+                  <option value="Month">Month(s)</option>
+                  <option value="Year">Year(s)</option>
+                </select>
+              </div>
+            </div>
+            <div>
+                <label for="pmDueDateBuffer" class="block text-sm font-medium text-gray-700">WO Due Date Buffer</label>
+                <input type="number" id="pmDueDateBuffer" min="1" class="w-full mt-1 px-3 py-2 border rounded" placeholder="Days after start (Default: 7)">
+            </div>
             <div class="col-span-2">
               <label for="pmDescription" class="block text-sm font-medium text-gray-700">Description</label>
               <textarea id="pmDescription" rows="2" class="w-full mt-1 px-3 py-2 border rounded"></textarea>
@@ -1238,15 +1254,6 @@
               <label for="pmAsset" class="block text-sm font-medium text-gray-700">Asset</label>
               <select id="pmAsset" class="w-full mt-1 px-3 py-2 border rounded" required></select>
             </div>
-             <div>
-              <label for="pmFrequency" class="block text-sm font-medium text-gray-700">Frequency</label>
-              <select id="pmFrequency" class="w-full mt-1 px-3 py-2 border rounded" required>
-                <option value="Weekly">Weekly</option>
-                <option value="Monthly">Monthly</option>
-                <option value="Quarterly">Quarterly</option>
-                <option value="Yearly">Yearly</option>
-              </select>
-            </div>
             <div>
               <label for="pmAssignedTo" class="block text-sm font-medium text-gray-700">Assign To</label>
               <select id="pmAssignedTo" class="w-full mt-1 px-3 py-2 border rounded" required></select>
@@ -1254,27 +1261,26 @@
             <div>
               <label for="pmTask" class="block text-sm font-medium text-gray-700">Task</label>
               <select id="pmTask" class="w-full mt-1 px-3 py-2 border rounded" required>
-                 <option value="Cleaning">Cleaning</option>
-                 <option value="Lubrication">Lubrication</option>
-                 <option value="Inspection">Inspection</option>
-                 <option value="Adjustment">Adjustment</option>
-                 <option value="Replacement">Replacement</option>
+                <option value="Cleaning">Cleaning</option>
+                <option value="Lubrication">Lubrication</option>
+                <option value="Inspection">Inspection</option>
+                <option value="Adjustment">Adjustment</option>
+                <option value="Replacement">Replacement</option>
               </select>
             </div>
-          </div>
-          <div class="col-span-2 mt-4">
-              <div class="relative flex items-start">
-                  <div class="flex items-center h-5">
-                      <input id="pmIsActive" type="checkbox" class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded">
-                  </div>
-                  <div class="ml-3 text-sm">
-                      <label for="pmIsActive" class="font-medium text-gray-700">Schedule is Active</label>
-                  </div>
-              </div>
+            
+            <div class="col-span-2 mt-2">
+                <div class="relative flex items-start">
+                    <div class="flex items-center h-5">
+                        <input id="pmIsActive" type="checkbox" class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded">
+                    </div>
+                    <div class="ml-3 text-sm">
+                        <label for="pmIsActive" class="font-medium text-gray-700">Schedule is Active</label>
+                    </div>
+                </div>
+            </div>
           </div>
 
-          <div class="mt-6 flex justify-end space-x-4 col-span-2">
-            </div>
           <div class="mt-6 flex justify-end space-x-4">
             <button type="button" class="bg-gray-300 hover:bg-gray-400 text-black py-2 px-4 rounded" data-close-modal>Cancel</button>
             <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded">Save Schedule</button>

@@ -56,14 +56,15 @@ foreach ($schedules as $schedule) {
     if ($today >= $next_pm_date) {
         $conn->begin_transaction();
         try {
-            // --- FIX 2: Define both start_date and dueDate for the new WO ---
-            $new_start_date_str = $next_pm_date->format('Y-m-d');
+            // --- START: MODIFIED LOGIC ---
+            $interval = $schedule['frequency_interval'];
+            $unit = $schedule['frequency_unit']; // e.g., 'Day', 'Week', 'Month', 'Year'
             
-            $dueDateBuffer = '+7 days'; // Default for Weekly and Monthly
-            if ($schedule['frequency'] === 'Quarterly') $dueDateBuffer = '+14 days';
-            if ($schedule['frequency'] === 'Yearly') $dueDateBuffer = '+30 days';
+            $buffer = $schedule['due_date_buffer'] ?? 7; // Use custom buffer, or default to 7 days
             
-            $new_due_date_str = (clone $next_pm_date)->modify($dueDateBuffer)->format('Y-m-d');
+            // Create the due date by adding the buffer to the next PM date
+            $new_due_date = (clone $next_pm_date)->modify("+$buffer day")->format('Y-m-d');
+            // --- END: MODIFIED LOGIC ---
 
             $wo_priority = 'Medium';
             $wo_status = 'Open';
@@ -86,8 +87,8 @@ foreach ($schedules as $schedule) {
                 $schedule['assetId'], 
                 $schedule['assignedTo'], 
                 $schedule['task'], 
-                $new_start_date_str, // This is the new start date
-                $new_due_date_str,   // This is the new due date
+                $new_start_date_str, // The calculated start date
+                $new_due_date, // The new custom due date
                 $wo_priority, 
                 $schedule['frequency'], 
                 $wo_status,

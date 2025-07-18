@@ -85,39 +85,33 @@ async function handlePmScheduleFormSubmit(e) {
     const scheduleId = document.getElementById("pmScheduleId").value;
     const isEditing = !!scheduleId;
 
-    // Gather all the data from the form fields
+    // Gather data from the new flexible fields
     const scheduleData = {
         title: document.getElementById("pmTitle").value,
         schedule_start_date: document.getElementById("pmStartDate").value,
         assetId: parseInt(document.getElementById("pmAsset").value),
         task: document.getElementById("pmTask").value,
         description: document.getElementById("pmDescription").value,
-        frequency: document.getElementById("pmFrequency").value,
+        frequency_interval: parseInt(document.getElementById("pmFrequencyInterval").value),
+        frequency_unit: document.getElementById("pmFrequencyUnit").value,
+        due_date_buffer: document.getElementById("pmDueDateBuffer").value ? parseInt(document.getElementById("pmDueDateBuffer").value) : null,
         assignedTo: parseInt(document.getElementById("pmAssignedTo").value),
-        checklist: [],      // Note: Checklist/Parts logic for this modal is not yet built
-        requiredParts: [],  // Note: Checklist/Parts logic for this modal is not yet built
         is_active: document.getElementById('pmIsActive').checked ? 1 : 0
     };
 
     try {
         if (isEditing) {
-            // If we are editing, call the update API
             await api.updatePmSchedule(parseInt(scheduleId), scheduleData);
             await logActivity("PM Schedule Updated", `Updated: ${scheduleData.title}`);
         } else {
-            // Otherwise, call the create API
             await api.createPmSchedule(scheduleData);
             await logActivity("PM Schedule Created", `Created: ${scheduleData.title}`);
         }
 
-        // Refresh the cache with the new data
         state.cache.pmSchedules = await api.getPmSchedules();
-        
-        // Close the modal and re-render the page
         document.getElementById("pmScheduleModal").style.display = "none";
         renderMainContent();
         showTemporaryMessage('PM Schedule saved successfully!');
-
     } catch (error) {
         showTemporaryMessage(`Failed to save schedule. ${error.message}`, true);
     }
@@ -1218,6 +1212,42 @@ async function deletePartRequest(id) {
             showTemporaryMessage(`Failed to delete request. ${error.message}`, true);
         }
     }
+}
+
+export function showPmScheduleModal(schedule = null) {
+    const form = document.getElementById("pmScheduleForm");
+    form.reset();
+    
+    const modalTitle = document.querySelector("#pmScheduleModal h2");
+    
+    document.getElementById("pmScheduleId").value = "";
+    document.getElementById("pmStartDate").value = new Date().toISOString().split('T')[0];
+    document.getElementById('pmIsActive').checked = true;
+    
+    // Populate dropdowns
+    const assets = state.cache.assets.filter(can.view);
+    document.getElementById("pmAsset").innerHTML = '<option value="">Select Asset</option>' + assets.map((a) => `<option value="${a.id}">${a.name}</option>`).join("");
+    const users = state.cache.users.filter((u) => ["Engineer", "Technician", "Supervisor"].includes(u.role) && can.view(u));
+    document.getElementById("pmAssignedTo").innerHTML = '<option value="">Assign To</option>' + users.map((u) => `<option value="${u.id}">${u.fullName}</option>`).join("");
+
+    if (schedule) {
+        modalTitle.textContent = "Edit PM Schedule";
+        document.getElementById("pmScheduleId").value = schedule.id;
+        document.getElementById("pmTitle").value = schedule.title;
+        document.getElementById("pmStartDate").value = schedule.schedule_start_date;
+        document.getElementById("pmFrequencyInterval").value = schedule.frequency_interval;
+        document.getElementById("pmFrequencyUnit").value = schedule.frequency_unit;
+        document.getElementById("pmDueDateBuffer").value = schedule.due_date_buffer || "";
+        document.getElementById("pmAsset").value = schedule.assetId;
+        document.getElementById("pmAssignedTo").value = schedule.assignedTo;
+        document.getElementById("pmTask").value = schedule.task;
+        document.getElementById("pmDescription").value = schedule.description;
+        document.getElementById('pmIsActive').checked = !!schedule.is_active;
+    } else {
+        modalTitle.textContent = "New PM Schedule";
+    }
+
+    document.getElementById('pmScheduleModal').style.display = 'flex';
 }
 
 // js/app.js
