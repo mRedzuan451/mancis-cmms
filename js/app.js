@@ -622,7 +622,55 @@ async function deleteLocation(type, id) {
     }
 }
 
-async function handlePmScheduleFormSubmit(e) { /* ... (already provided) ... */ }
+async function handlePmScheduleFormSubmit(e) {
+    e.preventDefault();
+    
+    // --- START: Added Validation ---
+    const title = document.getElementById("pmTitle").value;
+    const startDate = document.getElementById("pmStartDate").value;
+    const assetId = document.getElementById("pmAsset").value;
+    const assignedTo = document.getElementById("pmAssignedTo").value;
+    const task = document.getElementById("pmTask").value;
+
+    if (!title || !startDate || !assetId || !assignedTo || !task) {
+        alert("Please fill out all required fields: Title, Start Date, Asset, Assign To, and Task.");
+        return; // Stop the function here if validation fails
+    }
+    // --- END: Added Validation ---
+
+    const scheduleId = document.getElementById("pmScheduleId").value;
+    const isEditing = !!scheduleId;
+
+    const scheduleData = {
+        title: title,
+        schedule_start_date: startDate,
+        assetId: parseInt(assetId),
+        task: task,
+        description: document.getElementById("pmDescription").value,
+        frequency_interval: parseInt(document.getElementById("pmFrequencyInterval").value),
+        frequency_unit: document.getElementById("pmFrequencyUnit").value,
+        due_date_buffer: document.getElementById("pmDueDateBuffer").value ? parseInt(document.getElementById("pmDueDateBuffer").value) : null,
+        assignedTo: parseInt(assignedTo),
+        is_active: document.getElementById('pmIsActive').checked ? 1 : 0
+    };
+
+    try {
+        if (isEditing) {
+            await api.updatePmSchedule(parseInt(scheduleId), scheduleData);
+            await logActivity("PM Schedule Updated", `Updated: ${scheduleData.title}`);
+        } else {
+            await api.createPmSchedule(scheduleData);
+            await logActivity("PM Schedule Created", `Created: ${scheduleData.title}`);
+        }
+
+        state.cache.pmSchedules = await api.getPmSchedules();
+        document.getElementById("pmScheduleModal").style.display = "none";
+        renderMainContent();
+        showTemporaryMessage('PM Schedule saved successfully!');
+    } catch (error) {
+        showTemporaryMessage(`Failed to save schedule. ${error.message}`, true);
+    }
+}
 
 
 // --- EVENT LISTENER ATTACHMENT ---
