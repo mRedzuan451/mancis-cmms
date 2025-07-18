@@ -1249,39 +1249,43 @@ export function renderPmSchedulesPage() {
     `;
 }
 
+// This function now correctly handles the new flexible frequency and due date buffer fields.
 export function showPmScheduleModal(schedule = null) {
     const form = document.getElementById("pmScheduleForm");
     form.reset();
     
-    // --- THIS IS THE FIX ---
-    // This line was missing. It defines the modalTitle variable.
     const modalTitle = document.querySelector("#pmScheduleModal h2");
-    const isActiveCheckbox = document.getElementById('pmIsActive');
-
-    // Set default values for creating a new schedule
-    document.getElementById("pmScheduleId").value = "";
-    modalTitle.textContent = "New PM Schedule";
-    document.getElementById("pmStartDate").value = new Date().toISOString().split('T')[0];
-    isActiveCheckbox.checked = true; // Default to active for new schedules
     
-    // Populate dropdowns for both modes
+    // Set default values
+    document.getElementById("pmScheduleId").value = "";
+    document.getElementById("pmStartDate").value = new Date().toISOString().split('T')[0];
+    document.getElementById('pmIsActive').checked = true;
+    document.getElementById("pmFrequencyInterval").value = 1;
+    document.getElementById("pmFrequencyUnit").value = "Week";
+    document.getElementById("pmDueDateBuffer").value = "";
+
+    // Populate dropdowns
     const assets = state.cache.assets.filter(can.view);
     document.getElementById("pmAsset").innerHTML = '<option value="">Select Asset</option>' + assets.map((a) => `<option value="${a.id}">${a.name}</option>`).join("");
     const users = state.cache.users.filter((u) => ["Engineer", "Technician", "Supervisor"].includes(u.role) && can.view(u));
     document.getElementById("pmAssignedTo").innerHTML = '<option value="">Assign To</option>' + users.map((u) => `<option value="${u.id}">${u.fullName}</option>`).join("");
 
-    // If we are editing, pre-fill the form with the schedule's data
     if (schedule) {
+        // If editing, populate all fields from the schedule object
         modalTitle.textContent = "Edit PM Schedule";
         document.getElementById("pmScheduleId").value = schedule.id;
         document.getElementById("pmTitle").value = schedule.title;
         document.getElementById("pmStartDate").value = schedule.schedule_start_date;
-        document.getElementById("pmFrequency").value = schedule.frequency;
+        document.getElementById("pmFrequencyInterval").value = schedule.frequency_interval;
+        document.getElementById("pmFrequencyUnit").value = schedule.frequency_unit;
+        document.getElementById("pmDueDateBuffer").value = schedule.due_date_buffer || "";
         document.getElementById("pmAsset").value = schedule.assetId;
         document.getElementById("pmAssignedTo").value = schedule.assignedTo;
         document.getElementById("pmTask").value = schedule.task;
         document.getElementById("pmDescription").value = schedule.description;
-        isActiveCheckbox.checked = !!schedule.is_active;
+        document.getElementById('pmIsActive').checked = !!schedule.is_active;
+    } else {
+        modalTitle.textContent = "New PM Schedule";
     }
 
     document.getElementById('pmScheduleModal').style.display = 'flex';
