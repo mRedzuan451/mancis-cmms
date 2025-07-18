@@ -1,11 +1,10 @@
 <?php
 require_once 'auth_check.php';
-require_once 'calendar_integration.php'; // For calendar updates
+require_once 'calendar_integration.php';
 authorize(['Admin', 'Manager', 'Supervisor']);
 
 header("Content-Type: application/json; charset=UTF-8");
 
-// Set the correct timezone for all date calculations
 date_default_timezone_set('Asia/Kuala_Lumpur');
 
 $servername = "localhost"; $username = "root"; $password = ""; $dbname = "mancis_db";
@@ -29,38 +28,34 @@ foreach ($schedules as $schedule) {
     $base_date_str = $schedule['last_generated_date'] ?? $schedule['schedule_start_date'];
 
     if (empty($base_date_str) || $base_date_str === '0000-00-00') {
-        continue; // Skip schedules with no valid start date
+        continue;
     }
 
     $next_pm_date = new DateTime($base_date_str);
     
-    // For subsequent WOs, add the frequency interval. If it's the first one, use the base date itself.
     if ($schedule['last_generated_date'] !== null) {
         $interval = $schedule['frequency_interval'];
         $unit = $schedule['frequency_unit'];
         $next_pm_date->modify("+$interval $unit");
     }
 
-    // Generate a WO only if today is on or after the calculated next PM date
     if ($today >= $next_pm_date) {
         $conn->begin_transaction();
         try {
-            // --- THIS IS THE FIX ---
-            // 1. The start date is correctly defined from the calculated next PM date.
             $new_start_date_str = $next_pm_date->format('Y-m-d');
-            
-            // 2. The due date is calculated using the custom buffer.
-            $buffer = $schedule['due_date_buffer'] ?? 7; // Default to 7 days if not set
+            $buffer = $schedule['due_date_buffer'] ?? 7;
             $new_due_date = (clone $next_pm_date)->modify("+$buffer day")->format('Y-m-d');
 
-            // 3. Set other properties for the new WO.
             $wo_priority = 'Medium';
             $wo_status = 'Open';
             $wo_type = 'PM';
             $checklistJson = '[]';
             $requiredPartsJson = '[]';
             
-            // 4. Create the calendar event.
+            // --- THIS IS THE FIX ---
+            // 1. Create the frequency string and store it in a variable first.
+            $frequency_text = "{$schedule['frequency_interval']} {$schedule['frequency_unit']}(s)";
+
             addEventToCalendar($schedule['title'], $new_start_date_str);
 
             $stmt_insert = $conn->prepare(
@@ -68,7 +63,7 @@ foreach ($schedules as $schedule) {
                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
             );
 
-            // This bind statement now correctly uses all defined variables
+            // 2. Now, use the new $frequency_text variable in the function call.
             $stmt_insert->bind_param("ssiisssssssssi", 
                 $schedule['title'], 
                 $schedule['description'], 
@@ -78,7 +73,7 @@ foreach ($schedules as $schedule) {
                 $new_start_date_str,
                 $new_due_date,
                 $wo_priority, 
-                "{$schedule['frequency_interval']} {$schedule['frequency_unit']}(s)", 
+                $frequency_text, 
                 $wo_status,
                 $checklistJson, 
                 $requiredPartsJson,
@@ -88,7 +83,6 @@ foreach ($schedules as $schedule) {
             $stmt_insert->execute();
             $stmt_insert->close();
             
-            // 5. Update the schedule's last generated date to the start date of the WO we just created.
             $stmt_update = $conn->prepare("UPDATE pm_schedules SET last_generated_date = ? WHERE id = ?");
             $stmt_update->bind_param("si", $new_start_date_str, $schedule['id']);
             $stmt_update->execute();
