@@ -1209,7 +1209,7 @@ export function renderPmSchedulesPage() {
             <th class="p-2 text-left">Asset</th>
             <th class="p-2 text-left">Frequency</th>
             <th class="p-2 text-left">Next Start Date</th>
-            <th class="p-2 text-left">Next PM Date</th>
+            <th class="p-2 text-left">Following PM Date</th>
             <th class="p-2 text-left">Status</th>
             <th class="p-2 text-left">Actions</th>
           </tr></thead>
@@ -1217,20 +1217,18 @@ export function renderPmSchedulesPage() {
             ${schedules.map(s => {
                 const assetName = state.cache.assets.find(a => a.id === s.assetId)?.name || 'N/A';
                 const openWoForSchedule = openWorkOrders.find(wo => wo.pm_schedule_id === s.id);
+                
                 let nextStartDate = 'N/A';
-                let nextDueDate = 'N/A';
+                // --- THIS IS THE FIX ---
+                // We will always calculate the date for the cycle AFTER the current one.
+                const followingPmDate = calculateNextPmDate(s);
 
                 if (openWoForSchedule) {
+                    // If a WO is open, its start date is the "Next Start Date".
                     nextStartDate = openWoForSchedule.start_date;
-                    nextDueDate = openWoForSchedule.dueDate;
                 } else {
-                    nextStartDate = calculateNextPmDate(s);
-                    if (nextStartDate && nextStartDate !== 'N/A') {
-                        const tempDate = new Date(nextStartDate + 'T00:00:00');
-                        const buffer = s.due_date_buffer || 7; 
-                        tempDate.setDate(tempDate.getDate() + buffer);
-                        nextDueDate = tempDate.toISOString().split('T')[0];
-                    }
+                    // If no WO is open, the "Next Start Date" is the last one generated or the schedule's start date.
+                    nextStartDate = s.last_generated_date || s.schedule_start_date;
                 }
                 const frequencyText = `${s.frequency_interval} ${s.frequency_unit}(s)`;
 
@@ -1238,8 +1236,8 @@ export function renderPmSchedulesPage() {
                     <td class="p-2">${s.title}</td>
                     <td class="p-2">${assetName}</td>
                     <td class="p-2">${frequencyText}</td>
-                    <td class="p-2 font-semibold">${nextStartDate}</td>
-                    <td class="p-2 font-semibold">${nextDueDate}</td>
+                    <td class="p-2 font-semibold">${nextStartDate || 'N/A'}</td>
+                    <td class="p-2 font-semibold">${followingPmDate}</td>
                     <td class="p-2">${s.is_active ? '<span class="text-green-600">Active</span>' : '<span class="text-gray-500">Inactive</span>'}</td>
                     <td class="p-2 space-x-2">
                         <button class="view-pm-btn text-blue-500 hover:text-blue-700" data-id="${s.id}" title="View Details"><i class="fas fa-eye"></i></button>
