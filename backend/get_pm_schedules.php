@@ -8,9 +8,8 @@ $servername = "localhost"; $username = "root"; $password = ""; $dbname = "mancis
 $conn = new mysqli($servername, $username, $password, $dbname);
 if ($conn->connect_error) { die("Connection failed: " . $conn->connect_error); }
 
-// --- THIS IS THE FIX ---
-// The query now selects all the new and existing columns.
-$sql = "SELECT id, title, schedule_start_date, assetId, task, description, frequency_interval, frequency_unit, due_date_buffer, assignedTo, is_active, last_generated_date FROM pm_schedules ORDER BY title ASC";
+// The query now selects all the necessary columns
+$sql = "SELECT id, title, schedule_start_date, assetId, task, description, frequency_interval, frequency_unit, due_date_buffer, assignedTo, is_active, last_generated_date FROM pm_schedules ORDER BY id DESC";
 $result = $conn->query($sql);
 
 $schedules = [];

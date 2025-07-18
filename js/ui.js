@@ -1187,6 +1187,16 @@ export function renderPmSchedulesPage() {
     const schedules = state.cache.pmSchedules || [];
     const openWorkOrders = state.cache.workOrders.filter(wo => wo.status === 'Open' && wo.wo_type === 'PM');
 
+    // --- THIS IS THE FIX for sorting ---
+    // Sort the schedules by the next start date in descending order (latest on top).
+    schedules.sort((a, b) => {
+        const dateA_str = a.last_generated_date || a.schedule_start_date || '0';
+        const dateB_str = b.last_generated_date || b.schedule_start_date || '0';
+        const dateA = new Date(dateA_str);
+        const dateB = new Date(dateB_str);
+        return dateB - dateA; // Sorts descending
+    });
+
     const header = renderPageHeader("Preventive Maintenance Schedules", [
         '<button id="generatePmWoBtn" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded"><i class="fas fa-cogs mr-2"></i>Generate PM Work Orders</button>',
         '<button id="addPmScheduleBtn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded"><i class="fas fa-plus mr-2"></i>Add PM Schedule</button>'
@@ -1217,20 +1227,14 @@ export function renderPmSchedulesPage() {
                     nextStartDate = openWoForSchedule.start_date;
                     nextDueDate = openWoForSchedule.dueDate;
                 } else {
-                    nextStartDate = calculateNextPmDate(s); 
-                    
-                    // --- THIS IS THE FIX ---
-                    // Only attempt to calculate a due date if the start date is a valid date.
+                    nextStartDate = calculateNextPmDate(s);
                     if (nextStartDate !== 'N/A') {
                         const tempDate = new Date(nextStartDate + 'T00:00:00');
-                        // Use the custom buffer if it exists, otherwise default to 7 days
                         const buffer = s.due_date_buffer || 7; 
                         tempDate.setDate(tempDate.getDate() + buffer);
                         nextDueDate = tempDate.toISOString().split('T')[0];
                     }
                 }
-
-                // Format the frequency for display
                 const frequencyText = `${s.frequency_interval} ${s.frequency_unit}(s)`;
 
                 return `<tr class="border-b hover:bg-gray-50">
