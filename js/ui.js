@@ -753,13 +753,47 @@ export function showCalendarDetailModal(date, workOrders) {
     document.getElementById("calendarDetailModal").style.display = "flex";
 }
 
-export function showEditUserModal(userId) {
+export async function showEditUserModal(userId) {
     const user = state.cache.users.find(u => u.id === userId);
     if (!user) return;
+
+    // Set static user info
     document.getElementById("editUserId").value = user.id;
     document.getElementById("editUserFullName").textContent = user.fullName;
     document.getElementById("editUserRole").value = user.role;
+    
+    const permissionsContainer = document.getElementById("userPermissionsContainer");
+    permissionsContainer.innerHTML = '<p>Loading permissions...</p>';
     document.getElementById("editUserModal").style.display = "flex";
+
+    try {
+        // Fetch all required data in parallel
+        const [allPermissions, userPermissions] = await Promise.all([
+            api.getPermissions(),
+            api.getUserPermissions(userId)
+        ]);
+        
+        // Build the checkbox HTML
+        let permissionsHtml = '';
+        for (const key in allPermissions) {
+            const label = allPermissions[key];
+            const isChecked = userPermissions[key] ? 'checked' : '';
+            permissionsHtml += `
+                <div class="relative flex items-start">
+                    <div class="flex h-5 items-center">
+                        <input id="perm-${key}" name="permissions" data-key="${key}" type="checkbox" ${isChecked} class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                    </div>
+                    <div class="ml-3 text-sm">
+                        <label for="perm-${key}" class="font-medium text-gray-700">${label}</label>
+                    </div>
+                </div>
+            `;
+        }
+        permissionsContainer.innerHTML = permissionsHtml;
+
+    } catch (error) {
+        permissionsContainer.innerHTML = `<p class="text-red-500">Error loading permissions: ${error.message}</p>`;
+    }
 }
 
 export function addChecklistItem(text) {

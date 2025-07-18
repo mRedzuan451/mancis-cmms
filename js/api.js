@@ -187,4 +187,13 @@ export const api = {
         body: JSON.stringify({ id })
     }),
     generatePmWorkOrders: () => request('generate_pm_work_orders.php', { method: 'POST' }),
+    // Add these new functions inside the `export const api = { ... };` object
+
+    getPermissions: () => request('get_permissions.php'),
+    getUserPermissions: (userId) => request(`get_user_permissions.php?user_id=${userId}`),
+    updateUserPermissions: (data) => request('update_user_permissions.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+    }),
 };

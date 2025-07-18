@@ -348,17 +348,31 @@ async function handleWorkOrderFormSubmit(e) {
 async function handleEditUserFormSubmit(e) {
     e.preventDefault();
     const userId = parseInt(document.getElementById('editUserId').value);
-    const role = document.getElementById('editUserRole').value;
+    const newRole = document.getElementById('editUserRole').value;
+
+    // 1. Gather all checkbox states into an object
+    const permissions = {};
+    document.querySelectorAll('#userPermissionsContainer input[type="checkbox"]').forEach(checkbox => {
+        permissions[checkbox.dataset.key] = checkbox.checked;
+    });
 
     try {
-        await api.updateUserRole({ userId, role });
-        await logActivity("User Role Updated", `Changed role for user ID ${userId} to ${role}`);
+        // 2. Update the role first
+        await api.updateUserRole({ userId, role: newRole });
+        
+        // 3. Update the individual permission overrides
+        await api.updateUserPermissions({ userId, permissions });
+
+        await logActivity("User Permissions Updated", `Updated roles and permissions for user ID ${userId}`);
+        
+        // 4. Refresh data and UI
         state.cache.users = await api.getUsers();
         document.getElementById('editUserModal').style.display = 'none';
         renderMainContent();
-        showTemporaryMessage("User role updated successfully!");
+        showTemporaryMessage("User role and permissions updated successfully!");
+
     } catch (error) {
-        showTemporaryMessage(`Failed to update user role. ${error.message}`, true);
+        showTemporaryMessage(`Failed to update user. ${error.message}`, true);
     }
 }
 
