@@ -1,5 +1,4 @@
 <?php
-// backend/create_pm_schedule.php
 require_once 'auth_check.php';
 authorize(['Admin', 'Manager', 'Supervisor']);
 
@@ -11,21 +10,19 @@ if ($conn->connect_error) { die("Connection failed: " . $conn->connect_error); }
 
 $data = json_decode(file_get_contents("php://input"));
 
-$checklistJson = json_encode($data->checklist);
-$requiredPartsJson = json_encode($data->requiredParts);
-
-$stmt = $conn->prepare("INSERT INTO pm_schedules (title, schedule_start_date, assetId, task, description, frequency, assignedTo, checklist, requiredParts) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
-// Add 's' for the new date string
-$stmt->bind_param("ssisssiss",
+// This query now uses the new flexible frequency and due date buffer columns
+$stmt = $conn->prepare("INSERT INTO pm_schedules (title, schedule_start_date, assetId, task, description, frequency_interval, frequency_unit, due_date_buffer, assignedTo, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+$stmt->bind_param("ssissisiii",
     $data->title,
-    $data->schedule_start_date, // Bind the new field
+    $data->schedule_start_date,
     $data->assetId,
     $data->task,
     $data->description,
-    $data->frequency,
+    $data->frequency_interval,
+    $data->frequency_unit,
+    $data->due_date_buffer,
     $data->assignedTo,
-    $checklistJson,
-    $requiredPartsJson
+    $data->is_active
 );
 
 if ($stmt->execute()) {
@@ -33,7 +30,7 @@ if ($stmt->execute()) {
     echo json_encode(["message" => "PM Schedule created successfully."]);
 } else {
     http_response_code(500);
-    echo json_encode(["message" => "Failed to create PM Schedule."]);
+    echo json_encode(["message" => "Failed to create PM Schedule.", "error" => $stmt->error]);
 }
 
 $stmt->close();
