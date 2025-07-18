@@ -180,6 +180,7 @@ export function renderWorkOrderCalendar() {
     const firstDayOfMonth = new Date(year, month, 1).getDay();
     const daysInMonth = new Date(year, month + 1, 0).getDate();
     const workOrders = state.cache.workOrders.filter(can.view);
+    
     let calendarHtml = `
       <div class="flex justify-between items-center mb-6">
           <h1 class="text-3xl font-bold">Work Order Calendar</h1>
@@ -198,15 +199,25 @@ export function renderWorkOrderCalendar() {
               <div class="text-center font-bold p-2 calendar-day-header">Thu</div>
               <div class="text-center font-bold p-2 calendar-day-header">Fri</div>
               <div class="text-center font-bold p-2 calendar-day-header">Sat</div>`;
+    
     for (let i = 0; i < firstDayOfMonth; i++) {
         calendarHtml += `<div class="calendar-day other-month"></div>`;
     }
+
     const today = new Date();
     for (let day = 1; day <= daysInMonth; day++) {
-        const currentDate = new Date(year, month, day);
-        const isToday = today.toDateString() === currentDate.toDateString();
-        const dateStr = currentDate.toISOString().split("T")[0];
+        const isToday = today.getFullYear() === year && today.getMonth() === month && today.getDate() === day;
+
+        // --- THIS IS THE FIX ---
+        // Instead of converting to a Date object and then to a UTC string,
+        // we build the 'YYYY-MM-DD' string directly to avoid timezone shifts.
+        const monthStr = String(month + 1).padStart(2, '0'); // month is 0-indexed, so add 1
+        const dayStr = String(day).padStart(2, '0');
+        const dateStr = `${year}-${monthStr}-${dayStr}`;
+
+        // The filter now compares identical string formats, which is reliable.
         const wosOnThisDay = workOrders.filter((wo) => wo.dueDate === dateStr);
+        
         const hasEvents = wosOnThisDay.length > 0;
         calendarHtml += `
           <div class="calendar-day p-2 ${isToday ? "today" : ""} ${hasEvents ? "cursor-pointer hover:bg-blue-100" : ""}" ${hasEvents ? `data-date="${dateStr}"` : ""}>
@@ -223,11 +234,13 @@ export function renderWorkOrderCalendar() {
               </div>
           </div>`;
     }
+
     const lastDayOfMonth = new Date(year, month, daysInMonth).getDay();
     for (let i = lastDayOfMonth; i < 6; i++) {
         calendarHtml += `<div class="calendar-day other-month"></div>`;
     }
     calendarHtml += `</div></div>`;
+    
     return calendarHtml;
 }
 
