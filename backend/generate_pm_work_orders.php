@@ -1,7 +1,7 @@
 <?php
 require_once 'auth_check.php';
 require_once 'calendar_integration.php';
-authorize(['Admin', 'Manager', 'Supervisor']);
+authorize('wo_create');
 
 header("Content-Type: application/json; charset=UTF-8");
 

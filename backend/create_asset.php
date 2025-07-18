@@ -1,6 +1,6 @@
 <?php
 require_once 'auth_check.php';
-authorize(['Admin', 'Manager', 'Supervisor']);
+authorize('asset_create');
 
 header("Content-Type: application/json; charset=UTF-8");
 

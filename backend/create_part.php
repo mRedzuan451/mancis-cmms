@@ -1,6 +1,7 @@
 <?php
 
 require_once 'auth_check.php';
+authorize('part_create');
 
 header("Content-Type: application/json; charset=UTF-8");
 

@@ -1,8 +1,7 @@
 <?php
 
 require_once 'auth_check.php';
-
-authorize(['Admin', 'Supervisor', 'Engineer', 'Technician']);
+authorize('part_request_create');
 
 header("Access-Control-Allow-Origin: *");
 header("Content-Type: application/json; charset=UTF-8");

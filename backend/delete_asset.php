@@ -2,7 +2,7 @@
 
 require_once 'auth_check.php';
 
-authorize(['Admin', 'Manager']);
+authorize('asset_delete');
 
 header("Access-Control-Allow-Origin: *");
 header("Content-Type: application/json; charset=UTF-8");

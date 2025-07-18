@@ -2,7 +2,7 @@
 
 require_once 'auth_check.php';
 
-authorize(['Admin']);
+authorize('wo_delete');
 
 header("Access-Control-Allow-Origin: *");
 header("Content-Type: application/json; charset=UTF-8");

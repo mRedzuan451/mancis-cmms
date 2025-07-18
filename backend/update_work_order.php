@@ -1,6 +1,7 @@
 <?php
 require_once 'auth_check.php';
 require_once 'calendar_integration.php'; // Include the calendar helper
+authorize('wo_edit');
 
 function custom_log($message) {
     file_put_contents('debug_log.txt', date('[Y-m-d H:i:s] ') . $message . "\n", FILE_APPEND);

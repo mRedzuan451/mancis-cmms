@@ -2,7 +2,7 @@
 
 require_once 'auth_check.php';
 
-authorize(['Admin', 'Supervisor', 'Manager']);
+authorize('location_management');
 
 header("Access-Control-Allow-Origin: *");
 header("Content-Type: application/json; charset=UTF-8");

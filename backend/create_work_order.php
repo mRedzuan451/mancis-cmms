@@ -2,7 +2,7 @@
 require_once 'auth_check.php';
 require_once 'calendar_integration.php'; // Include the calendar helper
 
-authorize(['Admin', 'Manager', 'Supervisor', 'Engineer', 'Technician']);
+authorize('wo_create');
 
 header("Content-Type: application/json; charset=UTF-8");
 header("Access-Control-Allow-Methods: POST");

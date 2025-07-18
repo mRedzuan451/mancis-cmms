@@ -2,7 +2,7 @@
 
 require_once 'auth_check.php';
 
-authorize(['Admin']);
+authorize('user_delete');
 header("Access-Control-Allow-Origin: *");
 header("Content-Type: application/json; charset=UTF-8");
 header("Access-Control-Allow-Methods: POST");

@@ -1,7 +1,7 @@
 <?php
 // backend/delete_pm_schedule.php
 require_once 'auth_check.php';
-authorize(['Admin', 'Manager', 'Supervisor']);
+authorize('pm_schedule_delete')
 
 header("Content-Type: application/json; charset=UTF-8");
 
