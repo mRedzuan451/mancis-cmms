@@ -1184,8 +1184,12 @@ export function showEditPartRequestModal(req) {
     modal.style.display = 'flex';
 }
 
+// In js/ui.js
+
 export function renderPmSchedulesPage() {
     const schedules = state.cache.pmSchedules || [];
+    const openWorkOrders = state.cache.workOrders.filter(wo => wo.status === 'Open' && wo.wo_type === 'PM');
+
     const header = renderPageHeader("Preventive Maintenance Schedules", [
         '<button id="generatePmWoBtn" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded"><i class="fas fa-cogs mr-2"></i>Generate PM Work Orders</button>',
         '<button id="addPmScheduleBtn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded"><i class="fas fa-plus mr-2"></i>Add PM Schedule</button>'
@@ -1199,9 +1203,8 @@ export function renderPmSchedulesPage() {
             <th class="p-2 text-left">Schedule Title</th>
             <th class="p-2 text-left">Asset</th>
             <th class="p-2 text-left">Frequency</th>
-            <th class="p-2 text-left">Start Date</th>
-            <th class="p-2 text-left">Next PM Date</th>
-            <th class="p-2 text-left">WO Due Date</th>
+            <th class="p-2 text-left">Next Start Date</th>
+            <th class="p-2 text-left">Next Due Date</th>
             <th class="p-2 text-left">Status</th>
             <th class="p-2 text-left">Actions</th>
           </tr></thead>
@@ -1209,18 +1212,32 @@ export function renderPmSchedulesPage() {
             ${schedules.map(s => {
                 const assetName = state.cache.assets.find(a => a.id === s.assetId)?.name || 'N/A';
                 
-                // Determine the due date buffer text based on frequency
-                let dueDateText = "(+7 Days)";
-                if (s.frequency === 'Quarterly') dueDateText = "(+14 Days)";
-                if (s.frequency === 'Yearly') dueDateText = "(+30 Days)";
+                // --- THIS IS THE FIX ---
+                // Find the currently open PM work order for this schedule.
+                const openWoForSchedule = openWorkOrders.find(wo => wo.pm_schedule_id === s.id);
+
+                let nextStartDate = 'N/A';
+                let nextDueDate = 'N/A';
+
+                if (openWoForSchedule) {
+                    // If an open WO exists, use its dates directly.
+                    nextStartDate = openWoForSchedule.start_date;
+                    nextDueDate = openWoForSchedule.dueDate;
+                } else {
+                    // If no open WO is found, fall back to calculating the theoretical next date.
+                    nextStartDate = calculateNextPmDate(s); 
+                    // Create a temporary date object to calculate the due date
+                    const tempDate = new Date(nextStartDate + 'T00:00:00');
+                    tempDate.setDate(tempDate.getDate() + 7); // Assume +7 days as a default
+                    nextDueDate = tempDate.toISOString().split('T')[0];
+                }
 
                 return `<tr class="border-b hover:bg-gray-50">
                     <td class="p-2">${s.title}</td>
                     <td class="p-2">${assetName}</td>
                     <td class="p-2">${s.frequency}</td>
-                    <td class="p-2">${s.schedule_start_date}</td>
-                    <td class="p-2 font-semibold">${calculateNextPmDate(s)}</td>
-                    <td class="p-2 text-sm text-gray-600">${dueDateText}</td>
+                    <td class="p-2 font-semibold">${nextStartDate}</td>
+                    <td class="p-2 font-semibold">${nextDueDate}</td>
                     <td class="p-2">${s.is_active ? '<span class="text-green-600">Active</span>' : '<span class="text-gray-500">Inactive</span>'}</td>
                     <td class="p-2 space-x-2">
                         <button class="view-pm-btn text-blue-500 hover:text-blue-700" data-id="${s.id}" title="View Details"><i class="fas fa-eye"></i></button>
