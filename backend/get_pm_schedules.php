@@ -1,6 +1,5 @@
 <?php
 require_once 'auth_check.php';
-authorize(['Admin', 'Manager', 'Supervisor', 'Engineer', 'Technician']);
 
 header("Content-Type: application/json; charset=UTF-8");
 
@@ -11,6 +10,8 @@ if ($conn->connect_error) { die("Connection failed: " . $conn->connect_error); }
 // This query now selects all the necessary columns to prevent 'N/A' issues.
 $sql = "SELECT id, title, schedule_start_date, assetId, task, description, frequency_interval, frequency_unit, due_date_buffer, assignedTo, is_active, last_generated_date FROM pm_schedules ORDER BY id DESC";
 $result = $conn->query($sql);
+
+authorize('pm_schedule_view', $conn);
 
 $schedules = [];
 if ($result) {

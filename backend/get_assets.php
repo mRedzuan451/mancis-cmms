@@ -1,6 +1,5 @@
 <?php
 require_once 'auth_check.php';
-authorize(['Admin', 'Manager', 'Supervisor', 'Engineer', 'Technician']);
 
 header("Content-Type: application/json; charset=UTF-8");
 
@@ -16,6 +15,8 @@ if ($conn->connect_error) {
     echo json_encode(["message" => "Database connection failed: " . $conn->connect_error]);
     exit();
 }
+
+authorize('asset_view', $conn);
 
 $sql = "SELECT * FROM assets ORDER BY name ASC";
 $result = $conn->query($sql);

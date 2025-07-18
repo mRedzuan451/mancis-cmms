@@ -1,7 +1,6 @@
 <?php
 require_once 'auth_check.php';
 require_once 'permissions_config.php';
-authorize(['Admin', 'Manager']);
 
 header("Content-Type: application/json; charset=UTF-8");
 

@@ -1,12 +1,13 @@
 <?php
 require_once 'auth_check.php';
-authorize(['Admin', 'Manager', 'Supervisor', 'Engineer', 'Technician']);
 
 header("Content-Type: application/json; charset=UTF-8");
 
 $servername = "localhost"; $username = "root"; $password = ""; $dbname = "mancis_db";
 $conn = new mysqli($servername, $username, $password, $dbname);
 if ($conn->connect_error) { die("Connection failed: " . $conn->connect_error); }
+
+authorize('part_view', $conn);
 
 $sql = "SELECT * FROM parts ORDER BY name ASC";
 $result = $conn->query($sql);
