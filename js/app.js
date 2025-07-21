@@ -656,7 +656,6 @@ async function deleteLocation(type, id) {
 async function handlePmScheduleFormSubmit(e) {
     e.preventDefault();
     
-    // --- START: Added Validation ---
     const title = document.getElementById("pmTitle").value;
     const startDate = document.getElementById("pmStartDate").value;
     const assetId = document.getElementById("pmAsset").value;
@@ -665,12 +664,19 @@ async function handlePmScheduleFormSubmit(e) {
 
     if (!title || !startDate || !assetId || !assignedTo || !task) {
         alert("Please fill out all required fields: Title, Start Date, Asset, Assign To, and Task.");
-        return; // Stop the function here if validation fails
+        return; 
     }
-    // --- END: Added Validation ---
 
     const scheduleId = document.getElementById("pmScheduleId").value;
     const isEditing = !!scheduleId;
+
+    // --- START: NEW DATA GATHERING LOGIC ---
+    const checklistItems = Array.from(document.querySelectorAll("#pmChecklistContainer .checklist-item span")).map(span => ({ text: span.textContent, completed: false }));
+    const requiredParts = Array.from(document.querySelectorAll("#pmPartsContainer .pm-part-row")).map(row => ({
+        partId: parseInt(row.querySelector('.pm-part-select').value),
+        quantity: parseInt(row.querySelector('.pm-part-qty').value)
+    })).filter(p => p.partId && p.quantity > 0);
+    // --- END: NEW DATA GATHERING LOGIC ---
 
     const scheduleData = {
         title: title,
@@ -682,7 +688,9 @@ async function handlePmScheduleFormSubmit(e) {
         frequency_unit: document.getElementById("pmFrequencyUnit").value,
         due_date_buffer: document.getElementById("pmDueDateBuffer").value ? parseInt(document.getElementById("pmDueDateBuffer").value) : null,
         assignedTo: parseInt(assignedTo),
-        is_active: document.getElementById('pmIsActive').checked ? 1 : 0
+        is_active: document.getElementById('pmIsActive').checked ? 1 : 0,
+        checklist: checklistItems, // Add new data to payload
+        requiredParts: requiredParts // Add new data to payload
     };
 
     try {
@@ -1060,6 +1068,14 @@ function attachGlobalEventListeners() {
             "delete-pr-btn": () => deletePartRequest(id),
             "approve-pr-btn": () => handlePartRequestAction(id, 'Approved'),
             "reject-pr-btn": () => handlePartRequestAction(id, 'Rejected'),
+            // --- START: ADD THESE NEW ACTIONS ---
+            "addPmChecklistItemBtn": () => {
+                const input = document.getElementById('newPmChecklistItem');
+                if (input.value) { addChecklistItem(input.value, 'pmChecklistContainer'); input.value = ''; }
+            },
+            "addPmPartBtn": () => addPmPartRow(),
+            "remove-pm-part-btn": () => button.closest('.pm-part-row').remove(),
+            // --- END: ADD THESE NEW ACTIONS ---
             "delete-location-btn": () => deleteLocation(button.dataset.type, id),
             "addChecklistItemBtn": () => {
                 const input = document.getElementById('newChecklistItem');
@@ -1077,6 +1093,9 @@ function attachGlobalEventListeners() {
                     });
                 }
             },
+            "delete-pr-btn": () => deletePartRequest(id),
+            "approve-pr-btn": () => handlePartRequestAction(id, 'Approved'),
+
         };
         for (const cls in actions) {
             if (button.classList.contains(cls) || button.id === cls) {

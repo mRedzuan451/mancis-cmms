@@ -1254,6 +1254,20 @@
                 <label for="pmDueDateBuffer" class="block text-sm font-medium text-gray-700">WO Due Date Buffer</label>
                 <input type="number" id="pmDueDateBuffer" min="1" class="w-full mt-1 px-3 py-2 border rounded" placeholder="Days after start (Default: 7)">
             </div>
+            
+            <div>
+              <label for="pmTask" class="block text-sm font-medium text-gray-700">Task</label>
+              <select id="pmTask" class="w-full mt-1 px-3 py-2 border rounded" required>
+                <option value="Cleaning">Cleaning</option>
+                <option value="Lubrication">Lubrication</option>
+                <option value="Inspection">Inspection</option>
+                <option value="Adjustment">Adjustment</option>
+                <option value="Replacement">Replacement</option>
+                <option value="Overhaul">Overhaul</option>
+                <option value="Assemble">Assemble</option>
+                <option value="Removal">Removal</option>
+              </select>
+            </div>
             <div class="col-span-2">
               <label for="pmDescription" class="block text-sm font-medium text-gray-700">Description</label>
               <textarea id="pmDescription" rows="2" class="w-full mt-1 px-3 py-2 border rounded"></textarea>
@@ -1266,16 +1280,6 @@
               <label for="pmAssignedTo" class="block text-sm font-medium text-gray-700">Assign To</label>
               <select id="pmAssignedTo" class="w-full mt-1 px-3 py-2 border rounded" required></select>
             </div>
-            <div>
-              <label for="pmTask" class="block text-sm font-medium text-gray-700">Task</label>
-              <select id="pmTask" class="w-full mt-1 px-3 py-2 border rounded" required>
-                <option value="Cleaning">Cleaning</option>
-                <option value="Lubrication">Lubrication</option>
-                <option value="Inspection">Inspection</option>
-                <option value="Adjustment">Adjustment</option>
-                <option value="Replacement">Replacement</option>
-              </select>
-            </div>
             
             <div class="col-span-2 mt-2">
                 <div class="relative flex items-start">
@@ -1287,7 +1291,21 @@
                     </div>
                 </div>
             </div>
-          </div>
+            
+            <div class="col-span-2 mt-4">
+              <label class="block text-sm font-medium text-gray-700 mb-2">Checklist Template</label>
+              <div id="pmChecklistContainer" class="space-y-2 mb-2"></div>
+              <div class="flex gap-2">
+                <input type="text" id="newPmChecklistItem" class="flex-grow px-3 py-2 border rounded" placeholder="Add a new checklist step..." />
+                <button type="button" id="addPmChecklistItemBtn" class="bg-green-500 text-white px-3 py-2 rounded">+</button>
+              </div>
+            </div>
+            <div id="pmPartsSection" class="mt-4 col-span-2">
+              <label class="block text-sm font-medium text-gray-700 mb-2">Required Spare Parts Template</label>
+              <div id="pmPartsContainer" class="space-y-2"></div>
+              <button type="button" id="addPmPartBtn" class="mt-2 text-sm text-blue-500 hover:underline">+ Add Part</button>
+            </div>
+            </div>
 
           <div class="mt-6 flex justify-end space-x-4">
             <button type="button" class="bg-gray-300 hover:bg-gray-400 text-black py-2 px-4 rounded" data-close-modal>Cancel</button>

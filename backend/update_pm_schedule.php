@@ -18,8 +18,12 @@ if ($id <= 0) {
     exit();
 }
 
-$stmt = $conn->prepare("UPDATE pm_schedules SET title = ?, schedule_start_date = ?, assetId = ?, task = ?, description = ?, frequency_interval = ?, frequency_unit = ?, due_date_buffer = ?, assignedTo = ?, is_active = ? WHERE id = ?");
-$stmt->bind_param("ssissisiiii",
+// --- START: FIX ---
+$checklistJson = json_encode($data->checklist ?? []);
+$requiredPartsJson = json_encode($data->requiredParts ?? []);
+
+$stmt = $conn->prepare("UPDATE pm_schedules SET title = ?, schedule_start_date = ?, assetId = ?, task = ?, description = ?, frequency_interval = ?, frequency_unit = ?, due_date_buffer = ?, assignedTo = ?, is_active = ?, checklist = ?, requiredParts = ? WHERE id = ?");
+$stmt->bind_param("ssissisiiissi",
     $data->title,
     $data->schedule_start_date,
     $data->assetId,
@@ -30,8 +34,12 @@ $stmt->bind_param("ssissisiiii",
     $data->due_date_buffer,
     $data->assignedTo,
     $data->is_active,
+    $checklistJson,
+    $requiredPartsJson,
     $id
 );
+// --- END: FIX ---
+
 
 if ($stmt->execute()) {
     http_response_code(200);

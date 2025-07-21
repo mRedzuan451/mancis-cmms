@@ -1361,9 +1361,12 @@ export function showPmScheduleModal(schedule = null) {
     const form = document.getElementById("pmScheduleForm");
     form.reset();
     
+    // Clear the new containers
+    document.getElementById("pmChecklistContainer").innerHTML = "";
+    document.getElementById("pmPartsContainer").innerHTML = "";
+    
     const modalTitle = document.querySelector("#pmScheduleModal h2");
     
-    // Set default values
     document.getElementById("pmScheduleId").value = "";
     document.getElementById("pmStartDate").value = new Date().toISOString().split('T')[0];
     document.getElementById('pmIsActive').checked = true;
@@ -1371,14 +1374,12 @@ export function showPmScheduleModal(schedule = null) {
     document.getElementById("pmFrequencyUnit").value = "Week";
     document.getElementById("pmDueDateBuffer").value = "";
 
-    // Populate dropdowns
     const assets = state.cache.assets.filter(can.view);
     document.getElementById("pmAsset").innerHTML = '<option value="">Select Asset</option>' + assets.map((a) => `<option value="${a.id}">${a.name}</option>`).join("");
     const users = state.cache.users.filter((u) => ["Engineer", "Technician", "Supervisor"].includes(u.role) && can.view(u));
     document.getElementById("pmAssignedTo").innerHTML = '<option value="">Assign To</option>' + users.map((u) => `<option value="${u.id}">${u.fullName}</option>`).join("");
 
     if (schedule) {
-        // If editing, populate all fields from the schedule object
         modalTitle.textContent = "Edit PM Schedule";
         document.getElementById("pmScheduleId").value = schedule.id;
         document.getElementById("pmTitle").value = schedule.title;
@@ -1391,6 +1392,15 @@ export function showPmScheduleModal(schedule = null) {
         document.getElementById("pmTask").value = schedule.task;
         document.getElementById("pmDescription").value = schedule.description;
         document.getElementById('pmIsActive').checked = !!schedule.is_active;
+
+        // Populate existing checklist and parts
+        if (schedule.checklist && schedule.checklist.length > 0) {
+            schedule.checklist.forEach(item => addChecklistItem(item.text, 'pmChecklistContainer'));
+        }
+        if (schedule.requiredParts && schedule.requiredParts.length > 0) {
+            schedule.requiredParts.forEach(part => addPmPartRow(part.partId, part.quantity));
+        }
+
     } else {
         modalTitle.textContent = "New PM Schedule";
     }
@@ -1440,4 +1450,33 @@ function renderPageHeader(title, buttons = []) {
         </div>
     </div>
   `;
+}
+
+function addPmPartRow(selectedPartId = "", quantity = 1) {
+    const container = document.getElementById("pmPartsContainer");
+    const allParts = state.cache.parts.filter(can.view);
+    const row = document.createElement("div");
+    row.className = "flex items-center gap-2 pm-part-row mt-2";
+    
+    const select = document.createElement("select");
+    select.className = "w-2/3 px-3 py-2 border rounded pm-part-select";
+    select.innerHTML = '<option value="">Select a part...</option>' + allParts.map(p => `<option value="${p.id}">${p.name} (SKU: ${p.sku})</option>`).join("");
+    if (selectedPartId) select.value = selectedPartId;
+
+    const qtyInput = document.createElement("input");
+    qtyInput.type = "number";
+    qtyInput.className = "w-1/3 px-3 py-2 border rounded pm-part-qty";
+    qtyInput.value = quantity;
+    qtyInput.min = 1;
+    qtyInput.placeholder = "Qty";
+
+    const removeBtn = document.createElement("button");
+    removeBtn.type = "button";
+    removeBtn.className = "remove-pm-part-btn text-red-500 hover:text-red-700";
+    removeBtn.innerHTML = '<i class="fas fa-trash"></i>';
+    
+    row.appendChild(select);
+    row.appendChild(qtyInput);
+    row.appendChild(removeBtn);
+    container.appendChild(row);
 }
