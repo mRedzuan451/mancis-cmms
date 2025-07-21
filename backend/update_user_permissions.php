@@ -1,11 +1,22 @@
 <?php
 require_once 'auth_check.php';
 require_once 'permissions_config.php';
-authorize(['Admin']);
 
+// --- START: FIX ---
+
+// 1. Establish the database connection FIRST.
 $servername = "localhost"; $username = "root"; $password = ""; $dbname = "mancis_db";
 $conn = new mysqli($servername, $username, $password, $dbname);
-if ($conn->connect_error) { die("Connection failed: " . $conn->connect_error); }
+if ($conn->connect_error) { 
+    http_response_code(503);
+    echo json_encode(["message" => "Database connection failed."]);
+    exit(); 
+}
+
+// 2. NOW call authorize() with the required $conn variable.
+authorize('user_edit', $conn);
+
+// --- END: FIX ---
 
 $data = json_decode(file_get_contents("php://input"));
 $userId = $data->userId ?? 0;
