@@ -80,44 +80,60 @@ function render() {
     }
 }
 
+// js/app.js
+
 async function loadInitialData() {
     try {
-        const dataMap = {
-            partRequests: api.getPartRequests(),
-            locations: api.getLocations(),
-            receivedParts: api.getReceivedParts(),
-        };
+        const { permissions } = state.currentUser;
+        const dataMap = {}; // Start with an empty map
 
-        const { role } = state.currentUser;
-        if (role === 'Admin') {
-            Object.assign(dataMap, {
-                assets: api.getAssets(),
-                parts: api.getParts(),
-                users: api.getUsers(),
-                workOrders: api.getWorkOrders(),
-                logs: api.getLogs(),
-                pmSchedules: api.getPmSchedules(),
-            });
-        } else if (role !== 'Clerk') {
-            Object.assign(dataMap, {
-                assets: api.getAssets(),
-                parts: api.getParts(),
-                users: api.getUsers(),
-                workOrders: api.getWorkOrders(),
-                pmSchedules: api.getPmSchedules(),
-            });
+        // --- START: FIX ---
+        // Conditionally add API calls to the map based on user permissions.
+
+        if (permissions.asset_view) {
+            dataMap.assets = api.getAssets();
+        }
+        if (permissions.part_view) {
+            dataMap.parts = api.getParts();
+        }
+        if (permissions.user_view) {
+            dataMap.users = api.getUsers();
+        }
+        if (permissions.wo_view) {
+            dataMap.workOrders = api.getWorkOrders();
+        }
+        if (permissions.part_request_view) {
+            dataMap.partRequests = api.getPartRequests();
+        }
+        if (permissions.location_management) {
+            dataMap.locations = api.getLocations();
+        }
+        if (permissions.log_view) {
+            dataMap.logs = api.getLogs();
+        }
+        if (permissions.pm_schedule_view) {
+            dataMap.pmSchedules = api.getPmSchedules();
         }
         
+        // This data is needed for the part request workflow, which most roles can access.
+        dataMap.receivedParts = api.getReceivedParts();
+        // --- END: FIX ---
+
         const promises = Object.values(dataMap);
         const keys = Object.keys(dataMap);
+
+        // Fetch all allowed data in parallel
         const results = await Promise.all(promises);
 
+        // Populate the cache with the results
         results.forEach((result, index) => {
             state.cache[keys[index]] = result;
         });
 
     } catch (error) {
-        showTemporaryMessage("Failed to load initial application data. Please try again.", true);
+        showTemporaryMessage("Failed to load application data. Please try again.", true);
+        console.error("Error during initial data load:", error);
+        // Uncomment the line below if you want to auto-logout on data load failure
         handleLogout(render);
     }
 }
