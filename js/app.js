@@ -39,6 +39,7 @@ import {
     showPmScheduleModal, // This is now correctly imported from ui.js
     showPmScheduleDetailModal,
     addChecklistItem,
+    addPmPartRow,
 } from './ui.js';
 
 

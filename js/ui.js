@@ -1458,7 +1458,7 @@ function renderPageHeader(title, buttons = []) {
   `;
 }
 
-function addPmPartRow(selectedPartId = "", quantity = 1) {
+export function addPmPartRow(selectedPartId = "", quantity = 1) {
     const container = document.getElementById("pmPartsContainer");
     const allParts = state.cache.parts.filter(can.view);
     const row = document.createElement("div");
