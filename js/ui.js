@@ -541,13 +541,28 @@ export function renderSidebar() {
         .join("");
 }
 
-// --- MODAL SHOW/POPULATE FUNCTIONS ---
-
 export function showAssetModal(assetId = null) {
     const form = document.getElementById("assetForm");
     form.reset();
     document.getElementById("assetId").value = "";
     populateLocationDropdown(document.getElementById("assetLocation"), "operational");
+
+    // --- START: FIX ---
+
+    // 1. Get the dropdown element for related parts and clear it.
+    const partSelect = document.getElementById("assetRelatedParts");
+    partSelect.innerHTML = ''; // Clear previous options
+
+    // 2. Populate the dropdown with all available parts from the cache.
+    state.cache.parts.filter(can.view).forEach(part => {
+        const option = document.createElement('option');
+        option.value = part.id;
+        option.textContent = `${part.name} (SKU: ${part.sku})`;
+        partSelect.appendChild(option);
+    });
+
+    // --- END: FIX ---
+
     if (assetId) {
         const asset = state.cache.assets.find((a) => a.id === assetId);
         if (asset) {
@@ -560,6 +575,20 @@ export function showAssetModal(assetId = null) {
             document.getElementById("assetCost").value = asset.cost;
             document.getElementById("assetCurrency").value = asset.currency;
             document.getElementById("assetLocation").value = asset.locationId;
+
+            // --- START: FIX ---
+
+            // 3. Pre-select the parts that are already linked to this asset.
+            if (asset.relatedParts) {
+                Array.from(partSelect.options).forEach(option => {
+                    // Note: asset.relatedParts may contain numbers or strings, so we use '==' for loose comparison.
+                    if (asset.relatedParts.includes(option.value)) {
+                        option.selected = true;
+                    }
+                });
+            }
+
+            // --- END: FIX ---
         }
     } else {
         document.getElementById("assetModalTitle").textContent = "Add Asset";
