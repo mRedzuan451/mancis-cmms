@@ -567,27 +567,54 @@ export function showAssetModal(assetId = null) {
     document.getElementById("assetModal").style.display = "flex";
 }
 
-// --- NEW MODAL FUNCTIONS ---
-
 export function showAssetDetailModal(asset) {
     if (!asset) return;
     const contentEl = document.getElementById('assetDetailContent');
     const locationName = getFullLocationName(asset.locationId);
-
-    // --- NEW: Find related records ---
-
-    // 1. Find related spare parts
-    // This assumes a 'relatedAssets' array exists on your part objects.
+    
     const relatedParts = state.cache.parts.filter(part => 
         part.relatedAssets && part.relatedAssets.includes(asset.id.toString())
     );
 
-    // 2. Find transfer history from the activity log
     const transferHistory = state.cache.logs.filter(log => 
         log.action === "Asset Transferred" && log.details.includes(asset.name)
     );
 
-    // --- Updated HTML with new sections ---
+    // --- START: FIX ---
+
+    // 1. Find all work orders related to this asset.
+    const workOrderHistory = state.cache.workOrders
+        .filter(wo => wo.assetId === asset.id)
+        .sort((a, b) => new Date(b.dueDate) - new Date(a.dueDate)); // Sort by most recent due date
+
+    // 2. Build the HTML for the work order history section.
+    const workOrderHistoryHtml = `
+        <h3 class="text-lg font-bold mt-6 mb-2">Work Order History</h3>
+        <div class="bg-gray-50 p-3 rounded-md text-sm max-h-48 overflow-y-auto">
+            ${workOrderHistory.length > 0 ? `
+                <table class="w-full">
+                    <thead>
+                        <tr class="border-b">
+                            <th class="p-1 text-left">Title</th>
+                            <th class="p-1 text-left">Status</th>
+                            <th class="p-1 text-left">Due Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${workOrderHistory.map(wo => `
+                            <tr class="border-b hover:bg-gray-100">
+                                <td class="p-1">${wo.title}</td>
+                                <td class="p-1">${wo.status}</td>
+                                <td class="p-1">${wo.dueDate}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            ` : `<p class="text-gray-500">No work order history found for this asset.</p>`}
+        </div>
+    `;
+    
+    // 3. Update the modal's full content, including the new section.
     contentEl.innerHTML = `
         <h2 class="text-2xl font-bold mb-4">${asset.name}</h2>
         <div class="grid grid-cols-2 gap-4 text-sm">
@@ -622,8 +649,11 @@ export function showAssetDetailModal(asset) {
             ` : `<p class="text-gray-500">No transfer history found for this asset.</p>`}
         </div>
         
-        <h3 class="text-lg font-bold mt-6 mb-2">Work Order History</h3>
-        `;
+        ${workOrderHistoryHtml}
+    `;
+
+    // --- END: FIX ---
+    
     document.getElementById('assetDetailModal').style.display = 'flex';
 }
 
