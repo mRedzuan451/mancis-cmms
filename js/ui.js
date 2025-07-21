@@ -1095,8 +1095,10 @@ export async function showRestockPartsModal() {
     document.getElementById('restockPartsModal').style.display = 'flex';
 }
 // This function was also missing from your original ui.js
-export function populateLocationDropdowns(divisionSelect, departmentSelect) {
-    const { divisions = [], departments = [] } = state.cache.locations;
+export function populateLocationDropdowns(divisionSelect, departmentSelect, data = null) {
+    // If no specific data is passed, use the cached state. Otherwise, use the provided data.
+    const locationData = data || state.cache.locations;
+    const { divisions = [], departments = [] } = locationData || {};
 
     if (divisionSelect) {
         divisionSelect.innerHTML = '<option value="">Select Division</option>' + 

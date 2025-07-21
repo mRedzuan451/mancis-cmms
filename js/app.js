@@ -982,14 +982,16 @@ function attachGlobalEventListeners() {
         document.getElementById("registrationModal").style.display = "flex";
         const divisionSelect = document.getElementById('regDivision');
         const departmentSelect = document.getElementById('regDepartment');
-        if(!state.cache.locations || Object.keys(state.cache.locations).length === 0) {
-           api.getLocations().then(locations => {
-               state.cache.locations = locations;
-               populateLocationDropdowns(divisionSelect, departmentSelect);
-           });
-        } else {
-            populateLocationDropdowns(divisionSelect, departmentSelect);
-        }
+
+        // Always fetch fresh, public location data for the registration form.
+        api.getPublicLocations().then(locations => {
+            // Pass the fetched data directly to the dropdown population function.
+            populateLocationDropdowns(divisionSelect, departmentSelect, locations);
+        }).catch(error => {
+            console.error("Could not load locations for registration:", error);
+            divisionSelect.innerHTML = '<option>Error loading divisions</option>';
+            departmentSelect.innerHTML = '<option>Error loading departments</option>';
+        });
     });
     document.getElementById("registrationForm").addEventListener("submit", (e) => handleRegistration(e, async () => {
         if (state.currentUser?.role === 'Admin') {

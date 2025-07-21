@@ -171,6 +171,7 @@ export const api = {
         body: JSON.stringify({ id })
     }),
     getPmSchedules: () => request('get_pm_schedules.php'),
+    getPublicLocations: () => request('get_public_locations.php'),
     createPmSchedule: (data) => request('create_pm_schedule.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
