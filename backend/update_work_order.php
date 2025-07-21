@@ -1,22 +1,18 @@
 <?php
 require_once 'auth_check.php';
-require_once 'calendar_integration.php'; // Include the calendar helper
-authorize('wo_edit');
+require_once 'calendar_integration.php'; 
 
-function custom_log($message) {
-    file_put_contents('debug_log.txt', date('[Y-m-d H:i:s] ') . $message . "\n", FILE_APPEND);
-}
+$servername = "localhost"; $username = "root"; $password = ""; $dbname = "mancis_db";
+$conn = new mysqli($servername, $username, $password, $dbname);
+if ($conn->connect_error) { die("Connection failed: " . $conn->connect_error); }
 
-file_put_contents('debug_log.txt', "--- NEW DEBUG LOG ---\n");
-
-authorize(['Admin', 'Manager', 'Supervisor', 'Engineer', 'Technician']);
+authorize('wo_edit', $conn);
 
 header("Content-Type: application/json; charset=UTF-8");
 header("Access-Control-Allow-Methods: POST");
 
 date_default_timezone_set('Asia/Kuala_Lumpur');
 
-// Helper function to validate date strings
 function isValidDateString($dateStr) {
     if (empty($dateStr) || $dateStr === '0000-00-00') {
         return false;
@@ -24,10 +20,6 @@ function isValidDateString($dateStr) {
     $d = DateTime::createFromFormat('Y-m-d', $dateStr);
     return $d && $d->format('Y-m-d') === $dateStr;
 }
-
-$servername = "localhost"; $username = "root"; $password = ""; $dbname = "mancis_db";
-$conn = new mysqli($servername, $username, $password, $dbname);
-if ($conn->connect_error) { die("Connection failed: " . $conn->connect_error); }
 
 $data = json_decode(file_get_contents("php://input"));
 $id = isset($_GET['id']) ? intval($_GET['id']) : 0;
@@ -41,7 +33,6 @@ if ($id <= 0) {
 $conn->begin_transaction();
 
 try {
-    // Block 1: Part Consumption
     if (isset($data->status) && $data->status === 'Completed') {
         $stmt_get_parts = $conn->prepare("SELECT requiredParts FROM workorders WHERE id = ?");
         $stmt_get_parts->bind_param("i", $id);
@@ -74,7 +65,6 @@ try {
         }
     }
 
-    // Block 2: Main Work Order Update
     $checklistJson = json_encode($data->checklist);
     $requiredPartsJson = json_encode($data->requiredParts);
     $data->wo_type = $data->wo_type ?? 'CM';
@@ -83,7 +73,6 @@ try {
     if (!$stmt_update_wo->execute()) { throw new Exception("Failed to update work order details."); }
     $stmt_update_wo->close();
 
-    // Block 3: PM Re-generation
     if (isset($data->status) && $data->status === 'Completed' && isset($data->wo_type) && $data->wo_type === 'PM') {
         $stmt_get_schedule_id = $conn->prepare("SELECT pm_schedule_id FROM workorders WHERE id = ?");
         $stmt_get_schedule_id->bind_param("i", $id);
@@ -99,11 +88,6 @@ try {
             $stmt_get_schedule->close();
             if ($schedule_result->num_rows > 0) {
                 $schedule = $schedule_result->fetch_assoc();
-
-                // --- We will log the source dates here ---
-                custom_log("DATABASE VALUE: schedule_start_date is '" . ($schedule['schedule_start_date'] ?? 'NULL') . "'");
-                custom_log("DATABASE VALUE: last_generated_date is '" . ($schedule['last_generated_date'] ?? 'NULL') . "'");
-
                 $base_date_str = $schedule['last_generated_date'] ?? $schedule['schedule_start_date'];
                 if (isValidDateString($base_date_str)) {
                     $checklist_data = json_decode($schedule['checklist'], true) ?: [];
@@ -117,7 +101,6 @@ try {
                     }
                     $new_start_date_str = $next_pm_date->format('Y-m-d');
                     
-                    // Add the next PM's start date to the calendar
                     addEventToCalendar("Next PM for: " . $schedule['title'], $new_start_date_str);
                     
                     $new_due_date = clone $next_pm_date;

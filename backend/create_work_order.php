@@ -1,15 +1,15 @@
 <?php
 require_once 'auth_check.php';
-require_once 'calendar_integration.php'; // Include the calendar helper
-
-authorize('wo_create');
-
-header("Content-Type: application/json; charset=UTF-8");
-header("Access-Control-Allow-Methods: POST");
+require_once 'calendar_integration.php'; 
 
 $servername = "localhost"; $username = "root"; $password = ""; $dbname = "mancis_db";
 $conn = new mysqli($servername, $username, $password, $dbname);
 if ($conn->connect_error) { die("Connection failed: " . $conn->connect_error); }
+
+authorize('wo_create', $conn);
+
+header("Content-Type: application/json; charset=UTF-8");
+header("Access-Control-Allow-Methods: POST");
 
 $data = json_decode(file_get_contents("php://input"));
 
@@ -41,7 +41,6 @@ try {
     $new_wo_id = $stmt->insert_id;
     $stmt->close();
     
-    // Add the start date of the new work order to the calendar
     addEventToCalendar($data->title, $data->start_date);
 
     $conn->commit();

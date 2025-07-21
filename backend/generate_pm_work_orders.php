@@ -1,15 +1,16 @@
 <?php
 require_once 'auth_check.php';
 require_once 'calendar_integration.php';
-authorize('wo_create');
-
-header("Content-Type: application/json; charset=UTF-8");
-
-date_default_timezone_set('Asia/Kuala_Lumpur');
 
 $servername = "localhost"; $username = "root"; $password = ""; $dbname = "mancis_db";
 $conn = new mysqli($servername, $username, $password, $dbname);
 if ($conn->connect_error) { die("Connection failed: " . $conn->connect_error); }
+
+authorize('wo_create', $conn);
+
+header("Content-Type: application/json; charset=UTF-8");
+
+date_default_timezone_set('Asia/Kuala_Lumpur');
 
 $generated_count = 0;
 $today = new DateTime();
@@ -52,8 +53,6 @@ foreach ($schedules as $schedule) {
             $checklistJson = '[]';
             $requiredPartsJson = '[]';
             
-            // --- THIS IS THE FIX ---
-            // 1. Create the frequency string and store it in a variable first.
             $frequency_text = "{$schedule['frequency_interval']} {$schedule['frequency_unit']}(s)";
 
             addEventToCalendar($schedule['title'], $new_start_date_str);
@@ -63,7 +62,6 @@ foreach ($schedules as $schedule) {
                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
             );
 
-            // 2. Now, use the new $frequency_text variable in the function call.
             $stmt_insert->bind_param("ssiisssssssssi", 
                 $schedule['title'], 
                 $schedule['description'], 

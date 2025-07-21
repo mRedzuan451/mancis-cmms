@@ -1,13 +1,13 @@
 <?php
-
 require_once 'auth_check.php';
-authorize('part_create');
-
-header("Content-Type: application/json; charset=UTF-8");
 
 $servername = "localhost"; $username = "root"; $password = ""; $dbname = "mancis_db";
 $conn = new mysqli($servername, $username, $password, $dbname);
 if ($conn->connect_error) { die("Connection failed: " . $conn->connect_error); }
+
+authorize('part_create', $conn);
+
+header("Content-Type: application/json; charset=UTF-8");
 
 $data = json_decode(file_get_contents("php://input"));
 
@@ -17,11 +17,9 @@ if (empty($data->name) || empty($data->sku) || empty($data->locationId)) {
     exit();
 }
 
-// --- NEW: Convert the relatedAssets array to a JSON string ---
 $relatedAssetsJson = isset($data->relatedAssets) ? json_encode($data->relatedAssets) : null;
 
 $stmt = $conn->prepare("INSERT INTO parts (name, sku, category, quantity, minQuantity, locationId, maker, supplier, price, currency, relatedAssets) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-// Note the new 's' at the end for the JSON string
 $stmt->bind_param("sssiisssdss", 
     $data->name, 
     $data->sku, 
@@ -33,7 +31,7 @@ $stmt->bind_param("sssiisssdss",
     $data->supplier, 
     $data->price, 
     $data->currency,
-    $relatedAssetsJson // Bind the new JSON string
+    $relatedAssetsJson
 );
 
 if ($stmt->execute()) {

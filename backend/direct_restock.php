@@ -1,15 +1,14 @@
 <?php
-// backend/direct_restock.php
-
 require_once 'auth_check.php';
-authorize(['Admin', 'Manager', 'Supervisor', 'Clerk']);
-
-header("Content-Type: application/json; charset=UTF-8");
-header("Access-Control-Allow-Methods: POST");
 
 $servername = "localhost"; $username = "root"; $password = ""; $dbname = "mancis_db";
 $conn = new mysqli($servername, $username, $password, $dbname);
 if ($conn->connect_error) { die("Connection failed: " . $conn->connect_error); }
+
+authorize('part_edit', $conn);
+
+header("Content-Type: application/json; charset=UTF-8");
+header("Access-Control-Allow-Methods: POST");
 
 $data = json_decode(file_get_contents("php://input"));
 
@@ -23,7 +22,6 @@ try {
     $log_details = '';
     $log_user = $_SESSION['user_fullname'];
 
-    // SCENARIO 1: Update an existing part
     if (isset($data->partId) && !empty($data->partId)) {
         $partId = intval($data->partId);
 
@@ -38,7 +36,6 @@ try {
         if ($stmt->affected_rows === 0) { throw new Exception("Part not found or failed to update."); }
         $stmt->close();
 
-        // Get part name for logging
         $stmt_log = $conn->prepare("SELECT name FROM parts WHERE id = ?");
         $stmt_log->bind_param("i", $partId);
         $stmt_log->execute();
@@ -48,7 +45,6 @@ try {
         
         $log_details = "Added $quantity unit(s) to '$partName' (Part ID: $partId). Notes: $notes";
 
-    // SCENARIO 2: Create a new part
     } elseif (isset($data->newPartName) && !empty($data->newPartName)) {
         if (empty($data->newPartSku) || $quantity <= 0 || empty($locationId)) {
             throw new Exception("New part name, SKU, quantity, and location are required.");
@@ -73,7 +69,6 @@ try {
         throw new Exception("Invalid data provided for restock.");
     }
 
-    // Log the action
     $log_stmt = $conn->prepare("INSERT INTO logs (user, action, details) VALUES (?, 'Direct Part Restock', ?)");
     $log_stmt->bind_param("ss", $log_user, $log_details);
     $log_stmt->execute();

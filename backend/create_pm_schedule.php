@@ -1,16 +1,16 @@
 <?php
 require_once 'auth_check.php';
-authorize('pm_schedule_create');
-
-header("Content-Type: application/json; charset=UTF-8");
 
 $servername = "localhost"; $username = "root"; $password = ""; $dbname = "mancis_db";
 $conn = new mysqli($servername, $username, $password, $dbname);
 if ($conn->connect_error) { die("Connection failed: " . $conn->connect_error); }
 
+authorize('pm_schedule_create', $conn);
+
+header("Content-Type: application/json; charset=UTF-8");
+
 $data = json_decode(file_get_contents("php://input"));
 
-// This query now uses the new flexible frequency and due date buffer columns
 $stmt = $conn->prepare("INSERT INTO pm_schedules (title, schedule_start_date, assetId, task, description, frequency_interval, frequency_unit, due_date_buffer, assignedTo, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
 $stmt->bind_param("ssissisiii",
     $data->title,

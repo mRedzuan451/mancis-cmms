@@ -1,15 +1,24 @@
 <?php
-// backend/delete_part_request.php
-
 require_once 'auth_check.php';
-authorize('part_request_delete');
+
+// --- START: FIX ---
+
+// 1. Establish the database connection FIRST.
+$servername = "localhost"; $username = "root"; $password = ""; $dbname = "mancis_db";
+$conn = new mysqli($servername, $username, $password, $dbname);
+if ($conn->connect_error) { 
+    http_response_code(503);
+    echo json_encode(["message" => "Database connection failed."]);
+    exit();
+}
+
+// 2. NOW call authorize() with the correct permission key and the $conn variable.
+authorize('part_request_delete', $conn);
+
+// --- END: FIX ---
 
 header("Content-Type: application/json; charset=UTF-8");
 header("Access-Control-Allow-Methods: POST");
-
-$servername = "localhost"; $username = "root"; $password = ""; $dbname = "mancis_db";
-$conn = new mysqli($servername, $username, $password, $dbname);
-if ($conn->connect_error) { die("Connection failed: " . $conn->connect_error); }
 
 $data = json_decode(file_get_contents("php://input"));
 $id = isset($data->id) ? intval($data->id) : 0;

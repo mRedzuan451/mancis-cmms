@@ -1,13 +1,24 @@
 <?php
 require_once 'auth_check.php';
-authorize(['Admin', 'Manager','Supervisor']);
+
+// --- START: FIX ---
+
+// 1. Establish the database connection FIRST.
+$servername = "localhost"; $username = "root"; $password = ""; $dbname = "mancis_db";
+$conn = new mysqli($servername, $username, $password, $dbname);
+if ($conn->connect_error) { 
+    http_response_code(503);
+    echo json_encode(["message" => "Database connection failed."]);
+    exit();
+}
+
+// 2. NOW call authorize() with the correct permission key and the $conn variable.
+authorize('part_request_approve', $conn);
+
+// --- END: FIX ---
 
 header("Content-Type: application/json; charset=UTF-8");
 header("Access-Control-Allow-Methods: POST");
-
-$servername = "localhost"; $username = "root"; $password = ""; $dbname = "mancis_db";
-$conn = new mysqli($servername, $username, $password, $dbname);
-if ($conn->connect_error) { die("Connection failed: " . $conn->connect_error); }
 
 $data = json_decode(file_get_contents("php://input"));
 
@@ -23,7 +34,7 @@ if ($id <= 0 || empty($data->status) || empty($data->approverId)) {
 $conn->begin_transaction();
 
 try {
-    // ... (keep the SELECT query to get the request details)
+    // Get the request details to check its current status
     $request_sql = "SELECT * FROM partrequests WHERE id = ?";
     $stmt_get = $conn->prepare($request_sql);
     $stmt_get->bind_param("i", $id);
@@ -35,7 +46,7 @@ try {
     $request = $request_result->fetch_assoc();
     $stmt_get->close();
 
-    // If it was a storage request and it's approved, deduct from stock
+    // If approving a request from storage, deduct from inventory
     if ($data->status === 'Approved' && $request['status'] === 'Requested from Storage') {
         $part_id = $request['partId'];
         $quantity_requested = $request['quantity'];
@@ -50,21 +61,18 @@ try {
         }
         $stmt_part->close();
         
-        // --- ADD THIS LOGGING BLOCK ---
         $log_user = $_SESSION['user_fullname'];
-        // Create a details string compatible with the report (e.g., "3 x PartID 42")
         $log_details = "Issued from storage for request #" . $request['id'] . ": " . $quantity_requested . " x PartID " . $part_id;
         $log_stmt = $conn->prepare("INSERT INTO logs (user, action, details) VALUES (?, 'Parts Issued from Storage', ?)");
         $log_stmt->bind_param("ss", $log_user, $log_details);
         $log_stmt->execute();
         $log_stmt->close();
-        // --- END LOGGING BLOCK ---
 
-        // Change status to completed as it's an internal transfer
+        // Since it's an internal transfer, the status immediately becomes 'Completed'
         $data->status = 'Completed'; 
     }
 
-    // This part remains the same
+    // Update the request status and set the requester_viewed_status to 0 for notifications
     $stmt = $conn->prepare("UPDATE partrequests SET status = ?, approverId = ?, approvalDate = NOW(), rejectionReason = ?, requester_viewed_status = 0 WHERE id = ?");
     $stmt->bind_param("sisi", $data->status, $data->approverId, $rejectionReason, $id);
     $stmt->execute();
