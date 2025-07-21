@@ -59,10 +59,22 @@ export function renderAssetsPage() {
           <input type="text" id="assetSearch" class="w-full mb-4 px-3 py-2 border rounded" placeholder="Search by name, tag, or category...">
           <div class="overflow-x-auto">
               <table class="w-full" id="assetTable">
-                </table>
+                  
+                  <thead><tr class="border-b">
+                      <th class="p-2 w-4"><input type="checkbox" id="selectAllCheckbox"></th>
+                      <th class="p-2 text-left cursor-pointer" data-sort="name">Name <i class="fas fa-sort"></i></th>
+                      <th class="p-2 text-left cursor-pointer" data-sort="tag">Tag <i class="fas fa-sort"></i></th>
+                      <th class="p-2 text-left cursor-pointer" data-sort="locationId">Location <i class="fas fa-sort"></i></th>
+                      <th class="p-2 text-left cursor-pointer" data-sort="status">Status <i class="fas fa-sort"></i></th>
+                      <th class="p-2 text-left">Actions</th>
+                  </tr></thead>
+                  <tbody id="assetTableBody">${generateTableRows("assets", assets)}</tbody>
+                  </table>
           </div>
       </div>`;
 }
+
+// js/ui.js
 
 export function renderPartsPage() {
     const parts = state.cache.parts.filter(can.view);
@@ -81,6 +93,15 @@ export function renderPartsPage() {
           <input type="text" id="partSearch" class="w-full mb-4 px-3 py-2 border rounded" placeholder="Search...">
           <div class="overflow-x-auto">
               <table class="w-full" id="partTable">
+
+                  <thead><tr class="border-b">
+                      <th class="p-2 w-4"><input type="checkbox" id="selectAllCheckbox"></th>
+                      <th class="p-2 text-left cursor-pointer" data-sort="name">Part Name <i class="fas fa-sort"></i></th>
+                      <th class="p-2 text-left cursor-pointer" data-sort="sku">SKU <i class="fas fa-sort"></i></th>
+                      <th class="p-2 text-left cursor-pointer" data-sort="quantity">Quantity <i class="fas fa-sort"></i></th>
+                      <th class="p-2 text-left">Actions</th>
+                  </tr></thead>
+                  <tbody id="partTableBody">${generateTableRows("parts", parts)}</tbody>
                   </table>
           </div>
       </div>`;
