@@ -757,23 +757,30 @@ export async function showEditUserModal(userId) {
     const user = state.cache.users.find(u => u.id === userId);
     if (!user) return;
 
+    // --- START: FIX ---
+    const modal = document.getElementById('editUserModal');
+    const roleSelect = document.getElementById('editUserRole');
+    const permissionsContainer = document.getElementById('userPermissionsContainer');
+
     // Set static user info
-    document.getElementById("editUserId").value = user.id;
-    document.getElementById("editUserFullName").textContent = user.fullName;
-    document.getElementById("editUserRole").value = user.role;
+    document.getElementById('editUserId').value = user.id;
+    document.getElementById('editUserFullName').textContent = user.fullName;
+    roleSelect.value = user.role;
     
-    const permissionsContainer = document.getElementById("userPermissionsContainer");
     permissionsContainer.innerHTML = '<p>Loading permissions...</p>';
-    document.getElementById("editUserModal").style.display = "flex";
+    modal.style.display = 'flex';
 
     try {
         // Fetch all required data in parallel
-        const [allPermissions, userPermissions] = await Promise.all([
-            api.getPermissions(),
+        const [permissionData, userPermissions] = await Promise.all([
+            api.getPermissions(), // Fetches the new object with 'all' and 'roles'
             api.getUserPermissions(userId)
         ]);
         
-        // Build the checkbox HTML
+        const allPermissions = permissionData.all;
+        const roleDefaults = permissionData.roles;
+
+        // Build the checkbox HTML from the master list
         let permissionsHtml = '';
         for (const key in allPermissions) {
             const label = allPermissions[key];
@@ -791,9 +798,24 @@ export async function showEditUserModal(userId) {
         }
         permissionsContainer.innerHTML = permissionsHtml;
 
+        // --- ADD THIS EVENT LISTENER ---
+        // This is the core of the fix. It runs whenever the dropdown changes.
+        roleSelect.addEventListener('change', (e) => {
+            const newRole = e.target.value;
+            const newRoleDefaults = roleDefaults[newRole] || [];
+            
+            // Go through each checkbox
+            document.querySelectorAll('#userPermissionsContainer input[type="checkbox"]').forEach(checkbox => {
+                const permissionKey = checkbox.dataset.key;
+                // Check the box if the permission key is in the new role's default list
+                checkbox.checked = newRoleDefaults.includes(permissionKey);
+            });
+        });
+
     } catch (error) {
         permissionsContainer.innerHTML = `<p class="text-red-500">Error loading permissions: ${error.message}</p>`;
     }
+    // --- END: FIX ---
 }
 
 export function addChecklistItem(text) {
