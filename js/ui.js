@@ -877,12 +877,18 @@ export async function showEditUserModal(userId) {
     // --- END: FIX ---
 }
 
-export function addChecklistItem(text) {
-    const container = document.getElementById("woChecklistContainer");
+export function addChecklistItem(text, containerId) {
+    const container = document.getElementById(containerId);
+    if (!container) return; // Exit if the container doesn't exist
+
     const itemDiv = document.createElement("div");
     itemDiv.className = "flex items-center gap-2 checklist-item";
-    // The button no longer has an onclick attribute. It just has the class.
-    itemDiv.innerHTML = `<span class="flex-grow p-2 bg-gray-100 rounded">${text}</span><button type="button" class="remove-checklist-item-btn text-red-500 hover:text-red-700"><i class="fas fa-trash"></i></button>`;
+    itemDiv.innerHTML = `
+        <span class="flex-grow p-2 bg-gray-100 rounded">${text}</span>
+        <button type="button" class="remove-checklist-item-btn text-red-500 hover:text-red-700">
+            <i class="fas fa-trash"></i>
+        </button>
+    `;
     container.appendChild(itemDiv);
 }
 

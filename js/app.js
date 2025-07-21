@@ -1068,20 +1068,25 @@ function attachGlobalEventListeners() {
             "delete-pr-btn": () => deletePartRequest(id),
             "approve-pr-btn": () => handlePartRequestAction(id, 'Approved'),
             "reject-pr-btn": () => handlePartRequestAction(id, 'Rejected'),
-            // --- START: ADD THESE NEW ACTIONS ---
+            "delete-location-btn": () => deleteLocation(button.dataset.type, id),
+
+            // **FIX for Work Order Modal Checklist**
+            "addChecklistItemBtn": () => {
+                const input = document.getElementById('newChecklistItem');
+                if (input.value) { addChecklistItem(input.value, 'woChecklistContainer'); input.value = ''; }
+            },
+            
+            // **FIX for removing any checklist item**
+            "remove-checklist-item-btn": () => button.closest('.checklist-item').remove(),
+
+            // **FIX for PM Schedule Modal buttons**
             "addPmChecklistItemBtn": () => {
                 const input = document.getElementById('newPmChecklistItem');
                 if (input.value) { addChecklistItem(input.value, 'pmChecklistContainer'); input.value = ''; }
             },
             "addPmPartBtn": () => addPmPartRow(),
             "remove-pm-part-btn": () => button.closest('.pm-part-row').remove(),
-            // --- END: ADD THESE NEW ACTIONS ---
-            "delete-location-btn": () => deleteLocation(button.dataset.type, id),
-            "addChecklistItemBtn": () => {
-                const input = document.getElementById('newChecklistItem');
-                if (input.value) { addChecklistItem(input.value); input.value = ''; }
-            },
-            "remove-checklist-item-btn": () => button.closest('.checklist-item').remove(),
+
             "view-pm-btn": () => showPmScheduleDetailModal(state.cache.pmSchedules.find(s => s.id === id)),
             "edit-pm-btn": () => showPmScheduleModal(state.cache.pmSchedules.find(s => s.id === id)),
             "delete-pm-btn": () => {
@@ -1093,9 +1098,6 @@ function attachGlobalEventListeners() {
                     });
                 }
             },
-            "delete-pr-btn": () => deletePartRequest(id),
-            "approve-pr-btn": () => handlePartRequestAction(id, 'Approved'),
-
         };
         for (const cls in actions) {
             if (button.classList.contains(cls) || button.id === cls) {
