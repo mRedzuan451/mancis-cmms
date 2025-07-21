@@ -197,4 +197,15 @@ export const api = {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
     }),
+    bulkUpdateAssets: (data) => request('bulk_update_assets.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+    }),   
+    // --- ADD THIS NEW FUNCTION ---
+    bulkUpdateParts: (data) => request('bulk_update_parts.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+    }),
 };

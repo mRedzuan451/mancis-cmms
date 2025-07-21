@@ -40,6 +40,7 @@ import {
     showPmScheduleDetailModal,
     addChecklistItem,
     addPmPartRow,
+    showUploadModal,
 } from './ui.js';
 
 
@@ -788,6 +789,13 @@ function attachPageSpecificEventListeners(page) {
     
     // Attach any other event listeners that are specific to a certain page
     if (page === 'assets') {
+        document.getElementById("uploadAssetsBtn")?.addEventListener("click", () => {
+            showUploadModal('assets');
+            document.getElementById('assetUploadInput').click();
+        });
+        document.getElementById("assetUploadInput")?.addEventListener("change", (e) => {
+            handleFileUpload(e.target.files[0], 'assets');
+        });
         document.getElementById("addAssetBtn")?.addEventListener("click", () => showAssetModal());
         document.getElementById("assetSearch")?.addEventListener("input", (e) => {
             const searchTerm = e.target.value.toLowerCase();
@@ -830,6 +838,13 @@ function attachPageSpecificEventListeners(page) {
         });
 
     } else if (page === 'parts') {
+        document.getElementById("uploadPartsBtn")?.addEventListener("click", () => {
+            showUploadModal('parts');
+            document.getElementById('partUploadInput').click();
+        });
+        document.getElementById("partUploadInput")?.addEventListener("change", (e) => {
+            handleFileUpload(e.target.files[0], 'parts');
+        });
         document.getElementById("addPartBtn")?.addEventListener("click", () => showPartModal());
         
         // --- Search Logic for Parts ---
@@ -1163,6 +1178,67 @@ async function deletePartRequest(id) {
             showTemporaryMessage(`Failed to delete request. ${error.message}`, true);
         }
     }
+}
+
+async function handleFileUpload(file, type) {
+    if (!file) return;
+    if (file.type !== 'text/csv') {
+        showTemporaryMessage('Please upload a valid .csv file.', true);
+        return;
+    }
+
+    const resultDiv = document.getElementById('uploadResult');
+    document.getElementById('uploadInstructions').style.display = 'none';
+    resultDiv.style.display = 'block';
+    resultDiv.innerHTML = `<p>Processing file... please wait.</p>`;
+
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+        const text = e.target.result;
+        const lines = text.split(/\r?\n/).filter(line => line.trim() !== '');
+        if (lines.length < 2) {
+            resultDiv.innerHTML = `<p class="text-red-500">Error: CSV file must have a header row and at least one data row.</p>`;
+            return;
+        }
+
+        const header = lines[0].split(',').map(h => h.trim());
+        const rows = lines.slice(1).map(line => {
+            const values = line.split(',');
+            const rowObject = {};
+            header.forEach((key, index) => {
+                rowObject[key] = values[index] ? values[index].trim() : '';
+            });
+            return rowObject;
+        });
+
+        try {
+            let response;
+            if (type === 'assets') {
+                response = await api.bulkUpdateAssets(rows);
+            } else if (type === 'parts') {
+                response = await api.bulkUpdateParts(rows);
+            }
+
+            let resultHTML = `<p class="font-bold text-green-600">${response.message}</p><ul>`;
+            resultHTML += `<li><strong>Created:</strong> ${response.created}</li>`;
+            resultHTML += `<li><strong>Updated:</strong> ${response.updated}</li>`;
+            if (response.failed > 0) {
+                resultHTML += `<li class="text-red-500"><strong>Failed:</strong> ${response.failed}</li>`;
+                resultHTML += `</ul><p class="font-bold mt-2">Error Details:</p><ul class="text-sm list-disc list-inside">`;
+                response.errors.forEach(err => {
+                    resultHTML += `<li>${err}</li>`;
+                });
+                resultHTML += `</ul>`;
+            } else {
+                resultHTML += `</ul>`;
+            }
+            resultDiv.innerHTML = resultHTML;
+            refreshAllDataAndRender();
+        } catch (error) {
+            resultDiv.innerHTML = `<p class="text-red-500">An error occurred: ${error.message}</p>`;
+        }
+    };
+    reader.readAsText(file);
 }
 
 // js/app.js

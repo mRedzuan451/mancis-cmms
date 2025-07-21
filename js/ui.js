@@ -45,10 +45,9 @@ export function renderDashboard() {
 export function renderAssetsPage() {
     const assets = state.cache.assets.filter(can.view);
 
-    // Add the new "Delete Selected" button to the header
     const header = renderPageHeader("Asset Management", [
         '<button id="deleteSelectedBtn" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded hidden"><i class="fas fa-trash-alt mr-2"></i>Delete Selected</button>',
-        '<button id="refreshDataBtn" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded"><i class="fas fa-sync-alt mr-2"></i>Refresh</button>',
+        '<button id="uploadAssetsBtn" class="bg-teal-500 hover:bg-teal-600 text-white font-bold py-2 px-4 rounded"><i class="fas fa-upload mr-2"></i>Upload List</button>',
         '<button id="printAssetListBtn" class="bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-2 px-4 rounded"><i class="fas fa-print mr-2"></i>Print List</button>',
         '<button id="addAssetBtn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded"><i class="fas fa-plus mr-2"></i>Add Asset</button>'
     ]);
@@ -56,19 +55,11 @@ export function renderAssetsPage() {
     return `
       ${header}
       <div class="bg-white p-4 rounded-lg shadow">
+          <input type="file" id="assetUploadInput" class="hidden" accept=".csv">
           <input type="text" id="assetSearch" class="w-full mb-4 px-3 py-2 border rounded" placeholder="Search by name, tag, or category...">
           <div class="overflow-x-auto">
               <table class="w-full" id="assetTable">
-                  <thead><tr class="border-b">
-                      <th class="p-2 w-4"><input type="checkbox" id="selectAllCheckbox"></th>
-                      <th class="p-2 text-left cursor-pointer" data-sort="name">Name <i class="fas fa-sort"></i></th>
-                      <th class="p-2 text-left cursor-pointer" data-sort="tag">Tag <i class="fas fa-sort"></i></th>
-                      <th class="p-2 text-left cursor-pointer" data-sort="locationId">Location <i class="fas fa-sort"></i></th>
-                      <th class="p-2 text-left cursor-pointer" data-sort="status">Status <i class="fas fa-sort"></i></th>
-                      <th class="p-2 text-left">Actions</th>
-                  </tr></thead>
-                  <tbody id="assetTableBody">${generateTableRows("assets", assets)}</tbody>
-              </table>
+                </table>
           </div>
       </div>`;
 }
@@ -76,10 +67,9 @@ export function renderAssetsPage() {
 export function renderPartsPage() {
     const parts = state.cache.parts.filter(can.view);
     
-    // Add the "Delete Selected" button
     const header = renderPageHeader("Spare Parts Management", [
         '<button id="deleteSelectedBtn" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded hidden"><i class="fas fa-trash-alt mr-2"></i>Delete Selected</button>',
-        '<button id="refreshDataBtn" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded"><i class="fas fa-sync-alt mr-2"></i>Refresh</button>',
+        '<button id="uploadPartsBtn" class="bg-teal-500 hover:bg-teal-600 text-white font-bold py-2 px-4 rounded"><i class="fas fa-upload mr-2"></i>Upload List</button>',
         '<button id="printPartListBtn" class="bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-2 px-4 rounded"><i class="fas fa-print mr-2"></i>Print List</button>',
         '<button id="addPartBtn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded"><i class="fas fa-plus mr-2"></i>Add Parts</button>'
     ]);
@@ -87,18 +77,11 @@ export function renderPartsPage() {
     return `
       ${header}
       <div class="bg-white p-4 rounded-lg shadow">
+          <input type="file" id="partUploadInput" class="hidden" accept=".csv">
           <input type="text" id="partSearch" class="w-full mb-4 px-3 py-2 border rounded" placeholder="Search...">
           <div class="overflow-x-auto">
               <table class="w-full" id="partTable">
-                  <thead><tr class="border-b">
-                      <th class="p-2 w-4"><input type="checkbox" id="selectAllCheckbox"></th>
-                      <th class="p-2 text-left cursor-pointer" data-sort="name">Part Name <i class="fas fa-sort"></i></th>
-                      <th class="p-2 text-left cursor-pointer" data-sort="sku">SKU <i class="fas fa-sort"></i></th>
-                      <th class="p-2 text-left cursor-pointer" data-sort="quantity">Quantity <i class="fas fa-sort"></i></th>
-                      <th class="p-2 text-left">Actions</th>
-                  </tr></thead>
-                  <tbody id="partTableBody">${generateTableRows("parts", parts)}</tbody>
-              </table>
+                  </table>
           </div>
       </div>`;
 }
@@ -1485,4 +1468,29 @@ export function addPmPartRow(selectedPartId = "", quantity = 1) {
     row.appendChild(qtyInput);
     row.appendChild(removeBtn);
     container.appendChild(row);
+}
+
+export function showUploadModal(type) {
+    const modal = document.getElementById('uploadModal');
+    const title = document.getElementById('uploadModalTitle');
+    const downloadLink = document.getElementById('templateDownloadLink');
+    const instructions = document.getElementById('uploadInstructions');
+    const resultDiv = document.getElementById('uploadResult');
+
+    // Reset modal state
+    instructions.style.display = 'block';
+    resultDiv.style.display = 'none';
+    resultDiv.innerHTML = '';
+    
+    if (type === 'assets') {
+        title.textContent = 'Upload Assets File';
+        downloadLink.href = 'data:text/csv;charset=utf-8,tag,name,category,locationId,purchaseDate,cost,currency,status';
+        downloadLink.download = 'assets_template.csv';
+    } else if (type === 'parts') {
+        title.textContent = 'Upload Spare Parts File';
+        downloadLink.href = 'data:text/csv;charset=utf-8,sku,name,category,quantity,minQuantity,locationId,maker,supplier,price,currency';
+        downloadLink.download = 'parts_template.csv';
+    }
+
+    modal.style.display = 'flex';
 }

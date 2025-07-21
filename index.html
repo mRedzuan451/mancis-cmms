@@ -1377,6 +1377,25 @@
         </form>
       </div>
     </div>
-  </body>
+    <div id="uploadModal" class="modal">
+      <div class="modal-content">
+        <h2 id="uploadModalTitle" class="text-xl font-bold mb-4">Upload File</h2>
+        <div id="uploadInstructions">
+            <p class="text-sm text-gray-600 mb-4">
+                Please upload a CSV file with the correct format. The first row must be the header. 
+                The unique identifier column (<strong>tag</strong> for assets, <strong>sku</strong> for parts) will be used to match existing records for updates. 
+                If the identifier is not found, a new record will be created.
+            </p>
+            <a href="#" id="templateDownloadLink" class="text-blue-500 hover:underline">Download the template file</a>
+        </div>
+        <div id="uploadResult" class="hidden mt-4"></div>
+        <div class="mt-6 flex justify-end space-x-4">
+          <button type="button" class="bg-gray-300 hover:bg-gray-400 text-black py-2 px-4 rounded" data-close-modal>
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+    </body>
   <script type="module" src="js/app.js"></script>
 </html>
