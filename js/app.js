@@ -17,6 +17,8 @@ import {
     renderPartsRequestPage,
     renderPmSchedulesPage,
     renderInventoryReportPage,
+    renderStockTakePage,
+    renderStockTakeCountPage,
     generateTableRows,
     showAssetModal,
     showPartModal,
