@@ -533,11 +533,16 @@ export function generateTableRows(type, data) {
     }
 }
 
+// js/ui.js
+
 export function renderSidebar() {
-    const { fullName, role } = state.currentUser;
+    // --- START: FIX ---
+    // 1. Correctly destructure fullName, role, AND permissions from the current user's state.
+    const { fullName, role, permissions } = state.currentUser;
     document.getElementById("userFullName").textContent = fullName;
     document.getElementById("userRole").textContent = role;
     document.getElementById("userDepartment").textContent = getUserDepartment(state.currentUser);
+    
     const navLinks = [
         { page: "dashboard", icon: "fa-tachometer-alt", text: "Dashboard", roles: ["Admin", "Manager", "Supervisor", "Engineer", "Technician", "Clerk"] },
         { page: "assets", icon: "fa-box", text: "Assets", roles: ["Admin", "Manager", "Supervisor", "Engineer", "Technician"] },
@@ -552,20 +557,28 @@ export function renderSidebar() {
         { page: "userManagement", icon: "fa-users-cog", text: "User Management", roles: ["Admin"] },
         { page: "activityLog", icon: "fa-history", text: "Activity Log", roles: ["Admin"] },
     ];
-    if (permissions.feedback_view) {
-        navLinks.push({ page: "feedback", icon: "fa-envelope-open-text", text: "Feedback Inbox" });
+
+    // 2. Now that 'permissions' is defined, this check will work correctly.
+    if (permissions && permissions.feedback_view) {
+        navLinks.push({ page: "feedback", icon: "fa-envelope-open-text", text: "Feedback Inbox", roles: ["Admin"] });
     }
+
     const navMenu = document.getElementById("navMenu");
     navMenu.innerHTML = navLinks
         .filter((link) => link.roles.includes(state.currentUser.role))
         .map(link => `<a href="#" class="nav-link flex items-center p-2 rounded-lg hover:bg-gray-700 ${state.currentPage === link.page ? "bg-gray-900" : ""}" data-page="${link.page}"><i class="fas ${link.icon} w-6 text-center"></i><span class="ml-3">${link.text}</span></a>`)
         .join("");
+
     const sidebarFooter = document.getElementById("sidebar-footer");
-    sidebarFooter.insertAdjacentHTML('afterbegin', `
-        <button id="sendFeedbackBtn" class="w-full flex items-center justify-center bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded transition-colors mb-2">
-            <i class="fas fa-comment-dots mr-2"></i> Send Feedback
-        </button>
-    `);
+    // Add the "Send Feedback" button if it doesn't already exist
+    if (!sidebarFooter.querySelector('#sendFeedbackBtn')) {
+        sidebarFooter.insertAdjacentHTML('afterbegin', `
+            <button id="sendFeedbackBtn" class="w-full flex items-center justify-center bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded transition-colors mb-2">
+                <i class="fas fa-comment-dots mr-2"></i> Send Feedback
+            </button>
+        `);
+    }
+    // --- END: FIX ---
 }
 
 export function showAssetModal(assetId = null) {
