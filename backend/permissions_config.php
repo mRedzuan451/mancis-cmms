@@ -33,6 +33,9 @@ $permissions = [
     'location_management' => 'Manage Locations (Add/Delete)',
     'report_view'         => 'View Reports',
     'log_view'            => 'View Activity Log',
+
+    'stock_take_create'   => 'Initiate and perform stock takes',
+    'stock_take_approve'  => 'Approve and finalize stock takes',
 ];
 
 // --- THIS IS THE FIX ---
@@ -49,6 +52,7 @@ $role_permissions = [
         'user_view',
         'location_management',
         'report_view',
+        'stock_take_create', 'stock_take_approve',
     ],
 
     'Supervisor' => [
@@ -59,6 +63,7 @@ $role_permissions = [
         'pm_schedule_view', 'pm_schedule_create',
         'user_view',
         'location_management',
+        'stock_take_create', 'stock_take_approve',
     ],
 
     'Engineer' => [
@@ -74,10 +79,12 @@ $role_permissions = [
         'part_view',
         'wo_view', 'wo_create', 'wo_edit',
         'part_request_view', 'part_request_create',
+        'stock_take_create', 
     ],
 
     'Clerk' => [
         'part_request_view', 'part_request_create',
+        'stock_take_create',
     ],
 ];
 ?>

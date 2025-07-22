@@ -543,6 +543,7 @@ export function renderSidebar() {
         { page: "assets", icon: "fa-box", text: "Assets", roles: ["Admin", "Manager", "Supervisor", "Engineer", "Technician"] },
         { page: "parts", icon: "fa-cogs", text: "Spare Parts", roles: ["Admin", "Manager", "Supervisor", "Engineer", "Technician"] },
         { page: "partRequests", icon: "fa-inbox", text: "Part Requests", roles: ["Admin", "Manager", "Supervisor", "Engineer", "Technician", "Clerk"] },
+        { page: "stockTake", icon: "fa-clipboard-check", text: "Stock Take", roles: ["Admin", "Manager", "Supervisor", "Technician", "Clerk"] },
         { page: "workOrders", icon: "fa-clipboard-list", text: "Work Orders", roles: ["Admin", "Manager", "Supervisor", "Engineer", "Technician"] }, 
         { page: "pmSchedules", icon: "fa-calendar-check", text: "PM Schedules", roles: ["Admin", "Manager", "Supervisor"] },
         { page: "workOrderCalendar", icon: "fa-calendar-alt", text: "Calendar", roles: ["Admin", "Manager", "Supervisor", "Engineer", "Technician"] },
@@ -1527,4 +1528,95 @@ export function showUploadModal(type) {
     }
 
     modal.style.display = 'flex';
+}
+
+export function renderStockTakePage() {
+    const header = renderPageHeader("Stock Take Sessions", [
+        '<button id="startStockTakeBtn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded"><i class="fas fa-plus mr-2"></i>Start New Stock Take</button>'
+    ]);
+    const sessions = state.cache.stockTakes || [];
+    
+    const statusColors = { 
+        "In Progress": "bg-yellow-200 text-yellow-800", 
+        "Pending Approval": "bg-blue-200 text-blue-800",
+        "Completed": "bg-green-200 text-green-800",
+    };
+
+    return `
+      ${header}
+      <div class="bg-white p-4 rounded-lg shadow">
+        <table class="w-full">
+          <thead><tr class="border-b">
+            <th class="p-2 text-left">Session ID</th>
+            <th class="p-2 text-left">Status</th>
+            <th class="p-2 text-left">Created By</th>
+            <th class="p-2 text-left">Date</th>
+            <th class="p-2 text-left">Actions</th>
+          </tr></thead>
+          <tbody>
+            ${sessions.map(s => `
+                <tr class="border-b hover:bg-gray-50">
+                    <td class="p-2">#${s.id}</td>
+                    <td class="p-2"><span class="px-2 py-1 text-xs font-semibold rounded-full ${statusColors[s.status] || 'bg-gray-200'}">${s.status}</span></td>
+                    <td class="p-2">${s.creator_name}</td>
+                    <td class="p-2">${new Date(s.creation_date).toLocaleDateString()}</td>
+                    <td class="p-2">
+                        <button class="view-stock-take-btn text-blue-500 hover:text-blue-700" data-id="${s.id}" title="View/Edit"><i class="fas fa-eye"></i></button>
+                    </td>
+                </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    `;
+}
+
+export function renderStockTakeCountPage(items, details) {
+    const canApprove = state.currentUser.permissions.stock_take_approve;
+    const isPending = details.status === 'Pending Approval';
+    const isInProgress = details.status === 'In Progress';
+
+    let buttons = [];
+    if (isInProgress) {
+        buttons.push('<button id="saveStockTakeProgressBtn" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded"><i class="fas fa-save mr-2"></i>Save Progress</button>');
+        buttons.push('<button id="printStockTakeBtn" class="bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-2 px-4 rounded"><i class="fas fa-print mr-2"></i>Print Count Sheet</button>');
+        buttons.push('<button id="submitStockTakeBtn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded">Submit for Review</button>');
+    }
+    if (isPending && canApprove) {
+        buttons.push('<button id="approveStockTakeBtn" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded"><i class="fas fa-check mr-2"></i>Approve & Adjust Inventory</button>');
+    }
+    
+    const header = renderPageHeader(`Stock Take Session #${details.id}`, buttons);
+
+    return `
+        ${header}
+        <div class="bg-white p-4 rounded-lg shadow">
+            <table class="w-full">
+                <thead><tr class="border-b">
+                    <th class="p-2 text-left">Part Name</th>
+                    <th class="p-2 text-left">SKU</th>
+                    <th class="p-2 text-right">System Qty</th>
+                    <th class="p-2 text-center">Physical Qty</th>
+                    <th class="p-2 text-right">Variance</th>
+                </tr></thead>
+                <tbody id="stockTakeItemsContainer">
+                    ${items.map(item => {
+                        const variance = (item.counted_qty !== null) ? item.counted_qty - item.system_qty : '';
+                        const varianceColor = variance > 0 ? 'text-green-600' : (variance < 0 ? 'text-red-600' : '');
+                        return `
+                        <tr class="border-b">
+                            <td class="p-2">${item.name}</td>
+                            <td class="p-2">${item.sku}</td>
+                            <td class="p-2 text-right">${item.system_qty}</td>
+                            <td class="p-2 w-32">
+                                <input type="number" data-id="${item.id}" value="${item.counted_qty || ''}" 
+                                class="w-full text-center border rounded px-1 py-0.5 stock-take-qty-input" ${!isInProgress ? 'disabled' : ''}>
+                            </td>
+                            <td class="p-2 text-right font-bold ${varianceColor}">${variance}</td>
+                        </tr>
+                    `}).join('')}
+                </tbody>
+            </table>
+        </div>
+    `;
 }

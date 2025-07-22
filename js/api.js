@@ -208,4 +208,19 @@ export const api = {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
     }),
+    getStockTakes: () => request('get_stock_takes.php'),
+    getStockTakeDetails: (id) => request(`get_stock_take_details.php?id=${id}`),
+    startStockTake: () => request('start_stock_take.php', { method: 'POST' }),
+    saveStockTake: (data) => request('save_stock_take.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+    }),
+    approveStockTake: (data) => request('approve_stock_take.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+    }),
+    printStockTake: (id) => fetch(`${API_URL}/print_stock_take.php?id=${id}`, { credentials: 'include' }).then(res => res.text()),
+
 };

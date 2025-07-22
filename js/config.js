@@ -18,5 +18,7 @@ export const state = {
     logs: [],
     receivedParts: [],
     pmSchedules: [],
-  }
+    stockTakes: [],
+  },
+  currentStockTakeId: null,
 };

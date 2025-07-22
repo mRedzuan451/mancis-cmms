@@ -64,6 +64,18 @@ function renderMainContent() {
         case "activityLog":         content = renderActivityLogPage(); break;
         case "partRequests":        content = renderPartsRequestPage(); break;
         case "pmSchedules":         content = renderPmSchedulesPage(); break;
+        case "stockTake": {
+            if (state.currentStockTakeId) {
+                const details = state.cache.stockTakes.find(st => st.id === state.currentStockTakeId);
+                api.getStockTakeDetails(state.currentStockTakeId).then(items => {
+                    document.getElementById("mainContent").innerHTML = renderStockTakeCountPage(items, details);
+                });
+                content = "<p>Loading stock take details...</p>";
+            } else {
+                content = renderStockTakePage();
+            }
+            break;
+        }
         default:                    content = renderDashboard();
     }
     mainContent.innerHTML = content;
@@ -115,6 +127,9 @@ async function loadInitialData() {
         }
         if (permissions.pm_schedule_view) {
             dataMap.pmSchedules = api.getPmSchedules();
+        }
+        if (permissions.stock_take_create) {
+            dataMap.stockTakes = api.getStockTakes();
         }
         
         // This data is needed for the part request workflow, which most roles can access.
@@ -996,6 +1011,60 @@ function attachPageSpecificEventListeners(page) {
                 container.innerHTML = `<p class="text-red-500">Error generating report: ${error.message}</p>`;
             }
         });
+    } else if (page === 'stockTake') {
+        document.getElementById('startStockTakeBtn')?.addEventListener('click', async () => {
+            try {
+                const response = await api.startStockTake();
+                state.currentStockTakeId = response.id;
+                state.cache.stockTakes = await api.getStockTakes(); // Refresh list
+                render();
+            } catch(error) {
+                showTemporaryMessage('Failed to start new session.', true);
+            }
+        });
+
+        const saveAndSubmitLogic = async (isSubmitting) => {
+            const items = Array.from(document.querySelectorAll('.stock-take-qty-input')).map(input => ({
+                id: parseInt(input.dataset.id),
+                counted_qty: input.value,
+            }));
+            try {
+                await api.saveStockTake({ id: state.currentStockTakeId, items, is_submitting: isSubmitting });
+                showTemporaryMessage(isSubmitting ? 'Submitted for approval!' : 'Progress saved.');
+                state.cache.stockTakes = await api.getStockTakes();
+                if (isSubmitting) {
+                    state.currentStockTakeId = null; // Go back to list view
+                }
+                render();
+            } catch(error) {
+                showTemporaryMessage('Failed to save data.', true);
+            }
+        };
+
+        document.getElementById('saveStockTakeProgressBtn')?.addEventListener('click', () => saveAndSubmitLogic(false));
+        document.getElementById('submitStockTakeBtn')?.addEventListener('click', () => saveAndSubmitLogic(true));
+        
+        document.getElementById('approveStockTakeBtn')?.addEventListener('click', async () => {
+            if (!confirm('Are you sure you want to approve this count? This will permanently adjust all inventory quantities.')) return;
+            try {
+                await api.approveStockTake({ id: state.currentStockTakeId });
+                showTemporaryMessage('Stock take approved successfully!');
+                state.cache.stockTakes = await api.getStockTakes();
+                state.currentStockTakeId = null; // Go back to list view
+                render();
+            } catch(error) {
+                showTemporaryMessage('Failed to approve.', true);
+            }
+        });
+
+        document.getElementById('printStockTakeBtn')?.addEventListener('click', async () => {
+            try {
+                const printHtml = await api.printStockTake(state.currentStockTakeId);
+                printReport(`Stock Take #${state.currentStockTakeId}`, printHtml);
+            } catch(error) {
+                showTemporaryMessage('Could not generate printable sheet.', true);
+            }
+        });
     }
 }
 
@@ -1050,6 +1119,11 @@ function attachGlobalEventListeners() {
              return;
         }
         if (!button) return;
+        if (button.classList.contains('view-stock-take-btn')) {
+            state.currentStockTakeId = parseInt(button.dataset.id);
+            render();
+            return;
+        }
         const id = button.dataset.id ? parseInt(button.dataset.id) : null;
         const actions = {
             "view-asset-btn": () => showAssetDetailModal(state.cache.assets.find(a => a.id === id)),
