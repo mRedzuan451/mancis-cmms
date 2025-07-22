@@ -1183,6 +1183,19 @@ function attachGlobalEventListeners() {
                     });
                 }
             },
+            "delete-stock-take-btn": () => {
+            if (confirm('Are you sure you want to permanently delete this session and all its counting data?')) {
+                api.deleteStockTake(id)
+                    .then(async () => {
+                        showTemporaryMessage("Session deleted successfully.");
+                        state.cache.stockTakes = await api.getStockTakes();
+                        render();
+                    })
+                    .catch(error => {
+                        showTemporaryMessage(`Failed to delete session: ${error.message}`, true);
+                    });
+            }
+        },
         };
         for (const cls in actions) {
             if (button.classList.contains(cls) || button.id === cls) {

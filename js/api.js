@@ -223,5 +223,10 @@ export const api = {
     }),
     printStockTake: (id) => fetch(`${API_URL}/print_stock_take.php?id=${id}`, { credentials: 'include' }).then(res => res.text()),
     getStockTakeSession: (id) => request(`get_stock_take_session.php?id=${id}`),
+    deleteStockTake: (id) => request('delete_stock_take.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id })
+    }),
 
 };

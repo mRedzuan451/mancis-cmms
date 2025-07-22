@@ -1530,6 +1530,8 @@ export function showUploadModal(type) {
     modal.style.display = 'flex';
 }
 
+// js/ui.js
+
 export function renderStockTakePage() {
     const header = renderPageHeader("Stock Take Sessions", [
         '<button id="startStockTakeBtn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded"><i class="fas fa-plus mr-2"></i>Start New Stock Take</button>'
@@ -1560,9 +1562,15 @@ export function renderStockTakePage() {
                     <td class="p-2"><span class="px-2 py-1 text-xs font-semibold rounded-full ${statusColors[s.status] || 'bg-gray-200'}">${s.status}</span></td>
                     <td class="p-2">${s.creator_name}</td>
                     <td class="p-2">${new Date(s.creation_date).toLocaleDateString()}</td>
-                    <td class="p-2">
+                    <td class="p-2 space-x-2">
                         <button class="view-stock-take-btn text-blue-500 hover:text-blue-700" data-id="${s.id}" title="View/Edit"><i class="fas fa-eye"></i></button>
-                    </td>
+                        
+                        ${state.currentUser.permissions.stock_take_delete ? `
+                            <button class="delete-stock-take-btn text-red-500 hover:text-red-700" data-id="${s.id}" title="Delete">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        ` : ''}
+                        </td>
                 </tr>
             `).join('')}
           </tbody>
