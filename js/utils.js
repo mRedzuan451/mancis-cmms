@@ -39,6 +39,8 @@ export function getNextDate(days) {
  * @param {string} locationId The location ID (e.g., 'pl-1', 'box-5').
  * @returns {string} The full location path.
  */
+// js/utils.js
+
 export function getFullLocationName(locationId) {
   if (typeof locationId !== "string" || !locationId.includes("-")) return "N/A";
 
@@ -50,46 +52,65 @@ export function getFullLocationName(locationId) {
   const [type, id] = locationId.split("-");
   const numId = parseInt(id);
 
-  if (type === "pl") {
-    const pLine = productionLines.find((l) => l.id === numId);
-    if (!pLine) return "N/A";
-    const subLine = subLines.find((sl) => sl.id === pLine.subLineId);
-    if (!subLine) return pLine.name;
-    const dept = departments.find((d) => d.id === subLine.departmentId);
-    const div = dept ? divisions.find((d) => d.id === dept.divisionId) : null;
-    return `${div ? div.name + " > " : ""}${dept ? dept.name + " > " : ""}${subLine.name} > ${pLine.name}`;
-  } else if (type === "sl") {
-    const subLine = subLines.find((sl) => sl.id === numId);
-    if (!subLine) return "N/A";
-    const dept = departments.find((d) => d.id === subLine.departmentId);
-    const div = dept ? divisions.find((d) => d.id === dept.divisionId) : null;
-    return `${div ? div.name + " > " : ""}${dept ? dept.name + " > " : ""}${subLine.name}`;
-  } else if (type === "box") {
-    const box = boxes.find((b) => b.id === numId);
-    if (!box) return "N/A";
-    const shelf = shelves.find((s) => s.id === box.shelfId);
-    if (!shelf) return box.name;
-    const cabinet = cabinets.find((c) => c.id === shelf.cabinetId);
-    if (!cabinet) return `${shelf.name} > ${box.name}`;
-    const dept = departments.find((d) => d.id === cabinet.departmentId);
-    const div = dept ? divisions.find((d) => d.id === dept.divisionId) : null;
-    return `${div ? div.name + " > " : ""}${dept ? dept.name + " > " : ""}${cabinet.name} > ${shelf.name} > ${box.name}`;
-  } else if (type === "sh") {
-    const shelf = shelves.find((s) => s.id === numId);
-    if (!shelf) return "N/A";
-    const cabinet = cabinets.find((c) => c.id === shelf.cabinetId);
-    if (!cabinet) return shelf.name;
-    const dept = departments.find((d) => d.id === cabinet.departmentId);
-    const div = dept ? divisions.find((d) => d.id === dept.divisionId) : null;
-    return `${div ? div.name + " > " : ""}${dept ? dept.name + " > " : ""}${cabinet.name} > ${shelf.name}`;
-  } else if (type === "cab") {
-    const cabinet = cabinets.find((c) => c.id === numId);
-    if (!cabinet) return "N/A";
-    const dept = departments.find((d) => d.id === cabinet.departmentId);
-    const div = dept ? divisions.find((d) => d.id === dept.divisionId) : null;
-    return `${div ? div.name + " > " : ""}${dept ? dept.name + " > " : ""}${cabinet.name}`;
+  switch (type) {
+    case "pl": {
+      const pLine = productionLines.find((l) => l.id === numId);
+      if (!pLine) return "N/A";
+      const subLine = subLines.find((sl) => sl.id === pLine.subLineId);
+      if (!subLine) return pLine.name;
+      const dept = departments.find((d) => d.id === subLine.departmentId);
+      const div = dept ? divisions.find((d) => d.id === dept.divisionId) : null;
+      return `${div ? div.name + " > " : ""}${dept ? dept.name + " > " : ""}${subLine.name} > ${pLine.name}`;
+    }
+    case "sl": {
+      const subLine = subLines.find((sl) => sl.id === numId);
+      if (!subLine) return "N/A";
+      const dept = departments.find((d) => d.id === subLine.departmentId);
+      const div = dept ? divisions.find((d) => d.id === dept.divisionId) : null;
+      return `${div ? div.name + " > " : ""}${dept ? dept.name + " > " : ""}${subLine.name}`;
+    }
+    case "box": {
+      const box = boxes.find((b) => b.id === numId);
+      if (!box) return "N/A";
+      const shelf = shelves.find((s) => s.id === box.shelfId);
+      if (!shelf) return box.name;
+      const cabinet = cabinets.find((c) => c.id === shelf.cabinetId);
+      if (!cabinet) return `${shelf.name} > ${box.name}`;
+      const dept = departments.find((d) => d.id === cabinet.departmentId);
+      const div = dept ? divisions.find((d) => d.id === dept.divisionId) : null;
+      return `${div ? div.name + " > " : ""}${dept ? dept.name + " > " : ""}${cabinet.name} > ${shelf.name} > ${box.name}`;
+    }
+    case "sh": {
+      const shelf = shelves.find((s) => s.id === numId);
+      if (!shelf) return "N/A";
+      const cabinet = cabinets.find((c) => c.id === shelf.cabinetId);
+      if (!cabinet) return shelf.name;
+      const dept = departments.find((d) => d.id === cabinet.departmentId);
+      const div = dept ? divisions.find((d) => d.id === dept.divisionId) : null;
+      return `${div ? div.name + " > " : ""}${dept ? dept.name + " > " : ""}${cabinet.name} > ${shelf.name}`;
+    }
+    case "cab": {
+      const cabinet = cabinets.find((c) => c.id === numId);
+      if (!cabinet) return "N/A";
+      const dept = departments.find((d) => d.id === cabinet.departmentId);
+      const div = dept ? divisions.find((d) => d.id === dept.divisionId) : null;
+      return `${div ? div.name + " > " : ""}${dept ? dept.name + " > " : ""}${cabinet.name}`;
+    }
+    // --- START: ADDED LOGIC ---
+    case "dept": {
+      const dept = departments.find((d) => d.id === numId);
+      if (!dept) return "N/A";
+      const div = divisions.find((d) => d.id === dept.divisionId);
+      return `${div ? div.name + " > " : ""}${dept.name}`;
+    }
+    case "div": {
+      const div = divisions.find((d) => d.id === numId);
+      return div ? div.name : "N/A";
+    }
+    // --- END: ADDED LOGIC ---
+    default:
+      return "N/A";
   }
-  return "N/A";
 }
 
 /**

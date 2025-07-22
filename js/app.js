@@ -1242,39 +1242,43 @@ async function handleFileUpload(file, type) {
     reader.readAsText(file);
 }
 
+// js/app.js
+
 function handleDownloadLocations() {
-    const { productionLines = [], boxes = [] } = state.cache.locations || {};
+    const { 
+        divisions = [], departments = [], subLines = [], productionLines = [],
+        cabinets = [], shelves = [], boxes = [] 
+    } = state.cache.locations || {};
     
     // Define CSV header
     let csvContent = "data:text/csv;charset=utf-8,locationId,fullLocationName\r\n";
-
-    // Add production lines (for assets)
-    productionLines.forEach(line => {
-        const locationId = `pl-${line.id}`;
-        const fullName = getFullLocationName(locationId);
+    
+    const appendToCsv = (id, fullName) => {
         // Sanitize name in case it contains commas
         const sanitizedName = `"${fullName.replace(/"/g, '""')}"`;
-        csvContent += `${locationId},${sanitizedName}\r\n`;
-    });
+        csvContent += `${id},${sanitizedName}\r\n`;
+    };
 
-    // Add storage boxes (for parts)
-    boxes.forEach(box => {
-        const locationId = `box-${box.id}`;
-        const fullName = getFullLocationName(locationId);
-        const sanitizedName = `"${fullName.replace(/"/g, '""')}"`;
-        csvContent += `${locationId},${sanitizedName}\r\n`;
-    });
+    // --- START: FIX - Iterate through ALL location types ---
+    divisions.forEach(loc => appendToCsv(`div-${loc.id}`, getFullLocationName(`div-${loc.id}`)));
+    departments.forEach(loc => appendToCsv(`dept-${loc.id}`, getFullLocationName(`dept-${loc.id}`)));
+    subLines.forEach(loc => appendToCsv(`sl-${loc.id}`, getFullLocationName(`sl-${loc.id}`)));
+    productionLines.forEach(loc => appendToCsv(`pl-${loc.id}`, getFullLocationName(`pl-${loc.id}`)));
+    cabinets.forEach(loc => appendToCsv(`cab-${loc.id}`, getFullLocationName(`cab-${loc.id}`)));
+    shelves.forEach(loc => appendToCsv(`sh-${loc.id}`, getFullLocationName(`sh-${loc.id}`)));
+    boxes.forEach(loc => appendToCsv(`box-${loc.id}`, getFullLocationName(`box-${loc.id}`)));
+    // --- END: FIX ---
 
     // Create a link and trigger the download
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
-    link.setAttribute("download", "location_ids.csv");
+    link.setAttribute("download", "location_ids_complete.csv");
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
     
-    showTemporaryMessage("Location list download started.");
+    showTemporaryMessage("Complete location list download started.");
 }
 
 // js/app.js
