@@ -930,6 +930,7 @@ function attachPageSpecificEventListeners(page) {
             }
         });
     } else if (page === 'locations') {
+        document.getElementById('downloadLocationsBtn')?.addEventListener('click', handleDownloadLocations);
         document.querySelector('#addDivisionForm')?.addEventListener('submit', handleLocationFormSubmit);
         document.querySelector('#addDepartmentForm')?.addEventListener('submit', handleLocationFormSubmit);
         document.querySelector('#addSubLineForm')?.addEventListener('submit', handleLocationFormSubmit);
@@ -1239,6 +1240,41 @@ async function handleFileUpload(file, type) {
         }
     };
     reader.readAsText(file);
+}
+
+function handleDownloadLocations() {
+    const { productionLines = [], boxes = [] } = state.cache.locations || {};
+    
+    // Define CSV header
+    let csvContent = "data:text/csv;charset=utf-8,locationId,fullLocationName\r\n";
+
+    // Add production lines (for assets)
+    productionLines.forEach(line => {
+        const locationId = `pl-${line.id}`;
+        const fullName = getFullLocationName(locationId);
+        // Sanitize name in case it contains commas
+        const sanitizedName = `"${fullName.replace(/"/g, '""')}"`;
+        csvContent += `${locationId},${sanitizedName}\r\n`;
+    });
+
+    // Add storage boxes (for parts)
+    boxes.forEach(box => {
+        const locationId = `box-${box.id}`;
+        const fullName = getFullLocationName(locationId);
+        const sanitizedName = `"${fullName.replace(/"/g, '""')}"`;
+        csvContent += `${locationId},${sanitizedName}\r\n`;
+    });
+
+    // Create a link and trigger the download
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", "location_ids.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    showTemporaryMessage("Location list download started.");
 }
 
 // js/app.js
