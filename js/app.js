@@ -19,6 +19,7 @@ import {
     renderInventoryReportPage,
     renderStockTakePage,
     renderStockTakeCountPage,
+    renderFeedbackPage,
     generateTableRows,
     showAssetModal,
     showPartModal,
@@ -40,6 +41,7 @@ import {
     showRestockPartsModal,
     showPmScheduleModal, // This is now correctly imported from ui.js
     showPmScheduleDetailModal,
+    showFeedbackModal,
     addChecklistItem,
     addPmPartRow,
     showUploadModal,
