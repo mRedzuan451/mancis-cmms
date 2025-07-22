@@ -234,16 +234,24 @@ export function renderWorkOrderCalendar() {
     return calendarHtml;
 }
 
+// js/ui.js
+
 export function renderLocationsPage() {
     const { divisions = [], departments = [], subLines = [], productionLines = [], cabinets = [], shelves = [], boxes = [] } = state.cache.locations || {};
     const isAdmin = state.currentUser.role === "Admin";
 
-    const header = renderPageHeader("Location Management", [
-        '<button id="downloadLocationsBtn" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded"><i class="fas fa-download mr-2"></i>Download List</button>'
-    ]);
-
+    // --- START: FIX ---
+    // The page header HTML, including the new button, is now written directly into this function.
     return `
-      <h1 class="text-3xl font-bold mb-6">Location Management</h1>
+      <div class="flex justify-between items-center mb-6">
+          <h1 class="text-3xl font-bold">Location Management</h1>
+          <div class="space-x-2">
+              <button id="downloadLocationsBtn" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded">
+                  <i class="fas fa-download mr-2"></i>Download List
+              </button>
+          </div>
+      </div>
+    
       <div class="grid grid-cols-1 ${isAdmin ? "md:grid-cols-3" : ""} gap-6">
           ${isAdmin ? `
           <div class="bg-white p-4 rounded-lg shadow space-y-6">
@@ -320,6 +328,7 @@ export function renderLocationsPage() {
               </div>
           </div>
       </div>`;
+      // --- END: FIX ---
 }
 
 export function renderActivityLogPage() {
