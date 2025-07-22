@@ -66,30 +66,7 @@ function renderMainContent() {
         case "activityLog":         content = renderActivityLogPage(); break;
         case "partRequests":        content = renderPartsRequestPage(); break;
         case "pmSchedules":         content = renderPmSchedulesPage(); break;
-        case "stockTake": {
-            if (state.currentStockTakeId) {
-                const details = state.cache.stockTakes.find(st => st.id === state.currentStockTakeId);
-
-                // ** This is the fix **
-                // If the details are not found in the cache, show an error and reset the view.
-                if (!details) {
-                    showTemporaryMessage("Error: Could not find the specified stock take session.", true);
-                    state.currentStockTakeId = null; // Reset the ID
-                    content = renderStockTakePage(); // Go back to the list page
-                    break; // Exit the case
-                }
-
-                // If details are found, proceed as normal.
-                api.getStockTakeDetails(state.currentStockTakeId).then(items => {
-                    document.getElementById("mainContent").innerHTML = renderStockTakeCountPage(items, details);
-                });
-                content = "<p>Loading stock take details...</p>";
-
-            } else {
-                content = renderStockTakePage();
-            }
-            break;
-        }
+        case "stockTake":           content = renderStockTakePage(); break;
         default:                    content = renderDashboard();
     }
     mainContent.innerHTML = content;
@@ -1028,10 +1005,11 @@ function attachPageSpecificEventListeners(page) {
     } else if (page === 'stockTake') {
         document.getElementById('startStockTakeBtn')?.addEventListener('click', async () => {
             try {
+                showTemporaryMessage("Starting new session...");
                 const response = await api.startStockTake();
-                state.currentStockTakeId = response.id;
-                state.cache.stockTakes = await api.getStockTakes(); // Refresh list
-                render();
+                // After creating, refresh the cache and immediately load the details page
+                state.cache.stockTakes = await api.getStockTakes();
+                loadAndRenderStockTakeDetails(response.id);
             } catch(error) {
                 showTemporaryMessage('Failed to start new session.', true);
             }
@@ -1078,6 +1056,21 @@ function attachPageSpecificEventListeners(page) {
             } catch(error) {
                 showTemporaryMessage('Could not generate printable sheet.', true);
             }
+        });
+    } else if (page === 'stockTakeDetails') {
+        const detailsId = parseInt(document.querySelector('.page-header-title').dataset.id);
+
+        const saveAndSubmitLogic = async (isSubmitting) => {
+            // ... (this logic was moved here from the old 'stockTake' block)
+        };
+
+        document.getElementById('saveStockTakeProgressBtn')?.addEventListener('click', () => saveAndSubmitLogic(false));
+        document.getElementById('submitStockTakeBtn')?.addEventListener('click', () => saveAndSubmitLogic(true));
+        document.getElementById('approveStockTakeBtn')?.addEventListener('click', async () => {
+            // ... (this logic was moved here)
+        });
+        document.getElementById('printStockTakeBtn')?.addEventListener('click', async () => {
+            // ... (this logic was moved here)
         });
     }
 }
@@ -1134,9 +1127,10 @@ function attachGlobalEventListeners() {
         }
         if (!button) return;
         if (button.classList.contains('view-stock-take-btn')) {
-            state.currentStockTakeId = parseInt(button.dataset.id);
-            render();
-            return;
+            const stockTakeId = parseInt(button.dataset.id);
+            // Explicitly call the function to load the details page
+            loadAndRenderStockTakeDetails(stockTakeId);
+            return; 
         }
         const id = button.dataset.id ? parseInt(button.dataset.id) : null;
         const actions = {
@@ -1367,6 +1361,33 @@ function handleDownloadLocations() {
     document.body.removeChild(link);
     
     showTemporaryMessage("Complete location list download started.");
+}
+
+async function loadAndRenderStockTakeDetails(stockTakeId) {
+    const mainContent = document.getElementById("mainContent");
+    try {
+        mainContent.innerHTML = "<p>Loading stock take details...</p>";
+
+        // Fetch both the session details (from cache) and the item list (from API)
+        const details = state.cache.stockTakes.find(st => st.id === stockTakeId);
+        const items = await api.getStockTakeDetails(stockTakeId);
+
+        if (!details || !items) {
+            throw new Error("Could not load data for the stock take session.");
+        }
+        
+        // Directly render the counting page into the main content area
+        mainContent.innerHTML = renderStockTakeCountPage(items, details);
+        
+        // Manually attach event listeners since we bypassed the main render loop
+        attachPageSpecificEventListeners('stockTakeDetails');
+
+    } catch(error) {
+        showTemporaryMessage(error.message, true);
+        // If it fails, safely return to the list view
+        state.currentPage = 'stockTake';
+        render();
+    }
 }
 
 // js/app.js

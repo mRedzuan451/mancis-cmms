@@ -20,5 +20,4 @@ export const state = {
     pmSchedules: [],
     stockTakes: [],
   },
-  currentStockTakeId: null,
 };
