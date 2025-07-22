@@ -90,13 +90,18 @@ function render() {
 
 // js/app.js
 
+// js/app.js
+
 async function loadInitialData() {
     try {
         const { permissions } = state.currentUser;
-        const dataMap = {}; // Start with an empty map
+        const dataMap = {}; 
 
         // --- START: FIX ---
-        // Conditionally add API calls to the map based on user permissions.
+        // 1. Unconditionally fetch the basic locations needed for display purposes.
+        // We use 'getPublicLocations' because it's accessible to all logged-in users.
+        const publicLocationsPromise = api.getPublicLocations();
+        // --- END: FIX ---
 
         if (permissions.asset_view) {
             dataMap.assets = api.getAssets();
@@ -113,6 +118,7 @@ async function loadInitialData() {
         if (permissions.part_request_view) {
             dataMap.partRequests = api.getPartRequests();
         }
+        // This will fetch the FULL location data for authorized users, overwriting the public data later.
         if (permissions.location_management) {
             dataMap.locations = api.getLocations();
         }
@@ -129,17 +135,18 @@ async function loadInitialData() {
             dataMap.feedback = api.getFeedback();
         }
         
-        // This data is needed for the part request workflow, which most roles can access.
         dataMap.receivedParts = api.getReceivedParts();
-        // --- END: FIX ---
-
+        
         const promises = Object.values(dataMap);
         const keys = Object.keys(dataMap);
-
-        // Fetch all allowed data in parallel
         const results = await Promise.all(promises);
 
-        // Populate the cache with the results
+        // --- START: FIX ---
+        // 2. First, put the public locations into the cache.
+        state.cache.locations = await publicLocationsPromise;
+        // --- END: FIX ---
+
+        // 3. Then, populate the rest of the cache. If full locations were fetched, they will overwrite the public ones.
         results.forEach((result, index) => {
             state.cache[keys[index]] = result;
         });
@@ -147,8 +154,6 @@ async function loadInitialData() {
     } catch (error) {
         showTemporaryMessage("Failed to load application data. Please try again.", true);
         console.error("Error during initial data load:", error);
-        // Uncomment the line below if you want to auto-logout on data load failure
-        handleLogout(render);
     }
 }
 
