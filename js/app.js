@@ -69,10 +69,22 @@ function renderMainContent() {
         case "stockTake": {
             if (state.currentStockTakeId) {
                 const details = state.cache.stockTakes.find(st => st.id === state.currentStockTakeId);
+
+                // ** This is the fix **
+                // If the details are not found in the cache, show an error and reset the view.
+                if (!details) {
+                    showTemporaryMessage("Error: Could not find the specified stock take session.", true);
+                    state.currentStockTakeId = null; // Reset the ID
+                    content = renderStockTakePage(); // Go back to the list page
+                    break; // Exit the case
+                }
+
+                // If details are found, proceed as normal.
                 api.getStockTakeDetails(state.currentStockTakeId).then(items => {
                     document.getElementById("mainContent").innerHTML = renderStockTakeCountPage(items, details);
                 });
                 content = "<p>Loading stock take details...</p>";
+
             } else {
                 content = renderStockTakePage();
             }
