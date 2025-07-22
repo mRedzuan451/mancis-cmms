@@ -222,5 +222,6 @@ export const api = {
         body: JSON.stringify(data)
     }),
     printStockTake: (id) => fetch(`${API_URL}/print_stock_take.php?id=${id}`, { credentials: 'include' }).then(res => res.text()),
+    getStockTakeSession: (id) => request(`get_stock_take_session.php?id=${id}`),
 
 };

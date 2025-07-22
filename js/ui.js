@@ -1571,6 +1571,8 @@ export function renderStockTakePage() {
     `;
 }
 
+// js/ui.js
+
 export function renderStockTakeCountPage(items, details) {
     const canApprove = state.currentUser.permissions.stock_take_approve;
     const isPending = details.status === 'Pending Approval';
@@ -1586,7 +1588,17 @@ export function renderStockTakeCountPage(items, details) {
         buttons.push('<button id="approveStockTakeBtn" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded"><i class="fas fa-check mr-2"></i>Approve & Adjust Inventory</button>');
     }
     
-    const header = renderPageHeader(`Stock Take Session #${details.id}`, buttons);
+    // --- START: FIX ---
+    // The h1 tag now includes the necessary class and data-id for the event listeners to work.
+    const header = `
+      <div class="flex justify-between items-center mb-6">
+          <h1 class="text-3xl font-bold page-header-title" data-id="${details.id}">Stock Take Session #${details.id}</h1>
+          <div class="space-x-2">
+              ${buttons.join('\n')}
+          </div>
+      </div>
+    `;
+    // --- END: FIX ---
 
     return `
         ${header}
@@ -1601,7 +1613,7 @@ export function renderStockTakeCountPage(items, details) {
                 </tr></thead>
                 <tbody id="stockTakeItemsContainer">
                     ${items.map(item => {
-                        const variance = (item.counted_qty !== null) ? item.counted_qty - item.system_qty : '';
+                        const variance = (item.counted_qty !== null && item.counted_qty !== '') ? parseInt(item.counted_qty) - item.system_qty : '';
                         const varianceColor = variance > 0 ? 'text-green-600' : (variance < 0 ? 'text-red-600' : '');
                         return `
                         <tr class="border-b">
@@ -1609,7 +1621,7 @@ export function renderStockTakeCountPage(items, details) {
                             <td class="p-2">${item.sku}</td>
                             <td class="p-2 text-right">${item.system_qty}</td>
                             <td class="p-2 w-32">
-                                <input type="number" data-id="${item.id}" value="${item.counted_qty || ''}" 
+                                <input type="number" data-id="${item.id}" value="${item.counted_qty !== null ? item.counted_qty : ''}" 
                                 class="w-full text-center border rounded px-1 py-0.5 stock-take-qty-input" ${!isInProgress ? 'disabled' : ''}>
                             </td>
                             <td class="p-2 text-right font-bold ${varianceColor}">${variance}</td>

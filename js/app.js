@@ -1007,13 +1007,14 @@ function attachPageSpecificEventListeners(page) {
             try {
                 showTemporaryMessage("Starting new session...");
                 const response = await api.startStockTake();
-                // After creating, refresh the cache and immediately load the details page
                 state.cache.stockTakes = await api.getStockTakes();
                 loadAndRenderStockTakeDetails(response.id);
             } catch(error) {
                 showTemporaryMessage('Failed to start new session.', true);
             }
         });
+    } else if (page === 'stockTakeDetails') {
+        const detailsId = parseInt(document.querySelector('.page-header-title').dataset.id);
 
         const saveAndSubmitLogic = async (isSubmitting) => {
             const items = Array.from(document.querySelectorAll('.stock-take-qty-input')).map(input => ({
@@ -1021,11 +1022,11 @@ function attachPageSpecificEventListeners(page) {
                 counted_qty: input.value,
             }));
             try {
-                await api.saveStockTake({ id: state.currentStockTakeId, items, is_submitting: isSubmitting });
+                await api.saveStockTake({ id: detailsId, items, is_submitting: isSubmitting });
                 showTemporaryMessage(isSubmitting ? 'Submitted for approval!' : 'Progress saved.');
                 state.cache.stockTakes = await api.getStockTakes();
                 if (isSubmitting) {
-                    state.currentStockTakeId = null; // Go back to list view
+                    state.currentPage = 'stockTake';
                 }
                 render();
             } catch(error) {
@@ -1039,10 +1040,10 @@ function attachPageSpecificEventListeners(page) {
         document.getElementById('approveStockTakeBtn')?.addEventListener('click', async () => {
             if (!confirm('Are you sure you want to approve this count? This will permanently adjust all inventory quantities.')) return;
             try {
-                await api.approveStockTake({ id: state.currentStockTakeId });
+                await api.approveStockTake({ id: detailsId });
                 showTemporaryMessage('Stock take approved successfully!');
                 state.cache.stockTakes = await api.getStockTakes();
-                state.currentStockTakeId = null; // Go back to list view
+                state.currentPage = 'stockTake';
                 render();
             } catch(error) {
                 showTemporaryMessage('Failed to approve.', true);
@@ -1051,26 +1052,11 @@ function attachPageSpecificEventListeners(page) {
 
         document.getElementById('printStockTakeBtn')?.addEventListener('click', async () => {
             try {
-                const printHtml = await api.printStockTake(state.currentStockTakeId);
-                printReport(`Stock Take #${state.currentStockTakeId}`, printHtml);
+                const printHtml = await api.printStockTake(detailsId);
+                printReport(`Stock Take #${detailsId}`, printHtml);
             } catch(error) {
                 showTemporaryMessage('Could not generate printable sheet.', true);
             }
-        });
-    } else if (page === 'stockTakeDetails') {
-        const detailsId = parseInt(document.querySelector('.page-header-title').dataset.id);
-
-        const saveAndSubmitLogic = async (isSubmitting) => {
-            // ... (this logic was moved here from the old 'stockTake' block)
-        };
-
-        document.getElementById('saveStockTakeProgressBtn')?.addEventListener('click', () => saveAndSubmitLogic(false));
-        document.getElementById('submitStockTakeBtn')?.addEventListener('click', () => saveAndSubmitLogic(true));
-        document.getElementById('approveStockTakeBtn')?.addEventListener('click', async () => {
-            // ... (this logic was moved here)
-        });
-        document.getElementById('printStockTakeBtn')?.addEventListener('click', async () => {
-            // ... (this logic was moved here)
         });
     }
 }
@@ -1363,30 +1349,33 @@ function handleDownloadLocations() {
     showTemporaryMessage("Complete location list download started.");
 }
 
+// js/app.js
+
 async function loadAndRenderStockTakeDetails(stockTakeId) {
     const mainContent = document.getElementById("mainContent");
     try {
         mainContent.innerHTML = "<p>Loading stock take details...</p>";
 
-        // Fetch both the session details (from cache) and the item list (from API)
-        const details = state.cache.stockTakes.find(st => st.id === stockTakeId);
-        const items = await api.getStockTakeDetails(stockTakeId);
+        // --- START: FIX ---
+        // Use Promise.all to fetch both the session details and the items list directly.
+        // This is more reliable than using the cache.
+        const [details, items] = await Promise.all([
+            api.getStockTakeSession(stockTakeId),
+            api.getStockTakeDetails(stockTakeId)
+        ]);
+        // --- END: FIX ---
 
         if (!details || !items) {
-            throw new Error("Could not load data for the stock take session.");
+            throw new Error("Could not load all required data for the stock take session.");
         }
         
-        // Directly render the counting page into the main content area
         mainContent.innerHTML = renderStockTakeCountPage(items, details);
-        
-        // Manually attach event listeners since we bypassed the main render loop
         attachPageSpecificEventListeners('stockTakeDetails');
 
     } catch(error) {
         showTemporaryMessage(error.message, true);
-        // If it fails, safely return to the list view
         state.currentPage = 'stockTake';
-        render();
+        render(); // Go back to the list view on failure
     }
 }
 
