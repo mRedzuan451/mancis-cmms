@@ -37,6 +37,8 @@ $permissions = [
     'stock_take_create'   => 'Initiate and perform stock takes',
     'stock_take_approve'  => 'Approve and finalize stock takes',
     'stock_take_delete'   => 'Delete stock take sessions',
+
+    'feedback_view'       => 'View feedback inbox',
 ];
 
 // --- THIS IS THE FIX ---

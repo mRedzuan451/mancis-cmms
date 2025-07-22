@@ -552,11 +552,20 @@ export function renderSidebar() {
         { page: "userManagement", icon: "fa-users-cog", text: "User Management", roles: ["Admin"] },
         { page: "activityLog", icon: "fa-history", text: "Activity Log", roles: ["Admin"] },
     ];
+    if (permissions.feedback_view) {
+        navLinks.push({ page: "feedback", icon: "fa-envelope-open-text", text: "Feedback Inbox" });
+    }
     const navMenu = document.getElementById("navMenu");
     navMenu.innerHTML = navLinks
         .filter((link) => link.roles.includes(state.currentUser.role))
         .map(link => `<a href="#" class="nav-link flex items-center p-2 rounded-lg hover:bg-gray-700 ${state.currentPage === link.page ? "bg-gray-900" : ""}" data-page="${link.page}"><i class="fas ${link.icon} w-6 text-center"></i><span class="ml-3">${link.text}</span></a>`)
         .join("");
+    const sidebarFooter = document.getElementById("sidebar-footer");
+    sidebarFooter.insertAdjacentHTML('afterbegin', `
+        <button id="sendFeedbackBtn" class="w-full flex items-center justify-center bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded transition-colors mb-2">
+            <i class="fas fa-comment-dots mr-2"></i> Send Feedback
+        </button>
+    `);
 }
 
 export function showAssetModal(assetId = null) {
@@ -1637,6 +1646,42 @@ export function renderStockTakeCountPage(items, details) {
                     `}).join('')}
                 </tbody>
             </table>
+        </div>
+    `;
+}
+
+export function showFeedbackModal() {
+    const form = document.getElementById('feedbackForm');
+    form.reset();
+    document.getElementById('feedbackModal').style.display = 'flex';
+}
+
+export function renderFeedbackPage() {
+    const header = renderPageHeader("Feedback Inbox");
+    const feedbackList = state.cache.feedback || [];
+    const statusStyles = {
+        'New': 'border-blue-500',
+        'Read': 'border-gray-300',
+        'Archived': 'border-dashed border-gray-300 opacity-70'
+    };
+
+    return `
+        ${header}
+        <div class="space-y-4">
+        ${feedbackList.map(item => `
+            <div class="bg-white p-4 rounded-lg shadow border-l-4 ${statusStyles[item.status] || 'border-gray-300'}">
+                <div class="flex justify-between items-center mb-2">
+                    <p class="font-bold">${item.sender_name || 'Unknown User'}</p>
+                    <p class="text-sm text-gray-500">${new Date(item.timestamp).toLocaleString()}</p>
+                </div>
+                <p class="text-gray-700 mb-4">${item.message}</p>
+                <div class="flex justify-end items-center space-x-2">
+                    <span class="text-sm font-semibold">Status: ${item.status}</span>
+                    ${item.status === 'New' ? `<button class="feedback-status-btn bg-gray-200 hover:bg-gray-300 text-xs py-1 px-2 rounded" data-id="${item.id}" data-status="Read">Mark as Read</button>` : ''}
+                    ${item.status !== 'Archived' ? `<button class="feedback-status-btn bg-gray-200 hover:bg-gray-300 text-xs py-1 px-2 rounded" data-id="${item.id}" data-status="Archived">Archive</button>` : ''}
+                </div>
+            </div>
+        `).join('') || '<p>The feedback inbox is empty.</p>'}
         </div>
     `;
 }

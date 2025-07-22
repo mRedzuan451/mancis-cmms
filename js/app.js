@@ -67,6 +67,7 @@ function renderMainContent() {
         case "partRequests":        content = renderPartsRequestPage(); break;
         case "pmSchedules":         content = renderPmSchedulesPage(); break;
         case "stockTake":           content = renderStockTakePage(); break;
+        case "feedback":            content = renderFeedbackPage(); break;
         default:                    content = renderDashboard();
     }
     mainContent.innerHTML = content;
@@ -121,6 +122,9 @@ async function loadInitialData() {
         }
         if (permissions.stock_take_create) {
             dataMap.stockTakes = api.getStockTakes();
+        }
+        if (permissions.feedback_view) {
+            dataMap.feedback = api.getFeedback();
         }
         
         // This data is needed for the part request workflow, which most roles can access.
@@ -1183,6 +1187,19 @@ function attachGlobalEventListeners() {
                     });
                 }
             },
+            "sendFeedbackBtn": () => showFeedbackModal(), // <-- ADD THIS
+            "feedback-status-btn": async () => { // <-- AND THIS
+                const id = parseInt(button.dataset.id);
+                const status = button.dataset.status;
+                try {
+                    await api.updateFeedbackStatus(id, status);
+                    showTemporaryMessage(`Feedback marked as ${status}.`);
+                    state.cache.feedback = await api.getFeedback();
+                    renderMainContent();
+                } catch(error) {
+                    showTemporaryMessage('Could not update status.', true);
+                }
+            },
             "delete-stock-take-btn": () => {
             if (confirm('Are you sure you want to permanently delete this session and all its counting data?')) {
                 api.deleteStockTake(id)
@@ -1217,6 +1234,17 @@ function attachGlobalEventListeners() {
     document.getElementById("receivePartsForm").addEventListener("submit", handleReceivePartsFormSubmit);
     document.getElementById("restockPartsForm").addEventListener("submit", handleRestockPartsFormSubmit);
     document.getElementById("pmScheduleForm").addEventListener("submit", handlePmScheduleFormSubmit);
+    document.getElementById("feedbackForm").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const message = document.getElementById("feedbackMessage").value;
+        try {
+            await api.submitFeedback(message);
+            showTemporaryMessage("Thank you! Your feedback has been sent.");
+            document.getElementById("feedbackModal").style.display = "none";
+        } catch(error) {
+            showTemporaryMessage(`Submission failed: ${error.message}`, true);
+        }
+    });
 }
 
 async function checkForNotifications() {

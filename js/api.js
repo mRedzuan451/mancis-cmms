@@ -228,5 +228,15 @@ export const api = {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id })
     }),
-
+    submitFeedback: (message) => request('submit_feedback.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message })
+    }),
+    getFeedback: () => request('get_feedback.php'),
+    updateFeedbackStatus: (id, status) => request('update_feedback_status.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, status })
+    }),
 };

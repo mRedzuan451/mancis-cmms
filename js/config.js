@@ -19,5 +19,6 @@ export const state = {
     receivedParts: [],
     pmSchedules: [],
     stockTakes: [],
+    feedback: [],
   },
 };
