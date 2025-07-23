@@ -49,7 +49,7 @@ $role_permissions = [
 
     'Manager' => [
         'asset_view', 'asset_create', 'asset_edit',
-        'asset_transfer'
+        'asset_transfer',
         'part_view', 'part_create', 'part_edit',
         'wo_view', 'wo_create', 'wo_edit',
         'part_request_view', 'part_request_create', 'part_request_approve', 'part_request_delete',
