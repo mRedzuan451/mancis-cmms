@@ -375,7 +375,7 @@ export function renderPartsRequestPage() {
               <table class="w-full">
                   <thead><tr class="border-b">
                       <th class="p-2 text-left">Part Name</th>
-                      <th class="p-2 text-left">Quantity</th>
+                      <th class="p-2 text-left">Part Number</th> <th class="p-2 text-left">Quantity</th>
                       <th class="p-2 text-left">Status</th>
                       <th class="p-2 text-left">Purpose / Reason</th>
                       <th class="p-2 text-left">Actions</th>
@@ -500,7 +500,7 @@ export function generateTableRows(type, data) {
         return data.map((req) => {
             const part = req.partId ? state.cache.parts.find((p) => p.id === req.partId) : null;
             const partName = part ? part.name : `<span class="italic text-gray-500">${req.newPartName} (New)</span>`;
-            
+            const partNumber = part ? part.sku : (req.newPartNumber || 'N/A');
             // Look up the correct color class, or use a default gray if not found.
             const statusColorClass = prStatusColors[req.status] || "bg-gray-200 text-gray-800";
             
@@ -1292,7 +1292,8 @@ export function showPartRequestDetailModal(req) {
     const approver = req.approverId ? state.cache.users.find(u => u.id === req.approverId)?.fullName : 'N/A';
     const part = req.partId ? state.cache.parts.find(p => p.id === req.partId) : null;
     const partName = part ? part.name : (req.newPartName || 'New Part');
-
+    const partNumber = part ? part.sku : (req.newPartNumber || 'N/A');
+    
     contentEl.innerHTML = `
         <p><strong>Part:</strong> ${partName}</p>
         <p><strong>Quantity:</strong> ${req.quantity}</p>
