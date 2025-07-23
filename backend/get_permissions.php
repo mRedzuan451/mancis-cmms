@@ -12,8 +12,6 @@ if ($conn->connect_error) {
     exit();
 }
 
-// Only allow users who can edit other users to see the permissions structure.
-authorize('user_edit', $conn);
 
 header("Content-Type: application/json; charset=UTF-8");
 
