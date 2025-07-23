@@ -31,6 +31,12 @@ export function renderDashboard() {
       return woStartDate >= today && woStartDate <= sevenDaysFromNow;
   }).sort((a, b) => new Date(a.start_date) - new Date(b.start_date)); // Sort by soonest first
   
+  const overdueWOs = workOrders.filter(wo => {
+      if (wo.status === 'Completed') return false;
+      const woDueDate = new Date(wo.dueDate);
+      return woDueDate < today;
+  }).sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate)); // Sort by oldest first
+
 
   return `
     <h1 class="text-3xl font-bold mb-6">Dashboard</h1>
@@ -62,6 +68,7 @@ export function renderDashboard() {
                 }
             </div>
         </div>
+
         <div>
             <h2 class="text-2xl font-bold mb-4">High Priority Work Orders</h2>
             <div class="bg-white p-4 rounded-lg shadow">
@@ -77,6 +84,30 @@ export function renderDashboard() {
             </div>
         </div>
 
+        <div class="lg:col-span-2"> <h2 class="text-2xl font-bold mb-4">Overdue Work Orders</h2>
+            <div class="bg-white p-4 rounded-lg shadow">
+                ${overdueWOs.length > 0 ? `
+                    <table class="w-full">
+                        <thead><tr class="border-b"><th class="text-left p-2">Title</th><th class="text-left p-2">Asset</th><th class="text-left p-2">Assigned To</th><th class="text-left p-2">Days Overdue</th></tr></thead>
+                        <tbody>
+                            ${overdueWOs.map((wo) => {
+                                const diffTime = Math.abs(today - new Date(wo.dueDate));
+                                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                                const assignedUser = state.cache.users.find(u => u.id === wo.assignedTo)?.fullName || 'N/A';
+                                return `
+                                <tr class="border-b hover:bg-gray-50">
+                                    <td class="p-2">${wo.title}</td>
+                                    <td class="p-2">${state.cache.assets.find((a) => a.id === parseInt(wo.assetId))?.name || "N/A"}</td>
+                                    <td class="p-2">${assignedUser}</td>
+                                    <td class="p-2 text-red-600 font-bold">${diffDays} day(s)</td>
+                                </tr>`
+                            }).join("")}
+                        </tbody>
+                    </table>`
+                  : `<p class="text-gray-500">No overdue work orders. Great job!</p>`
+                }
+            </div>
+        </div>
     </div>`;
 }
 
