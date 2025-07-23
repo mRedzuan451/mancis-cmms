@@ -487,7 +487,6 @@ export function generateTableRows(type, data) {
       // js/ui.js --> inside generateTableRows()
 
       case "partRequests":
-        // This object maps a status name to a set of Tailwind CSS color classes.
         const prStatusColors = { 
             "Requested": "bg-blue-200 text-blue-800", 
             "Requested from Storage": "bg-cyan-200 text-cyan-800", 
@@ -500,8 +499,11 @@ export function generateTableRows(type, data) {
         return data.map((req) => {
             const part = req.partId ? state.cache.parts.find((p) => p.id === req.partId) : null;
             const partName = part ? part.name : `<span class="italic text-gray-500">${req.newPartName} (New)</span>`;
+            
+            // --- START: FIX ---
             const partNumber = part ? part.sku : (req.newPartNumber || 'N/A');
-            // Look up the correct color class, or use a default gray if not found.
+            // --- END: FIX ---
+
             const statusColorClass = prStatusColors[req.status] || "bg-gray-200 text-gray-800";
             
             const notesOrReason = req.status === 'Rejected' 
@@ -515,10 +517,8 @@ export function generateTableRows(type, data) {
             return `
               <tr class="border-b hover:bg-gray-50">
                   <td class="p-2">${partName}</td>
-                  <td class="p-2">${req.quantity}</td>
-                  
+                  <td class="p-2">${partNumber}</td> <td class="p-2">${req.quantity}</td>
                   <td class="p-2"><span class="px-2 py-1 text-xs font-semibold rounded-full ${statusColorClass}">${req.status}</span></td>
-                  
                   <td class="p-2 text-sm">${notesOrReason}</td>
                   <td class="p-2 space-x-2 whitespace-nowrap">
                       <button class="view-pr-btn text-blue-500 hover:text-blue-700" data-id="${req.id}" title="View Details"><i class="fas fa-eye"></i></button>
@@ -1293,10 +1293,10 @@ export function showPartRequestDetailModal(req) {
     const part = req.partId ? state.cache.parts.find(p => p.id === req.partId) : null;
     const partName = part ? part.name : (req.newPartName || 'New Part');
     const partNumber = part ? part.sku : (req.newPartNumber || 'N/A');
-    
+
     contentEl.innerHTML = `
         <p><strong>Part:</strong> ${partName}</p>
-        <p><strong>Quantity:</strong> ${req.quantity}</p>
+        <p><strong>Part Number/SKU:</strong> ${partNumber}</p> <p><strong>Quantity:</strong> ${req.quantity}</p>
         <p><strong>Status:</strong> ${req.status}</p>
         <p><strong>Requester:</strong> ${requester}</p>
         <p><strong>Request Date:</strong> ${new Date(req.requestDate).toLocaleString()}</p>
