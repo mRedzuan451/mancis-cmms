@@ -933,6 +933,53 @@ function attachPageSpecificEventListeners(page) {
         document.getElementById('storageRequestBtn')?.addEventListener('click', showStorageRequestModal);
         document.getElementById('receivePartsBtn')?.addEventListener('click', showReceivePartsModal);
         document.getElementById('restockPartsBtn')?.addEventListener('click', showRestockPartsModal);
+        document.getElementById('printPurchaseListBtn')?.addEventListener('click', () => {
+            const requestsToPrint = state.cache.partRequests.filter(req => req.status === 'Approved');
+
+            if (requestsToPrint.length === 0) {
+                showTemporaryMessage("There are no approved part requests to print.", true);
+                return;
+            }
+
+            const title = "Part Purchase List";
+            let content = `<h1>${title}</h1><p>Generated on: ${new Date().toLocaleString()}</p>`;
+            content += `
+                <table border="1" style="width:100%; border-collapse: collapse;">
+                    <thead>
+                        <tr>
+                            <th style="padding: 5px; text-align: left;">Part Name</th>
+                            <th style="padding: 5px; text-align: left;">Part Number / SKU</th>
+                            <th style="padding: 5px; text-align: right;">Quantity</th>
+                            <th style="padding: 5px; text-align: left;">Maker</th>
+                            <th style="padding: 5px; text-align: left;">Requester</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            requestsToPrint.forEach(req => {
+                const part = req.partId ? state.cache.parts.find(p => p.id === req.partId) : null;
+                const requester = state.cache.users.find(u => u.id === req.requesterId);
+
+                const partName = part ? part.name : (req.newPartName || 'N/A');
+                const partNumber = part ? part.sku : (req.newPartNumber || 'N/A');
+                const maker = part ? part.maker : (req.newPartMaker || '');
+                const requesterName = requester ? requester.fullName : 'N/A';
+                
+                content += `
+                    <tr>
+                        <td style="padding: 5px;">${partName}</td>
+                        <td style="padding: 5px;">${partNumber}</td>
+                        <td style="padding: 5px; text-align: right;">${req.quantity}</td>
+                        <td style="padding: 5px;">${maker}</td>
+                        <td style="padding: 5px;">${requesterName}</td>
+                    </tr>
+                `;
+            });
+
+            content += `</tbody></table>`;
+            printReport(title, content);
+        });
     } else if (page === 'pmSchedules') {
         document.getElementById('addPmScheduleBtn')?.addEventListener('click', () => showPmScheduleModal());
         document.getElementById('generatePmWoBtn')?.addEventListener('click', async () => {
