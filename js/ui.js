@@ -18,6 +18,20 @@ export function renderDashboard() {
   const lowStockItems = parts.filter((p) => parseInt(p.quantity) <= parseInt(p.minQuantity)).length;
   const highPriorityWOs = workOrders.filter((wo) => wo.priority === "High" && wo.status === "Open");
 
+  const today = new Date();
+  today.setHours(0, 0, 0, 0); // Set to the beginning of today for accurate comparison
+  const sevenDaysFromNow = new Date();
+  sevenDaysFromNow.setDate(today.getDate() + 7);
+
+  const upcomingPMs = workOrders.filter(wo => {
+      if (wo.wo_type !== 'PM' || wo.status === 'Completed') {
+          return false;
+      }
+      const woStartDate = new Date(wo.start_date);
+      return woStartDate >= today && woStartDate <= sevenDaysFromNow;
+  }).sort((a, b) => new Date(a.start_date) - new Date(b.start_date)); // Sort by soonest first
+  
+
   return `
     <h1 class="text-3xl font-bold mb-6">Dashboard</h1>
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
@@ -26,17 +40,43 @@ export function renderDashboard() {
         <div class="bg-white p-6 rounded-lg shadow"><h3 class="text-gray-500">Pending Part Requests</h3><p class="text-3xl font-bold">${pendingRequests}</p></div>
         <div class="bg-white p-6 rounded-lg shadow"><h3 class="text-gray-500">Low Stock Items</h3><p class="text-3xl font-bold">${lowStockItems}</p></div>
     </div>
-    <h2 class="text-2xl font-bold mb-4">High Priority Work Orders</h2>
-    <div class="bg-white p-4 rounded-lg shadow">
-        ${highPriorityWOs.length > 0 ? `
-            <table class="w-full">
-                <thead><tr class="border-b"><th class="text-left p-2">Title</th><th class="text-left p-2">Asset</th><th class="text-left p-2">Due Date</th></tr></thead>
-                <tbody>
-                    ${highPriorityWOs.map((wo) => `<tr class="border-b hover:bg-gray-50"><td class="p-2">${wo.title}</td><td class="p-2">${state.cache.assets.find((a) => a.id === parseInt(wo.assetId))?.name || "N/A"}</td><td class="p-2">${wo.dueDate}</td></tr>`).join("")}
-                </tbody>
-            </table>`
-          : `<p class="text-gray-500">No high priority work orders.</p>`
-        }
+    
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        
+        <div>
+            <h2 class="text-2xl font-bold mb-4">Upcoming PMs (Next 7 Days)</h2>
+            <div class="bg-white p-4 rounded-lg shadow">
+                ${upcomingPMs.length > 0 ? `
+                    <table class="w-full">
+                        <thead><tr class="border-b"><th class="text-left p-2">Title</th><th class="text-left p-2">Asset</th><th class="text-left p-2">Start Date</th></tr></thead>
+                        <tbody>
+                            ${upcomingPMs.map((wo) => `
+                                <tr class="border-b hover:bg-gray-50">
+                                    <td class="p-2">${wo.title}</td>
+                                    <td class="p-2">${state.cache.assets.find((a) => a.id === parseInt(wo.assetId))?.name || "N/A"}</td>
+                                    <td class="p-2">${wo.start_date}</td>
+                                </tr>`).join("")}
+                        </tbody>
+                    </table>`
+                  : `<p class="text-gray-500">No upcoming PMs in the next 7 days.</p>`
+                }
+            </div>
+        </div>
+        <div>
+            <h2 class="text-2xl font-bold mb-4">High Priority Work Orders</h2>
+            <div class="bg-white p-4 rounded-lg shadow">
+                ${highPriorityWOs.length > 0 ? `
+                    <table class="w-full">
+                        <thead><tr class="border-b"><th class="text-left p-2">Title</th><th class="text-left p-2">Asset</th><th class="text-left p-2">Due Date</th></tr></thead>
+                        <tbody>
+                            ${highPriorityWOs.map((wo) => `<tr class="border-b hover:bg-gray-50"><td class="p-2">${wo.title}</td><td class="p-2">${state.cache.assets.find((a) => a.id === parseInt(wo.assetId))?.name || "N/A"}</td><td class="p-2">${wo.dueDate}</td></tr>`).join("")}
+                        </tbody>
+                    </table>`
+                  : `<p class="text-gray-500">No high priority work orders.</p>`
+                }
+            </div>
+        </div>
+
     </div>`;
 }
 
