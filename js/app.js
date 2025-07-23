@@ -1186,6 +1186,15 @@ function attachGlobalEventListeners() {
             loadAndRenderStockTakeDetails(stockTakeId);
             return; 
         }
+        if (button.classList.contains('sidebar-section-toggle')) {
+            const sectionId = button.dataset.sectionId;
+            if (sectionId) {
+                // Toggle the state for that section
+                state.sidebarSections[sectionId] = !state.sidebarSections[sectionId];
+                renderSidebar(); // Re-render just the sidebar
+            }
+            return;
+        }
         const id = button.dataset.id ? parseInt(button.dataset.id) : null;
         const actions = {
             "view-asset-btn": () => showAssetDetailModal(state.cache.assets.find(a => a.id === id)),

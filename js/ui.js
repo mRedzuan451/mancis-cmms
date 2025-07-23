@@ -576,42 +576,87 @@ export function generateTableRows(type, data) {
 
 // js/ui.js
 
+// js/ui.js
+
 export function renderSidebar() {
-    // --- START: FIX ---
-    // 1. Correctly destructure fullName, role, AND permissions from the current user's state.
     const { fullName, role, permissions } = state.currentUser;
     document.getElementById("userFullName").textContent = fullName;
     document.getElementById("userRole").textContent = role;
     document.getElementById("userDepartment").textContent = getUserDepartment(state.currentUser);
-    
-    const navLinks = [
-        { page: "dashboard", icon: "fa-tachometer-alt", text: "Dashboard", roles: ["Admin", "Manager", "Supervisor", "Engineer", "Technician", "Clerk"] },
-        { page: "assets", icon: "fa-box", text: "Assets", roles: ["Admin", "Manager", "Supervisor", "Engineer", "Technician"] },
-        { page: "parts", icon: "fa-cogs", text: "Spare Parts", roles: ["Admin", "Manager", "Supervisor", "Engineer", "Technician"] },
-        { page: "partRequests", icon: "fa-inbox", text: "Part Requests", roles: ["Admin", "Manager", "Supervisor", "Engineer", "Technician", "Clerk"] },
-        { page: "stockTake", icon: "fa-clipboard-check", text: "Stock Take", roles: ["Admin", "Manager", "Supervisor", "Technician", "Clerk"] },
-        { page: "workOrders", icon: "fa-clipboard-list", text: "Work Orders", roles: ["Admin", "Manager", "Supervisor", "Engineer", "Technician"] }, 
-        { page: "pmSchedules", icon: "fa-calendar-check", text: "PM Schedules", roles: ["Admin", "Manager", "Supervisor"] },
-        { page: "workOrderCalendar", icon: "fa-calendar-alt", text: "Calendar", roles: ["Admin", "Manager", "Supervisor", "Engineer", "Technician"] },
-        { page: "locations", icon: "fa-map-marker-alt", text: "Locations", roles: ["Admin", "Manager", "Supervisor"] },
-        { page: "inventoryReport", icon: "fa-chart-line", text: "Inventory Report", roles: ["Admin", "Manager"] },
-        { page: "userManagement", icon: "fa-users-cog", text: "User Management", roles: ["Admin"] },
-        { page: "activityLog", icon: "fa-history", text: "Activity Log", roles: ["Admin"] },
+
+    // --- START: Redesigned navigation structure with groups ---
+    const navStructure = [
+        { type: 'link', page: "dashboard", icon: "fa-tachometer-alt", text: "Dashboard" },
+        { type: 'link', page: "workOrderCalendar", icon: "fa-calendar-alt", text: "Calendar" },
+        {
+            type: 'group',
+            id: 'management',
+            title: 'Management',
+            icon: 'fa-tasks',
+            links: [
+                { page: "assets", icon: "fa-box", text: "Assets" },
+                { page: "parts", icon: "fa-cogs", text: "Spare Parts" },
+                { page: "partRequests", icon: "fa-inbox", text: "Part Requests" },
+                { page: "stockTake", icon: "fa-clipboard-check", text: "Stock Take" },
+                { page: "workOrders", icon: "fa-clipboard-list", text: "Work Orders" }, 
+                { page: "pmSchedules", icon: "fa-calendar-check", text: "PM Schedules" },
+            ]
+        },
+        {
+            type: 'group',
+            id: 'admin',
+            title: 'Admin',
+            icon: 'fa-cogs',
+            links: [
+                { page: "locations", icon: "fa-map-marker-alt", text: "Locations" },
+                { page: "inventoryReport", icon: "fa-chart-line", text: "Inventory Report" },
+                { page: "userManagement", icon: "fa-users-cog", text: "User Management" },
+                { page: "activityLog", icon: "fa-history", text: "Activity Log" },
+                { page: "feedback", icon: "fa-envelope-open-text", text: "Feedback Inbox" },
+            ]
+        }
     ];
 
-    // 2. Now that 'permissions' is defined, this check will work correctly.
-    if (permissions && permissions.feedback_view) {
-        navLinks.push({ page: "feedback", icon: "fa-envelope-open-text", text: "Feedback Inbox", roles: ["Admin"] });
-    }
+    let navHtml = '';
+    navStructure.forEach(item => {
+        if (item.type === 'link') {
+            if (can.viewPage(item.page)) {
+                navHtml += `
+                    <a href="#" class="nav-link flex items-center p-2 rounded-lg hover:bg-gray-700 ${state.currentPage === item.page ? "bg-gray-900" : ""}" data-page="${item.page}">
+                        <i class="fas ${item.icon} w-6 text-center"></i><span class="ml-3">${item.text}</span>
+                    </a>`;
+            }
+        } else if (item.type === 'group') {
+            const visibleLinks = item.links.filter(link => can.viewPage(link.page));
+            if (visibleLinks.length > 0) {
+                const isOpen = state.sidebarSections[item.id];
+                navHtml += `
+                    <div>
+                        <button type="button" class="sidebar-section-toggle flex items-center w-full p-2 text-base font-normal text-white rounded-lg hover:bg-gray-700" data-section-id="${item.id}">
+                            <i class="fas ${item.icon} w-6 text-center"></i>
+                            <span class="flex-1 ml-3 text-left whitespace-nowrap">${item.title}</span>
+                            <i class="fas fa-chevron-down transition-transform ${isOpen ? 'rotate-180' : ''}"></i>
+                        </button>
+                        <ul class="py-2 space-y-2 ${!isOpen ? 'hidden' : ''}">
+                            ${visibleLinks.map(link => `
+                                <li>
+                                    <a href="#" class="nav-link flex items-center p-2 pl-11 w-full text-base font-normal rounded-lg hover:bg-gray-700 ${state.currentPage === link.page ? "bg-gray-900" : ""}" data-page="${link.page}">
+                                        <i class="fas ${link.icon} w-6 text-center"></i><span class="ml-3">${link.text}</span>
+                                    </a>
+                                </li>
+                            `).join('')}
+                        </ul>
+                    </div>
+                `;
+            }
+        }
+    });
+    // --- END: Redesigned navigation structure with groups ---
 
     const navMenu = document.getElementById("navMenu");
-    navMenu.innerHTML = navLinks
-        .filter((link) => link.roles.includes(state.currentUser.role))
-        .map(link => `<a href="#" class="nav-link flex items-center p-2 rounded-lg hover:bg-gray-700 ${state.currentPage === link.page ? "bg-gray-900" : ""}" data-page="${link.page}"><i class="fas ${link.icon} w-6 text-center"></i><span class="ml-3">${link.text}</span></a>`)
-        .join("");
+    navMenu.innerHTML = navHtml;
 
     const sidebarFooter = document.getElementById("sidebar-footer");
-    // Add the "Send Feedback" button if it doesn't already exist
     if (!sidebarFooter.querySelector('#sendFeedbackBtn')) {
         sidebarFooter.insertAdjacentHTML('afterbegin', `
             <button id="sendFeedbackBtn" class="w-full flex items-center justify-center bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded transition-colors mb-2">
@@ -619,7 +664,6 @@ export function renderSidebar() {
             </button>
         `);
     }
-    // --- END: FIX ---
 }
 
 export function showAssetModal(assetId = null) {

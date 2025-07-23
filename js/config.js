@@ -22,4 +22,8 @@ export const state = {
     feedback: [],
   },
   charts: {},
+  sidebarSections: {
+    management: true, // Let's have the main section open by default
+    admin: false,
+  },
 };
