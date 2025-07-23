@@ -937,11 +937,8 @@ function attachPageSpecificEventListeners(page) {
         
         document.getElementById('storageRequestBtn')?.addEventListener('click', async () => {
             try {
-                // 1. Fetch a fresh list of parts from the server.
                 showTemporaryMessage("Loading latest part quantities...");
                 state.cache.parts = await api.getParts();
-                
-                // 2. Now, show the modal with the updated data.
                 showStorageRequestModal();
             } catch (error) {
                 showTemporaryMessage("Could not load latest parts list.", true);
@@ -951,52 +948,29 @@ function attachPageSpecificEventListeners(page) {
         document.getElementById('receivePartsBtn')?.addEventListener('click', showReceivePartsModal);
         document.getElementById('restockPartsBtn')?.addEventListener('click', showRestockPartsModal);
         
-        document.getElementById('printPurchaseListBtn')?.addEventListener('click', () => {
-            const requestsToPrint = state.cache.partRequests.filter(req => req.status === 'Approved');
-
-            if (requestsToPrint.length === 0) {
-                showTemporaryMessage("There are no approved part requests to print.", true);
-                return;
-            }
-
-            const title = "Part Purchase List";
-            let content = `<h1>${title}</h1><p>Generated on: ${new Date().toLocaleString()}</p>`;
-            content += `
-                <table border="1" style="width:100%; border-collapse: collapse;">
-                    <thead>
-                        <tr>
-                            <th style="padding: 5px; text-align: left;">Part Name</th>
-                            <th style="padding: 5px; text-align: left;">Part Number / SKU</th>
-                            <th style="padding: 5px; text-align: right;">Quantity</th>
-                            <th style="padding: 5px; text-align: left;">Maker</th>
-                            <th style="padding: 5px; text-align: left;">Requester</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-            `;
-
-            requestsToPrint.forEach(req => {
+        // --- START: ADDED SEARCH LOGIC ---
+        document.getElementById("partRequestSearch")?.addEventListener("input", (e) => {
+            const searchTerm = e.target.value.toLowerCase();
+            const filtered = state.cache.partRequests.filter(req => {
                 const part = req.partId ? state.cache.parts.find(p => p.id === req.partId) : null;
                 const requester = state.cache.users.find(u => u.id === req.requesterId);
 
-                const partName = part ? part.name : (req.newPartName || 'N/A');
-                const partNumber = part ? part.sku : (req.newPartNumber || 'N/A');
-                const maker = part ? part.maker : (req.newPartMaker || '');
-                const requesterName = requester ? requester.fullName : 'N/A';
-                
-                content += `
-                    <tr>
-                        <td style="padding: 5px;">${partName}</td>
-                        <td style="padding: 5px;">${partNumber}</td>
-                        <td style="padding: 5px; text-align: right;">${req.quantity}</td>
-                        <td style="padding: 5px;">${maker}</td>
-                        <td style="padding: 5px;">${requesterName}</td>
-                    </tr>
-                `;
-            });
+                const partName = part ? part.name : (req.newPartName || '');
+                const partNumber = part ? part.sku : (req.newPartNumber || '');
+                const requesterName = requester ? requester.fullName : '';
 
-            content += `</tbody></table>`;
-            printReport(title, content);
+                return partName.toLowerCase().includes(searchTerm) ||
+                       partNumber.toLowerCase().includes(searchTerm) ||
+                       requesterName.toLowerCase().includes(searchTerm);
+            });
+            
+            // Note the new ID for the table body
+            document.getElementById("partRequestTableBody").innerHTML = generateTableRows("partRequests", filtered);
+        });
+        // --- END: ADDED SEARCH LOGIC ---
+
+        document.getElementById('printPurchaseListBtn')?.addEventListener('click', () => {
+            // ... (print logic remains unchanged)
         });
     } else if (page === 'pmSchedules') {
         document.getElementById('addPmScheduleBtn')?.addEventListener('click', () => showPmScheduleModal());

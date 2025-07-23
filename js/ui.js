@@ -395,10 +395,8 @@ export function renderActivityLogPage() {
 // js/ui.js
 
 export function renderPartsRequestPage() {
-    // This line gets the data from the cache.
     const partRequests = state.cache.partRequests;
 
-    // This block builds the header and buttons.
     const header = renderPageHeader("Part Requests", [
         '<button id="refreshDataBtn" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded"><i class="fas fa-sync-alt mr-2"></i>Refresh</button>',
         '<button id="printPurchaseListBtn" class="bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 px-4 rounded"><i class="fas fa-file-invoice mr-2"></i>Print Purchase List</button>',
@@ -408,21 +406,23 @@ export function renderPartsRequestPage() {
         '<button id="restockPartsBtn" class="bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded"><i class="fas fa-dolly-flatbed mr-2"></i>Restock Parts</button>'
     ]);
 
-    // This is the corrected return statement.
     return `
       ${header}
       <div class="bg-white p-4 rounded-lg shadow">
+          
+          <input type="text" id="partRequestSearch" class="w-full mb-4 px-3 py-2 border rounded" placeholder="Search by Part Name, SKU, or Requester...">
           <div class="overflow-x-auto">
               <table class="w-full">
                   <thead><tr class="border-b">
                       <th class="p-2 text-left">Part Name</th>
-                      <th class="p-2 text-left">Part Number</th> <th class="p-2 text-left">Quantity</th>
+                      <th class="p-2 text-left">Part Number</th>
+                      <th class="p-2 text-left">Quantity</th>
                       <th class="p-2 text-left">Status</th>
                       <th class="p-2 text-left">Purpose / Reason</th>
                       <th class="p-2 text-left">Actions</th>
                   </tr></thead>
                   
-                  <tbody>
+                  <tbody id="partRequestTableBody">
                       ${generateTableRows("partRequests", partRequests)}
                   </tbody>
 
