@@ -672,14 +672,10 @@ export function showAssetModal(assetId = null) {
     document.getElementById("assetId").value = "";
     populateLocationDropdown(document.getElementById("assetLocation"), "operational");
 
-    // --- START: FIX ---
-
-    // 1. Get the dropdown element for related parts and clear it.
     const partSelect = document.getElementById("assetRelatedParts");
     partSelect.innerHTML = ''; // Clear previous options
 
-    // 2. Populate the dropdown with all available parts from the cache.
-    state.cache.parts.filter(can.view).forEach(part => {
+    state.cache.parts.forEach(part => {
         const option = document.createElement('option');
         option.value = part.id;
         option.textContent = `${part.name} (SKU: ${part.sku})`;
@@ -1169,13 +1165,10 @@ export function showWorkOrderDetailModal(workOrder) {
 }
 
 export function showPartRequestModal() {
-    // Populate dropdown with existing parts
     const partSelect = document.getElementById('requestPartId');
     partSelect.innerHTML = state.cache.parts
-        .filter(can.view)
         .map(p => `<option value="${p.id}">${p.name} (SKU: ${p.sku})</option>`).join('');
 
-    // Toggle visibility of new part fields
     const checkbox = document.getElementById('requestNewPartCheckbox');
     const newPartContainer = document.getElementById('newPartContainer');
     const existingPartContainer = document.getElementById('existingPartContainer');
@@ -1215,14 +1208,6 @@ export function showReceivePartsModal() {
     document.getElementById('receivePartsModal').style.display = 'flex';
 }
 
-// js/ui.js
-
-// js/ui.js
-
-// js/ui.js
-
-// js/ui.js
-
 export async function showRestockPartsModal() {
     try {
         showTemporaryMessage("Loading received parts...");
@@ -1241,7 +1226,6 @@ export async function showRestockPartsModal() {
 
     const directPartSelect = document.getElementById('directStockPartId');
     directPartSelect.innerHTML = '<option value="">Select an existing part...</option>' + state.cache.parts
-        .filter(can.view)
         .map(p => `<option value="${p.id}">${p.name} (SKU: ${p.sku})</option>`).join('');
 
     populateLocationDropdown(document.getElementById('restockLocationId'), 'storage');
