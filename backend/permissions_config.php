@@ -6,6 +6,7 @@ $permissions = [
     'asset_create' => 'Create Assets',
     'asset_edit'   => 'Edit Assets',
     'asset_delete' => 'Delete Assets',
+    'asset_transfer' => 'Transfer Assets to New Locations', // <-- ADD THIS
 
     'part_view'    => 'View Parts',
     'part_create'  => 'Create Parts',
@@ -48,6 +49,7 @@ $role_permissions = [
 
     'Manager' => [
         'asset_view', 'asset_create', 'asset_edit',
+        'asset_transfer'
         'part_view', 'part_create', 'part_edit',
         'wo_view', 'wo_create', 'wo_edit',
         'part_request_view', 'part_request_create', 'part_request_approve', 'part_request_delete',
