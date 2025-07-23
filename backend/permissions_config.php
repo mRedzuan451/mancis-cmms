@@ -72,7 +72,7 @@ $role_permissions = [
     'Engineer' => [
         'asset_view', 'asset_edit',
         'part_view', 'part_edit',
-        'wo_view', 'wo_edit',
+        'wo_view', 'wo_edit', 
         'part_request_view', 'part_request_create',
         'pm_schedule_view','asset_create',
     ],
@@ -82,12 +82,14 @@ $role_permissions = [
         'part_view', 'part_edit',
         'wo_view', 'wo_create', 'wo_edit',
         'part_request_view', 'part_request_create','part_create',
+        'location_management',
         'stock_take_create', 'pm_schedule_view','report_view',
         'pm_schedule_create',
     ],
 
     'Clerk' => [
         'part_request_view', 'part_request_create',
+        'location_management',
         'stock_take_create', 'part_view',
     ],
 ];

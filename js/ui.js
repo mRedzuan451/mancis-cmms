@@ -600,6 +600,7 @@ export function renderSidebar() {
                 { page: "stockTake", icon: "fa-clipboard-check", text: "Stock Take" },
                 { page: "workOrders", icon: "fa-clipboard-list", text: "Work Orders" }, 
                 { page: "pmSchedules", icon: "fa-calendar-check", text: "PM Schedules" },
+                { page: "locations", icon: "fa-map-marker-alt", text: "Locations" },
             ]
         },
         {
@@ -608,7 +609,6 @@ export function renderSidebar() {
             title: 'Admin',
             icon: 'fa-cogs',
             links: [
-                { page: "locations", icon: "fa-map-marker-alt", text: "Locations" },
                 { page: "inventoryReport", icon: "fa-chart-line", text: "Inventory Report" },
                 { page: "userManagement", icon: "fa-users-cog", text: "User Management" },
                 { page: "activityLog", icon: "fa-history", text: "Activity Log" },
