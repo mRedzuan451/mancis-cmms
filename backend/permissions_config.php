@@ -79,10 +79,12 @@ $role_permissions = [
 
     'Technician' => [
         'asset_view',
-        'part_view',
+        'part_view', 'part_edit',
         'wo_view', 'wo_create', 'wo_edit',
-        'part_request_view', 'part_request_create',
-        'stock_take_create', 
+        'part_request_view', 'part_request_create','Create Parts',
+        'stock_take_create', 'pm_schedule_view','View Reports',
+        'Initiate and perform stock takes',
+        'Create/Edit PM Schedules',
     ],
 
     'Clerk' => [
