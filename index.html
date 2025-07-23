@@ -175,7 +175,7 @@
     <div id="app" class="hidden">
       <aside
         id="sidebar"
-        class="bg-gray-800 text-white w-64 min-h-screen fixed flex flex-col"
+        class="bg-gray-800 text-white w-64 min-h-screen fixed grid grid-rows-[auto_1fr_auto]"
       >
         <div class="p-4 border-b border-gray-700">
           <div class="logo-1">
@@ -185,13 +185,19 @@
               </div>
           </div>
         </div>
+
         <div id="userInfo" class="p-4 border-b border-gray-700">
           <p id="userFullName" class="font-semibold"></p>
           <p id="userRole" class="text-sm text-gray-400"></p>
           <p id="userDepartment" class="text-sm text-gray-400"></p>
         </div>
-        <nav id="navMenu" class="p-4 space-y-2 flex-grow overflow-y-auto min-h-0"></nav>
+
+        <nav id="navMenu" class="p-4 space-y-2 overflow-y-auto"></nav>
+        
         <div id="sidebar-footer" class="p-4 border-t border-gray-700">
+          <button id="sendFeedbackBtn" class="w-full flex items-center justify-center bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded transition-colors mb-2">
+            <i class="fas fa-comment-dots mr-2"></i> Send Feedback
+          </button>
           <button
             id="logoutBtn"
             class="w-full flex items-center justify-center bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded transition-colors mb-2"
@@ -200,7 +206,6 @@
           </button>
         </div>
       </aside>
-
       <main id="mainContent" class="ml-64 p-8"></main>
     </div>
 
