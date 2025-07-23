@@ -78,17 +78,34 @@ export const can = {
    * @returns {boolean} True if the user has permission.
    */
   viewPage: (page) => {
-    if (!state.currentUser) return false;
-    if (state.currentUser.role === 'Admin') return true;
-    const adminOnlyPages = ["userManagement", "activityLog"];
-    if (adminOnlyPages.includes(page)) {
-      return false;
+    if (!state.currentUser || !state.currentUser.permissions) return false;
+    const { permissions } = state.currentUser;
+
+    // The dashboard is always visible to logged-in users.
+    if (page === "dashboard") {
+      return true;
     }
-    const nonClerkPages = ["assets", "parts", "workOrders", "workOrderCalendar"];
-    if (state.currentUser.role === "Clerk" && nonClerkPages.includes(page)) {
-      return false;
-    }
-    return true;
+
+    // Map pages to the specific permission required to view them.
+    const pagePermissions = {
+      assets: 'asset_view',
+      parts: 'part_view',
+      partRequests: 'part_request_view',
+      stockTake: 'stock_take_create', // Users who can create can view the page
+      workOrders: 'wo_view',
+      pmSchedules: 'pm_schedule_view',
+      workOrderCalendar: 'wo_view', // Calendar is based on work orders
+      locations: 'location_management',
+      inventoryReport: 'report_view',
+      userManagement: 'user_view',
+      activityLog: 'log_view',
+      feedback: 'feedback_view', // This is the new rule
+    };
+
+    const requiredPermission = pagePermissions[page];
+
+    // Return true only if the user's permissions object has the required key set to true.
+    return requiredPermission ? permissions[requiredPermission] : false;
   },
 };
 
