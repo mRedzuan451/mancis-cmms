@@ -9,12 +9,22 @@ function getEffectivePermissions($userId, $conn) {
     $stmt_role->bind_param("i", $userId);
     $stmt_role->execute();
     $user_result = $stmt_role->get_result()->fetch_assoc();
-    if (!$user_result) { return []; } // Return no permissions if user not found
-    $userRole = $user_result['role'];
+    if (!$user_result) { return []; } 
+    $userRoleFromDb = $user_result['role'];
     $stmt_role->close();
 
-    // 2. Get the default permissions for that role.
-    $defaultPermissions = $role_permissions[$userRole] ?? [];
+    // --- START: FIX ---
+    // 2. Find the correctly-cased role key from the config file to prevent case-sensitivity issues.
+    $roleKey = null;
+    foreach (array_keys($role_permissions) as $key) {
+        if (strtolower($key) === strtolower($userRoleFromDb)) {
+            $roleKey = $key;
+            break;
+        }
+    }
+    // Use the correctly cased key to get the default permissions. If not found, default to an empty array.
+    $defaultPermissions = $roleKey ? $role_permissions[$roleKey] : [];
+    // --- END: FIX ---
 
     // 3. Get the specific overrides for this user from the user_permissions table.
     $stmt_perms = $conn->prepare("SELECT permission_key, has_permission FROM user_permissions WHERE user_id = ?");

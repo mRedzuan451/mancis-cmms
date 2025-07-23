@@ -88,7 +88,7 @@ $role_permissions = [
 
     'Clerk' => [
         'part_request_view', 'part_request_create',
-        'stock_take_create',
+        'stock_take_create', 'part_view',
     ],
 ];
 ?>
