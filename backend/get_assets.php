@@ -12,11 +12,34 @@ if ($conn->connect_error) {
     exit();
 }
 
-// The authorize() call is now in the correct place and has the $conn variable.
 authorize('asset_view', $conn);
 
-$sql = "SELECT * FROM assets ORDER BY name ASC";
-$result = $conn->query($sql);
+$user_role = $_SESSION['user_role'];
+$user_department_id = $_SESSION['user_department_id'];
+
+$sql = "";
+if ($user_role === 'Admin') {
+    $sql = "SELECT * FROM assets ORDER BY name ASC";
+    $stmt = $conn->prepare($sql);
+} else {
+    // This query finds all assets located in the user's department,
+    // checking both production line locations and storage locations.
+    $sql = "SELECT a.* FROM assets a
+            LEFT JOIN productionlines pl ON a.locationId = CONCAT('pl-', pl.id)
+            LEFT JOIN sublines sl ON pl.subLineId = sl.id
+            LEFT JOIN departments d1 ON sl.departmentId = d1.id
+            LEFT JOIN boxes b ON a.locationId = CONCAT('box-', b.id)
+            LEFT JOIN shelves sh ON b.shelfId = sh.id
+            LEFT JOIN cabinets cab ON sh.cabinetId = cab.id
+            LEFT JOIN departments d2 ON cab.departmentId = d2.id
+            WHERE d1.id = ? OR d2.id = ?
+            ORDER BY a.name ASC";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("ii", $user_department_id, $user_department_id);
+}
+
+$stmt->execute();
+$result = $stmt->get_result();
 
 $assets_array = array();
 if ($result && $result->num_rows > 0) {
@@ -29,6 +52,7 @@ if ($result && $result->num_rows > 0) {
     }
 }
 
+$stmt->close();
 $conn->close();
 echo json_encode($assets_array);
 ?>

@@ -8,10 +8,10 @@ import { getFullLocationName, getUserDepartment, showTemporaryMessage, calculate
 // Each function that creates a page view is now exported.
 
 export function renderDashboard() {
-  const assets = state.cache.assets.filter(can.view);
+  const assets = state.cache.assets;
   const workOrders = state.cache.workOrders.filter(can.view);
-  const parts = state.cache.parts.filter(can.view);
-  const partRequests = state.cache.partRequests.filter(can.view);
+  const parts = state.cache.parts;
+  const partRequests = state.cache.partRequests;
   
   const openWOs = workOrders.filter((wo) => wo.status === "Open").length;
   const pendingRequests = partRequests.filter((pr) => pr.status === "Requested").length;
@@ -84,7 +84,7 @@ export function renderDashboard() {
 // js/ui.js
 
 export function renderAssetsPage() {
-    const assets = state.cache.assets.filter(can.view);
+    const assets = state.cache.assets;
 
     const header = renderPageHeader("Asset Management", [
         '<button id="deleteSelectedBtn" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded hidden"><i class="fas fa-trash-alt mr-2"></i>Delete Selected</button>',
@@ -118,7 +118,7 @@ export function renderAssetsPage() {
 // js/ui.js
 
 export function renderPartsPage() {
-    const parts = state.cache.parts.filter(can.view);
+    const parts = state.cache.parts;
     
     const header = renderPageHeader("Spare Parts Management", [
         '<button id="deleteSelectedBtn" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded hidden"><i class="fas fa-trash-alt mr-2"></i>Delete Selected</button>',
