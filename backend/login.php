@@ -9,7 +9,7 @@
 // This entire block of headers and session configuration is required.
 
 // 1. SET UP CORS AND HANDLE PREFLIGHT REQUEST
-$allowed_origins = ['http://localhost', 'http://127.0.0.1', 'http://192.168.141.42'];
+$allowed_origins = ['http://localhost', 'http://127.0.0.1', 'http://10.189.197.42'];
 if (isset($_SERVER['HTTP_ORIGIN']) && in_array($_SERVER['HTTP_ORIGIN'], $allowed_origins)) {
     header("Access-Control-Allow-Origin: " . $_SERVER['HTTP_ORIGIN']);
 }
