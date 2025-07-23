@@ -940,9 +940,23 @@ function attachPageSpecificEventListeners(page) {
         });
     } else if (page === 'partRequests') {
         document.getElementById('newPartRequestBtn')?.addEventListener('click', showPartRequestModal);
-        document.getElementById('storageRequestBtn')?.addEventListener('click', showStorageRequestModal);
+        
+        document.getElementById('storageRequestBtn')?.addEventListener('click', async () => {
+            try {
+                // 1. Fetch a fresh list of parts from the server.
+                showTemporaryMessage("Loading latest part quantities...");
+                state.cache.parts = await api.getParts();
+                
+                // 2. Now, show the modal with the updated data.
+                showStorageRequestModal();
+            } catch (error) {
+                showTemporaryMessage("Could not load latest parts list.", true);
+            }
+        });
+
         document.getElementById('receivePartsBtn')?.addEventListener('click', showReceivePartsModal);
         document.getElementById('restockPartsBtn')?.addEventListener('click', showRestockPartsModal);
+        
         document.getElementById('printPurchaseListBtn')?.addEventListener('click', () => {
             const requestsToPrint = state.cache.partRequests.filter(req => req.status === 'Approved');
 
