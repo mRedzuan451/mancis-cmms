@@ -42,6 +42,7 @@ import {
     showPmScheduleModal, // This is now correctly imported from ui.js
     showPmScheduleDetailModal,
     showFeedbackModal,
+    renderStatusChart,
     addChecklistItem,
     addPmPartRow,
     showUploadModal,
@@ -797,6 +798,15 @@ function attachPageSpecificEventListeners(page) {
         
         deleteSelectedBtn?.addEventListener('click', () => handleMassDelete(pageType));
     };
+
+    if (page === 'dashboard') {
+        const workOrders = state.cache.workOrders.filter(can.view);
+        const statusCounts = workOrders.reduce((acc, wo) => {
+            acc[wo.status] = (acc[wo.status] || 0) + 1;
+            return acc;
+        }, {});
+        renderStatusChart(statusCounts);
+    }
 
     // Apply the checkbox logic to all pages that have a table list
     if (['assets', 'parts', 'workOrders', 'userManagement'].includes(page)) {

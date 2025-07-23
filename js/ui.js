@@ -16,27 +16,23 @@ export function renderDashboard() {
   const openWOs = workOrders.filter((wo) => wo.status === "Open").length;
   const pendingRequests = partRequests.filter((pr) => pr.status === "Requested").length;
   const lowStockItems = parts.filter((p) => parseInt(p.quantity) <= parseInt(p.minQuantity)).length;
-  const highPriorityWOs = workOrders.filter((wo) => wo.priority === "High" && wo.status === "Open");
-
+  
   const today = new Date();
-  today.setHours(0, 0, 0, 0); // Set to the beginning of today for accurate comparison
+  today.setHours(0, 0, 0, 0);
   const sevenDaysFromNow = new Date();
   sevenDaysFromNow.setDate(today.getDate() + 7);
 
   const upcomingPMs = workOrders.filter(wo => {
-      if (wo.wo_type !== 'PM' || wo.status === 'Completed') {
-          return false;
-      }
+      if (wo.wo_type !== 'PM' || wo.status === 'Completed') return false;
       const woStartDate = new Date(wo.start_date);
       return woStartDate >= today && woStartDate <= sevenDaysFromNow;
-  }).sort((a, b) => new Date(a.start_date) - new Date(b.start_date)); // Sort by soonest first
+  }).sort((a, b) => new Date(a.start_date) - new Date(b.start_date));
   
   const overdueWOs = workOrders.filter(wo => {
       if (wo.status === 'Completed') return false;
       const woDueDate = new Date(wo.dueDate);
       return woDueDate < today;
-  }).sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate)); // Sort by oldest first
-
+  }).sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
 
   return `
     <h1 class="text-3xl font-bold mb-6">Dashboard</h1>
@@ -47,68 +43,42 @@ export function renderDashboard() {
         <div class="bg-white p-6 rounded-lg shadow"><h3 class="text-gray-500">Low Stock Items</h3><p class="text-3xl font-bold">${lowStockItems}</p></div>
     </div>
     
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
         
-        <div>
-            <h2 class="text-2xl font-bold mb-4">Upcoming PMs (Next 7 Days)</h2>
-            <div class="bg-white p-4 rounded-lg shadow">
-                ${upcomingPMs.length > 0 ? `
-                    <table class="w-full">
-                        <thead><tr class="border-b"><th class="text-left p-2">Title</th><th class="text-left p-2">Asset</th><th class="text-left p-2">Start Date</th></tr></thead>
-                        <tbody>
-                            ${upcomingPMs.map((wo) => `
-                                <tr class="border-b hover:bg-gray-50">
-                                    <td class="p-2">${wo.title}</td>
-                                    <td class="p-2">${state.cache.assets.find((a) => a.id === parseInt(wo.assetId))?.name || "N/A"}</td>
-                                    <td class="p-2">${wo.start_date}</td>
-                                </tr>`).join("")}
-                        </tbody>
-                    </table>`
-                  : `<p class="text-gray-500">No upcoming PMs in the next 7 days.</p>`
-                }
+        <div class="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div>
+                <h2 class="text-2xl font-bold mb-4">Upcoming PMs (Next 7 Days)</h2>
+                <div class="bg-white p-4 rounded-lg shadow">
+                    ${upcomingPMs.length > 0 ? `
+                        <table class="w-full">
+                            <thead><tr class="border-b"><th class="text-left p-2">Title</th><th class="text-left p-2">Asset</th><th class="text-left p-2">Start Date</th></tr></thead>
+                            <tbody>${upcomingPMs.map(wo => `<tr class="border-b hover:bg-gray-50"><td class="p-2">${wo.title}</td><td class="p-2">${state.cache.assets.find(a => a.id === parseInt(wo.assetId))?.name || "N/A"}</td><td class="p-2">${wo.start_date}</td></tr>`).join("")}</tbody>
+                        </table>` : `<p class="text-gray-500">No upcoming PMs in the next 7 days.</p>`}
+                </div>
             </div>
-        </div>
 
-        <div>
-            <h2 class="text-2xl font-bold mb-4">High Priority Work Orders</h2>
-            <div class="bg-white p-4 rounded-lg shadow">
-                ${highPriorityWOs.length > 0 ? `
-                    <table class="w-full">
-                        <thead><tr class="border-b"><th class="text-left p-2">Title</th><th class="text-left p-2">Asset</th><th class="text-left p-2">Due Date</th></tr></thead>
-                        <tbody>
-                            ${highPriorityWOs.map((wo) => `<tr class="border-b hover:bg-gray-50"><td class="p-2">${wo.title}</td><td class="p-2">${state.cache.assets.find((a) => a.id === parseInt(wo.assetId))?.name || "N/A"}</td><td class="p-2">${wo.dueDate}</td></tr>`).join("")}
-                        </tbody>
-                    </table>`
-                  : `<p class="text-gray-500">No high priority work orders.</p>`
-                }
-            </div>
-        </div>
-
-        <div class="lg:col-span-2"> <h2 class="text-2xl font-bold mb-4">Overdue Work Orders</h2>
-            <div class="bg-white p-4 rounded-lg shadow">
-                ${overdueWOs.length > 0 ? `
-                    <table class="w-full">
-                        <thead><tr class="border-b"><th class="text-left p-2">Title</th><th class="text-left p-2">Asset</th><th class="text-left p-2">Assigned To</th><th class="text-left p-2">Days Overdue</th></tr></thead>
-                        <tbody>
-                            ${overdueWOs.map((wo) => {
+            <div class="lg:col-span-2">
+                <h2 class="text-2xl font-bold mb-4">Overdue Work Orders</h2>
+                <div class="bg-white p-4 rounded-lg shadow">
+                    ${overdueWOs.length > 0 ? `
+                        <table class="w-full">
+                            <thead><tr class="border-b"><th class="text-left p-2">Title</th><th class="text-left p-2">Asset</th><th class="text-left p-2">Days Overdue</th></tr></thead>
+                            <tbody>${overdueWOs.map(wo => {
                                 const diffTime = Math.abs(today - new Date(wo.dueDate));
                                 const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                                const assignedUser = state.cache.users.find(u => u.id === wo.assignedTo)?.fullName || 'N/A';
-                                return `
-                                <tr class="border-b hover:bg-gray-50">
-                                    <td class="p-2">${wo.title}</td>
-                                    <td class="p-2">${state.cache.assets.find((a) => a.id === parseInt(wo.assetId))?.name || "N/A"}</td>
-                                    <td class="p-2">${assignedUser}</td>
-                                    <td class="p-2 text-red-600 font-bold">${diffDays} day(s)</td>
-                                </tr>`
-                            }).join("")}
-                        </tbody>
-                    </table>`
-                  : `<p class="text-gray-500">No overdue work orders. Great job!</p>`
-                }
+                                return `<tr class="border-b hover:bg-gray-50"><td class="p-2">${wo.title}</td><td class="p-2">${state.cache.assets.find(a => a.id === parseInt(wo.assetId))?.name || "N/A"}</td><td class="p-2 text-red-600 font-bold">${diffDays} day(s)</td></tr>`}).join("")}</tbody>
+                        </table>` : `<p class="text-gray-500">No overdue work orders. Great job!</p>`}
+                </div>
             </div>
         </div>
-    </div>`;
+        
+        <div>
+            <h2 class="text-2xl font-bold mb-4">Work Order Status</h2>
+            <div class="bg-white p-4 rounded-lg shadow" style="height: 350px;">
+                <canvas id="woStatusChart"></canvas>
+            </div>
+        </div>
+        </div>`;
 }
 
 // js/ui.js
@@ -1769,4 +1739,48 @@ export function renderFeedbackPage() {
         `).join('') || '<p>The feedback inbox is empty.</p>'}
         </div>
     `;
+}
+
+export function renderStatusChart(statusCounts) {
+    const ctx = document.getElementById('woStatusChart');
+    if (!ctx) return; // Exit if the canvas element isn't on the page
+
+    // If a chart instance already exists, destroy it before creating a new one
+    if (state.charts.statusChart) {
+        state.charts.statusChart.destroy();
+    }
+    
+    const labels = Object.keys(statusCounts);
+    const data = Object.values(statusCounts);
+
+    const chartColors = {
+        'Open': '#3B82F6', // blue-500
+        'In Progress': '#F59E0B', // amber-500
+        'On Hold': '#F97316', // orange-500
+        'Completed': '#16A34A', // green-600
+        'Delay': '#EF4444', // red-500
+    };
+    
+    // Create a new chart instance and store it in the state
+    state.charts.statusChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Work Orders',
+                data: data,
+                backgroundColor: labels.map(label => chartColors[label] || '#6B7280'), // gray-500 for others
+                hoverOffset: 4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'top',
+                },
+            }
+        }
+    });
 }

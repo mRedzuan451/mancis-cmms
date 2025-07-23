@@ -21,4 +21,5 @@ export const state = {
     stockTakes: [],
     feedback: [],
   },
+  charts: {},
 };
