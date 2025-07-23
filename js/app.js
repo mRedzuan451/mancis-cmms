@@ -89,20 +89,14 @@ function render() {
     }
 }
 
-// js/app.js
-
-// js/app.js
-
 async function loadInitialData() {
     try {
         const { permissions } = state.currentUser;
         const dataMap = {}; 
 
-        // --- START: FIX ---
-        // 1. Unconditionally fetch the basic locations needed for display purposes.
-        // We use 'getPublicLocations' because it's accessible to all logged-in users.
         const publicLocationsPromise = api.getPublicLocations();
-        // --- END: FIX ---
+
+        dataMap.users = api.getUsers();
 
         if (permissions.asset_view) {
             dataMap.assets = api.getAssets();
