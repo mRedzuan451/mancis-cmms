@@ -1449,7 +1449,6 @@ export function renderPmSchedulesPage() {
     return `
       ${header}
       <div class="bg-white p-4 rounded-lg shadow">
-        
         <input type="text" id="pmScheduleSearch" class="w-full mb-4 px-3 py-2 border rounded" placeholder="Search by Schedule Title or Asset Name...">
         <table class="w-full">
           <thead><tr class="border-b">
@@ -1463,7 +1462,29 @@ export function renderPmSchedulesPage() {
           </tr></thead>
           <tbody id="pmSchedulesTableBody">
             ${schedules.map(s => {
-                // ... (existing table row rendering logic is unchanged)
+                const assetName = state.cache.assets.find(a => a.id === s.assetId)?.name || 'N/A';
+                const openWoForSchedule = openWorkOrders.find(wo => wo.pm_schedule_id === s.id);
+                
+                let nextStartDate = s.last_generated_date || s.schedule_start_date;
+                if (openWoForSchedule) {
+                    nextStartDate = openWoForSchedule.start_date;
+                }
+                const followingPmDate = calculateNextPmDate(s);
+                const frequencyText = `${s.frequency_interval} ${s.frequency_unit}(s)`;
+
+                return `<tr class="border-b hover:bg-gray-50">
+                    <td class="p-2">${s.title}</td>
+                    <td class="p-2">${assetName}</td>
+                    <td class="p-2">${frequencyText}</td>
+                    <td class="p-2 font-semibold">${nextStartDate || 'N/A'}</td>
+                    <td class="p-2 font-semibold">${followingPmDate}</td>
+                    <td class="p-2">${s.is_active ? '<span class="text-green-600">Active</span>' : '<span class="text-gray-500">Inactive</span>'}</td>
+                    <td class="p-2 space-x-2">
+                        <button class="view-pm-btn text-blue-500 hover:text-blue-700" data-id="${s.id}" title="View Details"><i class="fas fa-eye"></i></button>
+                        <button class="edit-pm-btn text-yellow-500 hover:text-yellow-700" data-id="${s.id}" title="Edit"><i class="fas fa-edit"></i></button>
+                        <button class="delete-pm-btn text-red-500 hover:text-red-700" data-id="${s.id}" title="Delete"><i class="fas fa-trash"></i></button>
+                    </td>
+                </tr>`
             }).join('')}
           </tbody>
         </table>
