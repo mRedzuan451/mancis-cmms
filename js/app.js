@@ -985,6 +985,41 @@ function attachPageSpecificEventListeners(page) {
                 showTemporaryMessage(`Failed to generate work orders. ${error.message}`, true);
             }
         });
+        document.getElementById("pmScheduleSearch")?.addEventListener("input", (e) => {
+            const searchTerm = e.target.value.toLowerCase();
+            const openWorkOrders = state.cache.workOrders.filter(wo => wo.status === 'Open' && wo.wo_type === 'PM');
+
+            const filtered = (state.cache.pmSchedules || []).filter(s => {
+                const assetName = state.cache.assets.find(a => a.id === s.assetId)?.name || '';
+                return s.title.toLowerCase().includes(searchTerm) ||
+                       assetName.toLowerCase().includes(searchTerm);
+            });
+
+            const tableBody = document.getElementById("pmSchedulesTableBody");
+            tableBody.innerHTML = filtered.map(s => {
+                const assetName = state.cache.assets.find(a => a.id === s.assetId)?.name || 'N/A';
+                const openWoForSchedule = openWorkOrders.find(wo => wo.pm_schedule_id === s.id);
+                let nextStartDate = s.last_generated_date || s.schedule_start_date;
+                if (openWoForSchedule) {
+                    nextStartDate = openWoForSchedule.start_date;
+                }
+                const followingPmDate = calculateNextPmDate(s);
+                const frequencyText = `${s.frequency_interval} ${s.frequency_unit}(s)`;
+                return `<tr class="border-b hover:bg-gray-50">
+                    <td class="p-2">${s.title}</td>
+                    <td class="p-2">${assetName}</td>
+                    <td class="p-2">${frequencyText}</td>
+                    <td class="p-2 font-semibold">${nextStartDate || 'N/A'}</td>
+                    <td class="p-2 font-semibold">${followingPmDate}</td>
+                    <td class="p-2">${s.is_active ? '<span class="text-green-600">Active</span>' : '<span class="text-gray-500">Inactive</span>'}</td>
+                    <td class="p-2 space-x-2">
+                        <button class="view-pm-btn text-blue-500 hover:text-blue-700" data-id="${s.id}" title="View Details"><i class="fas fa-eye"></i></button>
+                        <button class="edit-pm-btn text-yellow-500 hover:text-yellow-700" data-id="${s.id}" title="Edit"><i class="fas fa-edit"></i></button>
+                        <button class="delete-pm-btn text-red-500 hover:text-red-700" data-id="${s.id}" title="Delete"><i class="fas fa-trash"></i></button>
+                    </td>
+                </tr>`
+            }).join('');
+        });
     } else if (page === 'locations') {
         document.getElementById('downloadLocationsBtn')?.addEventListener('click', handleDownloadLocations);
         document.querySelector('#addDivisionForm')?.addEventListener('submit', handleLocationFormSubmit);
@@ -1107,6 +1142,18 @@ function attachPageSpecificEventListeners(page) {
             } catch(error) {
                 showTemporaryMessage('Could not generate printable sheet.', true);
             }
+        });
+    } else if (page === 'userManagement') {
+        document.getElementById("userSearch")?.addEventListener("input", (e) => {
+            const searchTerm = e.target.value.toLowerCase();
+            const filtered = state.cache.users.filter(user => {
+                const departmentName = getUserDepartment(user) || '';
+                return user.fullName.toLowerCase().includes(searchTerm) ||
+                       user.username.toLowerCase().includes(searchTerm) ||
+                       user.role.toLowerCase().includes(searchTerm) ||
+                       departmentName.toLowerCase().includes(searchTerm);
+            });
+            document.getElementById("userTableBody").innerHTML = generateTableRows("users", filtered);
         });
     }
 }
