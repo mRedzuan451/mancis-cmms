@@ -26,4 +26,5 @@ export const state = {
     management: true, // Let's have the main section open by default
     admin: false,
   },
+  showArchivedFeedback: false,
 };

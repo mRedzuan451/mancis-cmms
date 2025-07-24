@@ -1734,9 +1734,17 @@ export function showFeedbackModal() {
     document.getElementById('feedbackModal').style.display = 'flex';
 }
 
+// js/ui.js
+
 export function renderFeedbackPage() {
-    const header = renderPageHeader("Feedback Inbox");
-    const feedbackList = state.cache.feedback || [];
+    const toggleButtonText = state.showArchivedFeedback ? 'Hide Archived' : 'Show Archived';
+    const header = renderPageHeader("Feedback Inbox", [
+        `<button id="toggleArchivedFeedbackBtn" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded">${toggleButtonText}</button>`
+    ]);
+    
+    const feedbackList = (state.cache.feedback || [])
+        .filter(item => state.showArchivedFeedback || item.status !== 'Archived'); // Filter based on state
+
     const statusStyles = {
         'New': 'border-blue-500',
         'Read': 'border-gray-300',
@@ -1757,6 +1765,8 @@ export function renderFeedbackPage() {
                     <span class="text-sm font-semibold">Status: ${item.status}</span>
                     ${item.status === 'New' ? `<button class="feedback-status-btn bg-gray-200 hover:bg-gray-300 text-xs py-1 px-2 rounded" data-id="${item.id}" data-status="Read">Mark as Read</button>` : ''}
                     ${item.status !== 'Archived' ? `<button class="feedback-status-btn bg-gray-200 hover:bg-gray-300 text-xs py-1 px-2 rounded" data-id="${item.id}" data-status="Archived">Archive</button>` : ''}
+                    
+                    ${state.currentUser.permissions.feedback_delete ? `<button class="feedback-delete-btn bg-red-100 hover:bg-red-200 text-red-700 text-xs py-1 px-2 rounded" data-id="${item.id}">Delete</button>` : ''}
                 </div>
             </div>
         `).join('') || '<p>The feedback inbox is empty.</p>'}
