@@ -22,6 +22,7 @@ $permissions = [
     'part_request_create'   => 'Create Part Requests',
     'part_request_approve'  => 'Approve/Reject Part Requests',
     'part_request_delete'   => 'Delete Part Requests',
+    'part_restock'        => 'Restock received parts into inventory',
 
     'pm_schedule_view'    => 'View PM Schedules',
     'pm_schedule_create'  => 'Create/Edit PM Schedules',
@@ -66,7 +67,7 @@ $role_permissions = [
         'wo_view', 'wo_create', 'wo_edit',
         'part_request_view', 'part_request_create', 'part_request_approve',
         'pm_schedule_view', 'pm_schedule_create',
-        'user_view',
+        'user_view','part_restock',
         'location_management',
         'stock_take_create', 'stock_take_approve',
     ],
@@ -75,7 +76,7 @@ $role_permissions = [
         'asset_view', 'asset_edit',
         'part_view', 'part_edit',
         'wo_view', 'wo_edit',
-        'location_management',
+        'location_management','part_restock',
         'part_request_view', 'part_request_create',
         'pm_schedule_view','asset_create',
     ],
@@ -85,14 +86,14 @@ $role_permissions = [
         'part_view', 'part_edit',
         'wo_view', 'wo_create', 'wo_edit',
         'part_request_view', 'part_request_create','part_create',
-        'location_management',
+        'location_management','part_restock',
         'stock_take_create', 'pm_schedule_view','report_view',
         'pm_schedule_create',
     ],
 
     'Clerk' => [
         'part_request_view', 'part_request_create',
-        'location_management',
+        'location_management','part_restock',
         'stock_take_create', 'part_view',
     ],
 ];

@@ -397,19 +397,29 @@ export function renderActivityLogPage() {
 export function renderPartsRequestPage() {
     const partRequests = state.cache.partRequests;
 
-    const header = renderPageHeader("Part Requests", [
+    // --- START: FIX ---
+    // The list of buttons is now built dynamically based on permissions.
+    const buttons = [
         '<button id="refreshDataBtn" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded"><i class="fas fa-sync-alt mr-2"></i>Refresh</button>',
         '<button id="printPurchaseListBtn" class="bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 px-4 rounded"><i class="fas fa-file-invoice mr-2"></i>Print Purchase List</button>',
-        '<button id="storageRequestBtn" class="bg-teal-500 hover:bg-teal-600 text-white font-bold py-2 px-4 rounded"><i class="fas fa-warehouse mr-2"></i>Request from Storage</button>',
-        '<button id="newPartRequestBtn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded"><i class="fas fa-plus mr-2"></i>New Purchase Request</button>',
-        '<button id="receivePartsBtn" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded"><i class="fas fa-box-open mr-2"></i>Receive Parts</button>',
-        '<button id="restockPartsBtn" class="bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded"><i class="fas fa-dolly-flatbed mr-2"></i>Restock Parts</button>'
-    ]);
+    ];
+
+    if (state.currentUser.permissions.part_request_create) {
+        buttons.push('<button id="storageRequestBtn" class="bg-teal-500 hover:bg-teal-600 text-white font-bold py-2 px-4 rounded"><i class="fas fa-warehouse mr-2"></i>Request from Storage</button>');
+        buttons.push('<button id="newPartRequestBtn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded"><i class="fas fa-plus mr-2"></i>New Purchase Request</button>');
+    }
+    
+    if (state.currentUser.permissions.part_restock) {
+        buttons.push('<button id="receivePartsBtn" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded"><i class="fas fa-box-open mr-2"></i>Receive Parts</button>');
+        buttons.push('<button id="restockPartsBtn" class="bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded"><i class="fas fa-dolly-flatbed mr-2"></i>Restock Parts</button>');
+    }
+
+    const header = renderPageHeader("Part Requests", buttons);
+    // --- END: FIX ---
 
     return `
       ${header}
       <div class="bg-white p-4 rounded-lg shadow">
-          
           <input type="text" id="partRequestSearch" class="w-full mb-4 px-3 py-2 border rounded" placeholder="Search by Part Name, SKU, or Requester...">
           <div class="overflow-x-auto">
               <table class="w-full">
