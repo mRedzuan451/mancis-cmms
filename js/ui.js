@@ -556,8 +556,8 @@ export function generateTableRows(type, data) {
             
             const canEdit = req.requesterId === state.currentUser.id && req.status === 'Requested';
             const canDelete = ['Admin', 'Manager'].includes(state.currentUser.role);
-            const canApprove = (state.currentUser.role === "Admin" || state.currentUser.role === "Manager") && (req.status === "Requested" || req.status === "Requested from Storage");
-
+            const canApprove = state.currentUser.permissions.part_request_approve && 
+                               (req.status === "Requested" || req.status === "Requested from Storage");
             return `
               <tr class="border-b hover:bg-gray-50">
                   <td class="p-2">${partName}</td>
