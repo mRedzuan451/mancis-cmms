@@ -13,7 +13,7 @@ if ($conn->connect_error) {
 }
 
 // Select all fields EXCEPT the password for security
-$sql = "SELECT id, fullName, employeeId, username, role, divisionId, departmentId FROM users ORDER BY fullName ASC";
+$sql = "SELECT id, fullName, employeeId, username, email, contact_number, role, divisionId, departmentId FROM users ORDER BY fullName ASC";
 $result = $conn->query($sql);
 
 // **DEBUGGING STEP 2: Check for query errors**

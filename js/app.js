@@ -1208,6 +1208,16 @@ function attachPageSpecificEventListeners(page) {
             });
             document.getElementById("userTableBody").innerHTML = generateTableRows("users", filtered);
         });
+        document.getElementById("addUserBtn")?.addEventListener("click", () => {
+            document.getElementById("registrationModalTitle").textContent = 'Add New User';
+            document.getElementById("regRole").classList.remove('hidden'); // SHOW role selector
+            document.getElementById("registrationModal").style.display = "flex";
+            const divisionSelect = document.getElementById('regDivision');
+            const departmentSelect = document.getElementById('regDepartment');
+            api.getPublicLocations().then(locations => {
+                populateLocationDropdowns(divisionSelect, departmentSelect, locations);
+            });
+        });
     }
 }
 
@@ -1216,6 +1226,8 @@ function attachGlobalEventListeners() {
     document.getElementById("loginForm").addEventListener("submit", (e) => handleLogin(e, loadAndRender));
     document.getElementById("logoutBtn").addEventListener("click", () => handleLogout(render));
     document.getElementById("createAccountBtn").addEventListener("click", () => {
+        document.getElementById("registrationModalTitle").textContent = 'Create New Account';
+        document.getElementById("regRole").classList.add('hidden'); // Hide role selector
         document.getElementById("registrationModal").style.display = "flex";
         const divisionSelect = document.getElementById('regDivision');
         const departmentSelect = document.getElementById('regDepartment');

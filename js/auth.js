@@ -148,11 +148,16 @@ export async function handleRegistration(e, onRegisterSuccess) {
     const regError = document.getElementById("regError");
     regError.textContent = '';
 
+    const roleSelect = document.getElementById("regRole");
+    const isAdminCreating = roleSelect.style.display !== 'hidden';
+
     const userData = {
         fullName: document.getElementById("regFullName").value,
         employeeId: document.getElementById("regEmployeeId").value,
         username: document.getElementById("regUsername").value,
         password: document.getElementById("regPassword").value,
+        email: document.getElementById("regEmail").value, // New field
+        contact_number: document.getElementById("regContactNumber").value,
         divisionId: parseInt(document.getElementById("regDivision").value),
         departmentId: parseInt(document.getElementById("regDepartment").value),
         role: "Clerk", // New users default to Clerk role

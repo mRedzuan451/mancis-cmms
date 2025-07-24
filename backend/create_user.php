@@ -53,6 +53,8 @@ $stmt->bind_param("sssssii",
     $data->employeeId, 
     $data->username, 
     $hashedPassword, // Use the new $hashedPassword variable here
+    $data->email, // New field
+    $data->contact_number,
     $data->role,
     $data->divisionId,
     $data->departmentId

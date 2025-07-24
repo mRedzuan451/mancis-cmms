@@ -187,6 +187,7 @@ export function renderUserManagementPage() {
     
     // Add the "Delete Selected" button
     const header = renderPageHeader("User Management", [
+        '<button id="addUserBtn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded"><i class="fas fa-user-plus mr-2"></i>Add User</button>',
         '<button id="deleteSelectedBtn" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded hidden"><i class="fas fa-trash-alt mr-2"></i>Delete Selected</button>',
         '<button id="refreshDataBtn" class="bg-gray-500 text-white font-bold py-2 px-4 rounded"><i class="fas fa-sync-alt mr-2"></i>Refresh</button>'
     ]);
