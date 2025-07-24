@@ -241,110 +241,75 @@
 
     <div id="registrationModal" class="modal">
       <div class="modal-content">
-        <h2 class="text-xl font-bold mb-4">Create New Account</h2>
+        
+        <h2 id="registrationModalTitle" class="text-xl font-bold mb-4">Create New Account</h2>
         <form id="registrationForm">
           <div class="grid grid-cols-2 gap-4">
-            <input
-              type="text"
-              id="regFullName"
-              placeholder="Full Name"
-              class="col-span-2 px-3 py-2 border rounded"
-              required
-            />
-            <input
-              type="text"
-              id="regEmployeeId"
-              placeholder="Employee ID"
-              class="px-3 py-2 border rounded"
-              required
-            />
-            <input
-              type="text"
-              id="regUsername"
-              placeholder="Username"
-              class="px-3 py-2 border rounded"
-              required
-            />
+            <input type="text" id="regFullName" placeholder="Full Name" class="col-span-2 px-3 py-2 border rounded" required />
+            <input type="text" id="regEmployeeId" placeholder="Employee ID" class="px-3 py-2 border rounded" required />
+            <input type="text" id="regUsername" placeholder="Username" class="px-3 py-2 border rounded" required />
+            
             <input type="email" id="regEmail" placeholder="Email Address" class="col-span-2 px-3 py-2 border rounded" />
             <input type="text" id="regContactNumber" placeholder="Contact Number" class="col-span-2 px-3 py-2 border rounded" />
-            <input
-              type="password"
-              id="regPassword"
-              placeholder="Password"
-              class="col-span-2 px-3 py-2 border rounded"
-              required
-            />
-            <select
-              id="regDivision"
-              class="col-span-2 px-3 py-2 border rounded"
-              required
-            ></select>
-            <select
-              id="regDepartment"
-              class="col-span-2 px-3 py-2 border rounded"
-              required
-            ></select>
+
+            <input type="password" id="regPassword" placeholder="Password" class="col-span-2 px-3 py-2 border rounded" required />
+            <select id="regDivision" class="col-span-2 px-3 py-2 border rounded" required ></select>
+            <select id="regDepartment" class="col-span-2 px-3 py-2 border rounded" required ></select>
+            
+            <select id="regRole" class="col-span-2 px-3 py-2 border rounded hidden" required>
+                <option value="Manager">Manager</option>
+                <option value="Supervisor">Supervisor</option>
+                <option value="Engineer">Engineer</option>
+                <option value="Technician">Technician</option>
+                <option value="Clerk">Clerk</option>
+            </select>
           </div>
-          <p
-            id="regError"
-            class="text-red-500 text-sm mt-2 text-center h-5"
-          ></p>
+          <p id="regError" class="text-red-500 text-sm mt-2 text-center h-5"></p>
           <div class="mt-6 flex justify-end space-x-4">
-            <button
-              type="button"
-              class="bg-gray-300 hover:bg-gray-400 text-black py-2 px-4 rounded"
-              data-close-modal
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              class="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded"
-            >
-              Register
-            </button>
+            <button type="button" class="bg-gray-300 hover:bg-gray-400 text-black py-2 px-4 rounded" data-close-modal>Cancel</button>
+            <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded">Register</button>
           </div>
         </form>
       </div>
     </div>
 
     <div id="editUserModal" class="modal">
-    <div class="modal-content">
-        <h2 class="text-xl font-bold mb-4">Edit User Role & Permissions</h2>
-        <form id="editUserForm">
-            <input type="hidden" id="editUserId" />
-            <p class="mb-4">Editing user: <strong id="editUserFullName"></strong></p>
+        <div class="modal-content">
+            <h2 class="text-xl font-bold mb-4">Edit User Role & Permissions</h2>
+            <form id="editUserForm">
+                <input type="hidden" id="editUserId" />
+                <p class="mb-4">Editing user: <strong id="editUserFullName"></strong></p>
 
-            <div class="mb-4">
-                <label for="editUserRole" class="block text-sm font-medium text-gray-700">Role</label>
-                <select id="editUserRole" class="w-full mt-1 px-3 py-2 border rounded" required>
-                    <option value="Manager">Manager</option>
-                    <option value="Supervisor">Supervisor</option>
-                    <option value="Engineer">Engineer</option>
-                    <option value="Technician">Technician</option>
-                    <option value="Clerk">Clerk</option>
-                </select>
-            </div>
-
-            <div class="border-t pt-4 mt-4">
-                <h3 class="text-lg font-semibold mb-2">Individual Permissions</h3>
-                <p class="text-sm text-gray-500 mb-4">Grant or revoke specific permissions for this user, overriding their role defaults.</p>
-                <div id="userPermissionsContainer" class="grid grid-cols-2 gap-x-4 gap-y-2 max-h-60 overflow-y-auto p-2 border rounded bg-gray-50">
-                    <p>Loading permissions...</p>
+                <div class="mb-4">
+                    <label for="editUserRole" class="block text-sm font-medium text-gray-700">Role</label>
+                    <select id="editUserRole" class="w-full mt-1 px-3 py-2 border rounded" required>
+                        <option value="Manager">Manager</option>
+                        <option value="Supervisor">Supervisor</option>
+                        <option value="Engineer">Engineer</option>
+                        <option value="Technician">Technician</option>
+                        <option value="Clerk">Clerk</option>
+                    </select>
                 </div>
-            </div>
 
-            <div class="mt-6 flex justify-end space-x-4">
-                <button type="button" class="bg-gray-300 hover:bg-gray-400 text-black py-2 px-4 rounded" data-close-modal>
-                    Cancel
-                </button>
-                <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded">
-                    Save Changes
-                </button>
-            </div>
-        </form>
+                <div class="border-t pt-4 mt-4">
+                    <h3 class="text-lg font-semibold mb-2">Individual Permissions</h3>
+                    <p class="text-sm text-gray-500 mb-4">Grant or revoke specific permissions for this user, overriding their role defaults.</p>
+                    <div id="userPermissionsContainer" class="grid grid-cols-2 gap-x-4 gap-y-2 max-h-60 overflow-y-auto p-2 border rounded bg-gray-50">
+                        <p>Loading permissions...</p>
+                    </div>
+                </div>
+
+                <div class="mt-6 flex justify-end space-x-4">
+                    <button type="button" class="bg-gray-300 hover:bg-gray-400 text-black py-2 px-4 rounded" data-close-modal>
+                        Cancel
+                    </button>
+                    <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded">
+                        Save Changes
+                    </button>
+                </div>
+            </form>
+        </div>
     </div>
-</div>
 
     <div id="assetModal" class="modal">
       <div class="modal-content max-h-[90vh] overflow-y-auto">
