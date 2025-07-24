@@ -171,6 +171,8 @@ export function renderWorkOrdersPage() {
                       <th class="p-2 w-4"><input type="checkbox" id="selectAllCheckbox"></th>
                       <th class="p-2 text-left cursor-pointer" data-sort="title">Title <i class="fas fa-sort"></i></th>
                       <th class="p-2 text-left cursor-pointer" data-sort="assetId">Asset <i class="fas fa-sort"></i></th>
+                      <th class="p-2 text-left cursor-pointer" data-sort="start_date">Start Date <i class="fas fa-sort"></i></th>
+                      <th class="p-2 text-left cursor-pointer" data-sort="dueDate">Due Date <i class="fas fa-sort"></i></th>
                       <th class="p-2 text-left cursor-pointer" data-sort="status">Status <i class="fas fa-sort"></i></th>
                       <th class="p-2 text-left">Actions</th>
                   </tr></thead>
@@ -508,7 +510,9 @@ export function generateTableRows(type, data) {
               <tr class="border-b hover:bg-gray-50">
                   <td class="p-2"><input type="checkbox" class="row-checkbox" data-id="${wo.id}"></td>
                   <td class="p-2">${wo.title}</td>
-                  <td class="p-2">${state.cache.assets.find((a) => a.id === parseInt(wo.assetId))?.name || "N/A"}</td>
+                  <td class="p-2">${assetName}</td>
+                  <td class="p-2">${wo.start_date}</td>
+                  <td class="p-2">${wo.dueDate}</td>
                   <td class="p-2"><span class="px-2 py-1 text-xs font-semibold rounded-full ${statusColorClass}">${wo.status}</span></td>
                   <td class="p-2 space-x-2 whitespace-nowrap">
                       <button class="view-wo-btn text-blue-500 hover:text-blue-700" data-id="${wo.id}" title="View Details"><i class="fas fa-eye"></i></button>
@@ -516,7 +520,7 @@ export function generateTableRows(type, data) {
                           <button class="edit-wo-btn text-yellow-500 hover:text-yellow-700" data-id="${wo.id}" title="Edit"><i class="fas fa-edit"></i></button>
                           <button class="complete-wo-btn text-green-500 hover:text-green-700" data-id="${wo.id}" title="Complete"><i class="fas fa-check-circle"></i></button>
                       ` : ''}
-                      ${state.currentUser.role === 'Admin' ? `
+                      ${state.currentUser.permissions.wo_delete ? `
                           <button class="delete-wo-btn text-red-500 hover:text-red-700" data-id="${wo.id}" title="Delete"><i class="fas fa-trash"></i></button>
                       ` : ''}
                   </td>
