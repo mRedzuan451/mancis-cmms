@@ -1195,7 +1195,7 @@ export function showStorageRequestModal() {
      // We now only check if the part has a quantity greater than 0.
      partSelect.innerHTML = '<option value="">Select a part...</option>' + state.cache.parts
         .filter(p => p.quantity > 0)
-        .map(p => `<option value="${p.id}">${p.name} (In Stock: ${p.quantity})</option>`).join('');
+        .map(p => `<option value="${p.id}">${p.name} (SKU: ${p.sku}) (In Stock: ${p.quantity})</option>`).join('');
      // --- END: FIX ---
 
     document.getElementById('storageRequestModal').style.display = 'flex';
