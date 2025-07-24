@@ -1446,6 +1446,14 @@ export function renderPmSchedulesPage() {
         '<button id="generatePmWoBtn" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded"><i class="fas fa-cogs mr-2"></i>Generate PM Work Orders</button>',
         '<button id="addPmScheduleBtn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded"><i class="fas fa-plus mr-2"></i>Add PM Schedule</button>'
     ]);
+    const statusColors = { 
+        "Active": "bg-green-200 text-green-800",
+        "Inactive": "bg-gray-200 text-gray-800",
+        "Open": "bg-blue-200 text-blue-800", 
+        "In Progress": "bg-yellow-200 text-yellow-800", 
+        "On Hold": "bg-orange-200 text-orange-800", 
+        "Delay": "bg-red-200 text-red-800", 
+    };
     
     return `
       ${header}
@@ -1457,6 +1465,7 @@ export function renderPmSchedulesPage() {
             <th class="p-2 text-left">Asset</th>
             <th class="p-2 text-left">Frequency</th>
             <th class="p-2 text-left">Next Start Date</th>
+            <th class="p-2 text-left">Next Due Date</th>
             <th class="p-2 text-left">Following PM Date</th>
             <th class="p-2 text-left">Status</th>
             <th class="p-2 text-left">Actions</th>
@@ -1466,20 +1475,40 @@ export function renderPmSchedulesPage() {
                 const assetName = state.cache.assets.find(a => a.id === s.assetId)?.name || 'N/A';
                 const openWoForSchedule = openWorkOrders.find(wo => wo.pm_schedule_id === s.id);
                 
-                let nextStartDate = s.last_generated_date || s.schedule_start_date;
+                // --- START: New Date and Status Logic ---
+                let nextStartDateStr = calculateNextPmDate(s);
+                let nextDueDateStr = 'N/A';
+                let status = s.is_active ? 'Active' : 'Inactive';
+                
                 if (openWoForSchedule) {
-                    nextStartDate = openWoForSchedule.start_date;
+                    // If a WO already exists, use its dates and status
+                    nextStartDateStr = openWoForSchedule.start_date;
+                    nextDueDateStr = openWoForSchedule.dueDate;
+                    status = openWoForSchedule.status;
+                } else if (s.is_active) {
+                    // If no WO exists yet, calculate the next due date based on the buffer
+                    const nextStartDate = new Date(nextStartDateStr + 'T00:00:00');
+                    if (!isNaN(nextStartDate.getTime())) {
+                        const bufferDays = s.due_date_buffer || 7; // Default to 7 days if no buffer is set
+                        nextStartDate.setDate(nextStartDate.getDate() + bufferDays);
+                        nextDueDateStr = nextStartDate.toISOString().split('T')[0];
+                    }
                 }
-                const followingPmDate = calculateNextPmDate(s);
+                
+                const followingPmDate = calculateNextPmDate({ ...s, last_generated_date: nextStartDateStr });
+                const statusColorClass = statusColors[status] || 'bg-gray-200';
+                // --- END: New Date and Status Logic ---
+
                 const frequencyText = `${s.frequency_interval} ${s.frequency_unit}(s)`;
 
                 return `<tr class="border-b hover:bg-gray-50">
                     <td class="p-2">${s.title}</td>
                     <td class="p-2">${assetName}</td>
                     <td class="p-2">${frequencyText}</td>
-                    <td class="p-2 font-semibold">${nextStartDate || 'N/A'}</td>
-                    <td class="p-2 font-semibold">${followingPmDate}</td>
-                    <td class="p-2">${s.is_active ? '<span class="text-green-600">Active</span>' : '<span class="text-gray-500">Inactive</span>'}</td>
+                    <td class="p-2 font-semibold">${nextStartDateStr || 'N/A'}</td>
+                    <td class="p-2 font-semibold">${nextDueDateStr}</td>
+                    <td class="p-2">${followingPmDate}</td>
+                    <td class="p-2"><span class="px-2 py-1 text-xs font-semibold rounded-full ${statusColorClass}">${status}</span></td>
                     <td class="p-2 space-x-2">
                         <button class="view-pm-btn text-blue-500 hover:text-blue-700" data-id="${s.id}" title="View Details"><i class="fas fa-eye"></i></button>
                         <button class="edit-pm-btn text-yellow-500 hover:text-yellow-700" data-id="${s.id}" title="Edit"><i class="fas fa-edit"></i></button>
