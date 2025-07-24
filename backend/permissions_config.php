@@ -41,6 +41,7 @@ $permissions = [
     'stock_take_delete'   => 'Delete stock take sessions',
 
     'feedback_view'       => 'View feedback inbox',
+    'feedback_delete'     => 'Delete feedback messages',
 ];
 
 // --- THIS IS THE FIX ---

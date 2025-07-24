@@ -1343,6 +1343,23 @@ function attachGlobalEventListeners() {
                 }
             },
             "sendFeedbackBtn": () => showFeedbackModal(), // <-- ADD THIS
+            "toggleArchivedFeedbackBtn": () => {
+                state.showArchivedFeedback = !state.showArchivedFeedback;
+                renderMainContent();
+            },
+            "feedback-delete-btn": async () => {
+                if (confirm('Are you sure you want to permanently delete this feedback message?')) {
+                    try {
+                        await api.deleteFeedback(id);
+                        showTemporaryMessage("Feedback deleted.");
+                        // Refresh the list from the server
+                        state.cache.feedback = await api.getFeedback();
+                        renderMainContent();
+                    } catch (error) {
+                        showTemporaryMessage('Could not delete feedback.', true);
+                    }
+                }
+            },
             "feedback-status-btn": async () => { // <-- AND THIS
                 const id = parseInt(button.dataset.id);
                 const status = button.dataset.status;

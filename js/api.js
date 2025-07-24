@@ -239,4 +239,9 @@ export const api = {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id, status })
     }),
+    deleteFeedback: (id) => request('delete_feedback.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id })
+    }),
 };
