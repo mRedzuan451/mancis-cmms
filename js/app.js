@@ -568,6 +568,8 @@ async function handleReceivePartsFormSubmit(e) {
     }
 }
 
+// js/app.js
+
 async function handleRestockPartsFormSubmit(e) {
     e.preventDefault();
     const isDirectStockMode = document.getElementById('directStockContainer').style.display === 'block';
@@ -601,13 +603,20 @@ async function handleRestockPartsFormSubmit(e) {
             logMessage = `Restocked parts from received request ID: ${receivedId}`;
         }
         
-        // --- FIX: Add logging for the restock action ---
-        await logActivity("Parts Restocked", logMessage);
+        // This log is created by the backend, but we can add a frontend one too if needed.
+        // await logActivity("Parts Restocked", logMessage);
         
+        // Refresh caches for data that has changed.
         state.cache.receivedParts = await api.getReceivedParts();
         state.cache.partRequests = await api.getPartRequests();
         state.cache.parts = await api.getParts();
-        state.cache.logs = await api.getLogs();
+        
+        // --- START: FIX ---
+        // Only refresh the logs if the user has permission to view them.
+        if (state.currentUser.permissions.log_view) {
+            state.cache.logs = await api.getLogs();
+        }
+        // --- END: FIX ---
         
         document.getElementById('restockPartsModal').style.display = 'none';
         renderMainContent();
