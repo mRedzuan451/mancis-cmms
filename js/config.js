@@ -27,4 +27,5 @@ export const state = {
     admin: false,
   },
   showArchivedFeedback: false,
+  selectedLocationDepartmentId: null,
 };

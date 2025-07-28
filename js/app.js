@@ -640,27 +640,31 @@ async function handleRestockPartsFormSubmit(e) {
 }
 
 async function handleLocationFormSubmit(e) {
-    e.preventDefault();
+    if (e.preventDefault) e.preventDefault();
     const form = e.target;
-    const formId = form.id;
     let type, name, parentId;
 
-    switch(formId) {
-        case 'addDivisionForm':
-            type = 'division'; name = form.querySelector('input').value; break;
-        case 'addDepartmentForm':
-            type = 'department'; name = form.querySelector('input').value; parentId = form.querySelector('select').value; break;
-        case 'addSubLineForm':
-            type = 'subLine'; name = form.querySelector('input').value; parentId = form.querySelector('select').value; break;
-        case 'addProductionLineForm':
-            type = 'productionLine'; name = form.querySelector('input').value; parentId = form.querySelector('select').value; break;
-        case 'addCabinetForm':
-            type = 'cabinet'; name = form.querySelector('input').value; parentId = form.querySelector('select').value; break;
-        case 'addShelfForm':
-            type = 'shelf'; name = form.querySelector('input').value; parentId = form.querySelector('select').value; break;
-        case 'addBoxForm':
-            type = 'box'; name = form.querySelector('input').value; parentId = form.querySelector('select').value; break;
-        default: return;
+    if (e.type) { // It's our custom object
+        type = e.type;
+        name = e.name;
+        parentId = e.parentId;
+    } else { // It's a real form event
+        const formId = form.id;
+        switch(formId) {
+            case 'addDivisionForm':
+                type = 'division'; name = form.querySelector('input').value; break;
+            case 'addDepartmentForm':
+                type = 'department'; name = form.querySelector('input').value; parentId = form.querySelector('select').value; break;
+            case 'addSubLineForm':
+                type = 'subLine'; name = form.querySelector('input').value; parentId = form.querySelector('select').value; break;
+            case 'addProductionLineForm':
+                type = 'productionLine'; name = form.querySelector('input').value; parentId = form.querySelector('select').value; break;
+            case 'addShelfForm':
+                type = 'shelf'; name = form.querySelector('input').value; parentId = form.querySelector('select').value; break;
+            case 'addBoxForm':
+                type = 'box'; name = form.querySelector('input').value; parentId = form.querySelector('select').value; break;
+            default: return;
+        }
     }
 
     try {
@@ -1086,12 +1090,27 @@ function attachPageSpecificEventListeners(page) {
             }).join('');
         });
     } else if (page === 'locations') {
+        document.getElementById('storageDepartmentFilter')?.addEventListener('change', (e) => {
+            const selectedId = e.target.value ? parseInt(e.target.value) : null;
+            state.selectedLocationDepartmentId = selectedId;
+            renderMainContent();
+        });
+        document.querySelector('#addCabinetForm')?.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const name = e.target.querySelector('input').value;
+            // The parentId is the currently selected department
+            handleLocationFormSubmit({
+                target: e.target,
+                type: 'cabinet',
+                name: name,
+                parentId: state.selectedLocationDepartmentId
+            });
+        });
         document.getElementById('downloadLocationsBtn')?.addEventListener('click', handleDownloadLocations);
         document.querySelector('#addDivisionForm')?.addEventListener('submit', handleLocationFormSubmit);
         document.querySelector('#addDepartmentForm')?.addEventListener('submit', handleLocationFormSubmit);
         document.querySelector('#addSubLineForm')?.addEventListener('submit', handleLocationFormSubmit);
         document.querySelector('#addProductionLineForm')?.addEventListener('submit', handleLocationFormSubmit);
-        document.querySelector('#addCabinetForm')?.addEventListener('submit', handleLocationFormSubmit);
         document.querySelector('#addShelfForm')?.addEventListener('submit', handleLocationFormSubmit);
         document.querySelector('#addBoxForm')?.addEventListener('submit', handleLocationFormSubmit);
     } else if (page === 'inventoryReport') {
