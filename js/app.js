@@ -1090,11 +1090,6 @@ function attachPageSpecificEventListeners(page) {
             }).join('');
         });
     } else if (page === 'locations') {
-        document.getElementById('storageDepartmentFilter')?.addEventListener('change', (e) => {
-            const selectedId = e.target.value ? parseInt(e.target.value) : null;
-            state.selectedLocationDepartmentId = selectedId;
-            renderMainContent();
-        });
         document.querySelector('#addCabinetForm')?.addEventListener('submit', (e) => {
             e.preventDefault();
             const name = e.target.querySelector('input').value;

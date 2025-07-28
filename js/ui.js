@@ -301,63 +301,57 @@ export function renderLocationsPage() {
         '<button id="downloadLocationsBtn" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded"><i class="fas fa-download mr-2"></i>Download List</button>'
     ]);
 
-    const selectedDeptId = state.selectedLocationDepartmentId;
-    const filteredCabinets = selectedDeptId ? cabinets.filter(c => c.departmentId === selectedDeptId) : [];
+    const filteredCabinets = isAdmin ? cabinets : cabinets.filter(c => c.departmentId === userDeptId);
     const filteredCabinetIds = filteredCabinets.map(c => c.id);
-    const filteredShelves = selectedDeptId ? shelves.filter(s => filteredCabinetIds.includes(s.cabinetId)) : [];
+    const filteredShelves = isAdmin ? shelves : shelves.filter(s => filteredCabinetIds.includes(s.cabinetId));
     const filteredShelfIds = filteredShelves.map(s => s.id);
-    const filteredBoxes = selectedDeptId ? boxes.filter(b => filteredShelfIds.includes(b.shelfId)) : [];
+    const filteredBoxes = isAdmin ? boxes : boxes.filter(b => filteredShelfIds.includes(b.shelfId));
     
     return `
       ${header}
-      <div class="grid grid-cols-1 ${isAdmin ? "md:grid-cols-2 lg:grid-cols-3" : "md:grid-cols-1"} gap-6">
-          ${isAdmin ? `
+      <div class="grid grid-cols-1 ${isAdmin ? "md:grid-cols-2 lg:grid-cols-3" : "md:grid-cols-2"} gap-6">
           <div class="bg-white p-4 rounded-lg shadow space-y-6">
-              </div>
-          <div class="bg-white p-4 rounded-lg shadow">
-              </div>` : ""}
+              <h2 class="text-xl font-bold mb-4">Production Locations</h2>
+              ${isAdmin ? `
+                ` : `
+                <p class="text-sm text-gray-600">Contact an administrator to manage production locations.</p>
+              `}
+          </div>
           
           <div class="bg-white p-4 rounded-lg shadow space-y-4">
               <h2 class="text-xl font-bold mb-2">Storage Locations</h2>
-
-              <div class="mb-4">
-                <label for="storageDepartmentFilter" class="block text-sm font-medium text-gray-700">Filter by Department</label>
-                <select id="storageDepartmentFilter" class="w-full mt-1 px-3 py-2 border rounded">
-                  <option value="">Select a department to view...</option>
-                  ${departments.map(d => `<option value="${d.id}" ${selectedDeptId === d.id ? 'selected' : ''}>${getFullLocationName(`dept-${d.id}`)}</option>`).join('')}
-                </select>
-              </div>
-              ${selectedDeptId ? `
+              <p class="text-sm text-gray-500 mb-4">${isAdmin ? 'Manage all storage locations.' : 'Displaying storage for your department only.'}</p>
+              
                <div>
                   <h3 class="font-semibold mb-2">Cabinets</h3>
                    <ul class="space-y-2 mb-4 max-h-40 overflow-y-auto">
-                      ${filteredCabinets.map(c => `<li class="flex justify-between items-center p-2 bg-gray-50 rounded"><span>${c.name}</span><button class="delete-location-btn text-red-500 hover:text-red-700" data-id="${c.id}" data-type="cabinet"><i class="fas fa-trash"></i></button></li>`).join("") || '<li class="text-gray-500">No cabinets in this department.</li>'}
+                      ${filteredCabinets.map(c => `<li class="flex justify-between items-center p-2 bg-gray-50 rounded"><span>${c.name}</span>${isAdmin ? `<button class="delete-location-btn text-red-500 hover:text-red-700" data-id="${c.id}" data-type="cabinet"><i class="fas fa-trash"></i></button>` : ''}</li>`).join("") || '<li class="text-gray-500">No cabinets found.</li>'}
                   </ul>
-                  <form id="addCabinetForm" class="border-t pt-2">
+                  ${isAdmin ? `<form id="addCabinetForm" class="border-t pt-2">
+                      <select class="w-full mb-2 px-2 py-1 border rounded" required><option value="">Select Department</option>${departments.map(d => `<option value="${d.id}">${getFullLocationName(`dept-${d.id}`)}</option>`).join("")}</select>
                       <div class="flex gap-2"><input type="text" id="newCabinetName" class="flex-grow px-2 py-1 border rounded" placeholder="New Cabinet Name" required><button type="submit" class="bg-blue-500 text-white px-3 py-1 rounded">+</button></div>
-                  </form>
+                  </form>` : ''}
               </div>
                <div>
                   <h3 class="font-semibold mb-2">Shelves</h3>
                    <ul class="space-y-2 mb-4 max-h-40 overflow-y-auto">
-                      ${filteredShelves.map(s => `<li class="flex justify-between items-center p-2 bg-gray-50 rounded"><span>${s.name}</span><button class="delete-location-btn text-red-500 hover:text-red-700" data-id="${s.id}" data-type="shelf"><i class="fas fa-trash"></i></button></li>`).join("") || '<li class="text-gray-500">No shelves found.</li>'}
+                      ${filteredShelves.map(s => `<li class="flex justify-between items-center p-2 bg-gray-50 rounded"><span>${s.name}</span>${isAdmin ? `<button class="delete-location-btn text-red-500 hover:text-red-700" data-id="${s.id}" data-type="shelf"><i class="fas fa-trash"></i></button>`: ''}</li>`).join("") || '<li class="text-gray-500">No shelves found.</li>'}
                   </ul>
-                  <form id="addShelfForm" class="border-t pt-2">
+                   ${isAdmin ? `<form id="addShelfForm" class="border-t pt-2">
                       <select class="w-full mb-2 px-2 py-1 border rounded" required><option value="">Select Cabinet</option>${filteredCabinets.map(c => `<option value="${c.id}">${c.name}</option>`).join("")}</select>
                       <div class="flex gap-2"><input type="text" id="newShelfName" class="flex-grow px-2 py-1 border rounded" placeholder="New Shelf Name" required><button type="submit" class="bg-blue-500 text-white px-3 py-1 rounded">+</button></div>
-                  </form>
+                  </form>` : ''}
               </div>
                <div>
                   <h3 class="font-semibold mb-2">Boxes</h3>
                    <ul class="space-y-2 mb-4 max-h-40 overflow-y-auto">
-                      ${filteredBoxes.map(b => `<li class="flex justify-between items-center p-2 bg-gray-50 rounded"><span>${b.name}</span><button class="delete-location-btn text-red-500 hover:text-red-700" data-id="${b.id}" data-type="box"><i class="fas fa-trash"></i></button></li>`).join("") || '<li class="text-gray-500">No boxes found.</li>'}
+                      ${filteredBoxes.map(b => `<li class="flex justify-between items-center p-2 bg-gray-50 rounded"><span>${b.name}</span>${isAdmin ? `<button class="delete-location-btn text-red-500 hover:text-red-700" data-id="${b.id}" data-type="box"><i class="fas fa-trash"></i></button>`: ''}</li>`).join("") || '<li class="text-gray-500">No boxes found.</li>'}
                   </ul>
-                  <form id="addBoxForm" class="border-t pt-2">
+                  ${isAdmin ? `<form id="addBoxForm" class="border-t pt-2">
                       <select class="w-full mb-2 px-2 py-1 border rounded" required><option value="">Select Shelf</option>${filteredShelves.map(s => `<option value="${s.id}">${s.name}</option>`).join("")}</select>
                       <div class="flex gap-2"><input type="text" id="newBoxName" class="flex-grow px-2 py-1 border rounded" placeholder="New Box Name" required><button type="submit" class="bg-blue-500 text-white px-3 py-1 rounded">+</button></div>
-                  </form>
+                  </form>` : ''}
               </div>
-              ` : '<p class="text-gray-500 p-4 text-center">Please select a department to manage its storage locations.</p>'}
           </div>
       </div>`;
 }
