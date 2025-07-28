@@ -8,12 +8,31 @@ authorize('stock_take_create', $conn);
 $id = isset($_GET['id']) ? intval($_GET['id']) : 0;
 
 // --- START: FIX ---
-// 1. Updated the SQL query to select the 'counted_qty' as well.
-$sql = "SELECT p.name, p.sku, p.locationId, sti.system_qty, sti.counted_qty 
-        FROM stock_take_items sti 
-        JOIN parts p ON sti.part_id = p.id 
-        WHERE sti.stock_take_id = ? 
-        ORDER BY p.name ASC";
+// This new SQL query joins all the location tables to build the full name directly.
+$sql = "SELECT 
+            p.name, 
+            p.sku, 
+            sti.system_qty, 
+            sti.counted_qty,
+            CONCAT_WS(' > ', d.name, dep.name, cab.name, sh.name, b.name) AS fullLocationName
+        FROM 
+            stock_take_items sti
+        JOIN 
+            parts p ON sti.part_id = p.id
+        LEFT JOIN 
+            boxes b ON p.locationId = CONCAT('box-', b.id)
+        LEFT JOIN 
+            shelves sh ON b.shelfId = sh.id
+        LEFT JOIN 
+            cabinets cab ON sh.cabinetId = cab.id
+        LEFT JOIN 
+            departments dep ON cab.departmentId = dep.id
+        LEFT JOIN 
+            divisions d ON dep.divisionId = d.id
+        WHERE 
+            sti.stock_take_id = ? 
+        ORDER BY 
+            p.name ASC";
 // --- END: FIX ---
         
 $stmt = $conn->prepare($sql);
@@ -33,14 +52,14 @@ $html .= "<table border='1' style='width:100%; border-collapse: collapse;'><thea
     </tr></thead><tbody>";
 
 while ($row = $result->fetch_assoc()) {
-    $locationName = getFullLocationName($row['locationId']); // Use the helper function for a full name
-    
     // --- START: FIX ---
-    // 2. Calculate variance and set colors.
-    $counted_qty = $row['counted_qty'] ?? 0; // Default to 0 if not counted
+    // We now get the location name directly from our new SQL query.
+    $locationName = $row['fullLocationName'] ?? 'N/A';
+    // --- END: FIX ---
+    
+    $counted_qty = $row['counted_qty'] ?? 0;
     $variance = $counted_qty - $row['system_qty'];
     $variance_color = $variance < 0 ? 'color: red;' : ($variance > 0 ? 'color: green;' : '');
-    // --- END: FIX ---
 
     $html .= "<tr>
         <td style='padding: 5px;'>{$row['name']}</td>
