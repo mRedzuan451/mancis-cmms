@@ -642,6 +642,7 @@ async function handleRestockPartsFormSubmit(e) {
 async function handleLocationFormSubmit(e) {
     if (e.preventDefault) e.preventDefault();
     const form = e.target;
+    const isAdmin = state.currentUser.role === 'Admin';
     let type, name, parentId;
 
     if (e.type) { // It's our custom object
@@ -659,6 +660,12 @@ async function handleLocationFormSubmit(e) {
                 type = 'subLine'; name = form.querySelector('input').value; parentId = form.querySelector('select').value; break;
             case 'addProductionLineForm':
                 type = 'productionLine'; name = form.querySelector('input').value; parentId = form.querySelector('select').value; break;
+            case 'addCabinetForm':
+            type = 'cabinet';
+            name = form.querySelector('input').value;
+            // If Admin, get parent from dropdown. Otherwise, use the user's own department.
+            parentId = isAdmin ? form.querySelector('select').value : state.currentUser.departmentId;
+            break;
             case 'addShelfForm':
                 type = 'shelf'; name = form.querySelector('input').value; parentId = form.querySelector('select').value; break;
             case 'addBoxForm':
