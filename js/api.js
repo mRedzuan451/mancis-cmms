@@ -44,7 +44,8 @@ export const api = {
     getLogs: () => request('get_logs.php'),
     getReceivedParts: () => request('get_received_parts.php'),
     getInventoryReport: (params) => request(`get_inventory_report.php?startDate=${params.startDate}&endDate=${params.endDate}`),
-    
+    getCostReport: (params) => request(`get_cost_report.php?startDate=${params.startDate}&endDate=${params.endDate}`),
+
     // AUTH operations
     login: (username, password) => request('login.php', {
         method: 'POST',

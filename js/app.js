@@ -39,13 +39,14 @@ import {
     showStorageRequestModal,
     showReceivePartsModal,
     showRestockPartsModal,
-    showPmScheduleModal, // This is now correctly imported from ui.js
+    showPmScheduleModal,
     showPmScheduleDetailModal,
     showFeedbackModal,
     renderStatusChart,
     addChecklistItem,
     addPmPartRow,
     showUploadModal,
+    renderCostReportPage,
 } from './ui.js';
 
 
@@ -66,6 +67,7 @@ function renderMainContent() {
         case "workOrderCalendar":   content = renderWorkOrderCalendar(); break;
         case "locations":           content = renderLocationsPage(); break;
         case "inventoryReport":     content = renderInventoryReportPage(); break;
+        case "costReport":          content = renderCostReportPage(); break;
         case "activityLog":         content = renderActivityLogPage(); break;
         case "partRequests":        content = renderPartsRequestPage(); break;
         case "pmSchedules":         content = renderPmSchedulesPage(); break;
@@ -1136,6 +1138,49 @@ function attachPageSpecificEventListeners(page) {
                 document.getElementById('printReportBtn').addEventListener('click', () => {
                     printReport(`Inventory Report: ${startDate} to ${endDate}`, container.innerHTML);
                 });
+            } catch (error) {
+                container.innerHTML = `<p class="text-red-500">Error generating report: ${error.message}</p>`;
+            }
+        });
+    } else if (page === 'costReport') {
+        document.getElementById('costReportForm')?.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+            const container = document.getElementById('reportResultContainer');
+            container.innerHTML = '<p>Generating cost report, please wait...</p>';
+            
+            try {
+                const reportData = await api.getCostReport({ startDate, endDate });
+                let grandTotalCost = 0;
+                
+                let tableHTML = `
+                    <h2 class="text-xl font-bold mb-4">Report for ${startDate} to ${endDate}</h2>
+                    <table class="w-full">
+                        <thead><tr class="border-b">
+                            <th class="p-2 text-left">Asset Name</th>
+                            <th class="p-2 text-left">Department</th>
+                            <th class="p-2 text-right">Total Parts Cost</th>
+                        </tr></thead><tbody>`;
+                
+                reportData.forEach(item => {
+                    grandTotalCost += item.totalCost;
+                    tableHTML += `
+                        <tr class="border-b hover:bg-gray-50">
+                            <td class="p-2">${item.assetName}</td>
+                            <td class="p-2">${item.departmentName}</td>
+                            <td class="p-2 text-right">RM ${item.totalCost.toFixed(2)}</td>
+                        </tr>`;
+                });
+
+                tableHTML += `</tbody><tfoot>
+                        <tr class="border-t-2 font-bold">
+                            <td class="p-2 text-right" colspan="2">Grand Total Maintenance Cost</td>
+                            <td class="p-2 text-right">RM ${grandTotalCost.toFixed(2)}</td>
+                        </tr>
+                    </tfoot></table>`;
+                
+                container.innerHTML = tableHTML;
             } catch (error) {
                 container.innerHTML = `<p class="text-red-500">Error generating report: ${error.message}</p>`;
             }

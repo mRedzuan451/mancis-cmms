@@ -42,6 +42,7 @@ $permissions = [
 
     'feedback_view'       => 'View feedback inbox',
     'feedback_delete'     => 'Delete feedback messages',
+    'report_cost_view'    => 'View maintenance cost reports',
 ];
 
 // --- THIS IS THE FIX ---
@@ -60,6 +61,7 @@ $role_permissions = [
         'location_management',
         'report_view',
         'stock_take_create', 'stock_take_approve',
+        'report_cost_view',
     ],
 
     'Supervisor' => [

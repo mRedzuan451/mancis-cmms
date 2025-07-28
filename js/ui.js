@@ -626,11 +626,21 @@ export function renderSidebar() {
         },
         {
             type: 'group',
+            id: 'reports', // <-- NEW GROUP
+            title: 'Reports',
+            icon: 'fa-chart-pie',
+            links: [
+                { page: "inventoryReport", icon: "fa-chart-line", text: "Inventory Report" },
+                { page: "costReport", icon: "fa-dollar-sign", text: "Cost Report" },
+            ]
+        },
+        {
+            type: 'group',
             id: 'admin',
             title: 'Admin',
             icon: 'fa-cogs',
             links: [
-                { page: "inventoryReport", icon: "fa-chart-line", text: "Inventory Report" },
+                { page: "locations", icon: "fa-map-marker-alt", text: "Locations" },
                 { page: "userManagement", icon: "fa-users-cog", text: "User Management" },
                 { page: "activityLog", icon: "fa-history", text: "Activity Log" },
                 { page: "feedback", icon: "fa-envelope-open-text", text: "Feedback Inbox" },
@@ -1871,4 +1881,32 @@ export function renderStatusChart(statusCounts) {
             }
         }
     });
+}
+
+export function renderCostReportPage() {
+    const today = new Date();
+    const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0];
+    const todayStr = today.toISOString().split('T')[0];
+    
+    return `
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-3xl font-bold">Maintenance Cost Report</h1>
+        </div>
+        <div class="bg-white p-4 rounded-lg shadow mb-6">
+            <form id="costReportForm" class="flex items-end gap-4">
+                <div>
+                    <label for="startDate" class="block text-sm font-medium text-gray-700">Start Date</label>
+                    <input type="date" id="startDate" value="${firstDayOfMonth}" class="mt-1 px-3 py-2 border rounded w-full">
+                </div>
+                <div>
+                    <label for="endDate" class="block text-sm font-medium text-gray-700">End Date</label>
+                    <input type="date" id="endDate" value="${todayStr}" class="mt-1 px-3 py-2 border rounded w-full">
+                </div>
+                <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded">Generate Report</button>
+            </form>
+        </div>
+        <div id="reportResultContainer" class="bg-white p-4 rounded-lg shadow">
+            <p class="text-gray-500">Please select a date range and click "Generate Report".</p>
+        </div>
+    `;
 }
