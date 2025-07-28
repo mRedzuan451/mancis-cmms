@@ -9,12 +9,12 @@ import { getFullLocationName, getUserDepartment, showTemporaryMessage, calculate
 
 export function renderDashboard() {
   const assets = state.cache.assets;
-  const workOrders = state.cache.workOrders.filter(can.view);
+  const workOrders = state.cache.workOrders;
   const parts = state.cache.parts;
   const partRequests = state.cache.partRequests;
   
-  const openWOs = workOrders.filter((wo) => wo.status === "Open").length;
-  const pendingRequests = partRequests.filter((pr) => pr.status === "Requested").length;
+  const openWOs = workOrders.filter((wo) => wo.status !== "Completed").length;
+  const pendingRequests = partRequests.filter((pr) => pr.status === "Requested" || pr.status === "Requested from Storage").length;
   const lowStockItems = parts.filter((p) => parseInt(p.quantity) <= parseInt(p.minQuantity)).length;
   
   const today = new Date();
@@ -37,18 +37,30 @@ export function renderDashboard() {
   return `
     <h1 class="text-3xl font-bold mb-6">Dashboard</h1>
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <div class="bg-white p-6 rounded-lg shadow"><h3 class="text-gray-500">Total Assets</h3><p class="text-3xl font-bold">${assets.length}</p></div>
-        <div class="bg-white p-6 rounded-lg shadow"><h3 class="text-gray-500">Open Work Orders</h3><p class="text-3xl font-bold">${openWOs}</p></div>
-        <div class="bg-white p-6 rounded-lg shadow"><h3 class="text-gray-500">Pending Part Requests</h3><p class="text-3xl font-bold">${pendingRequests}</p></div>
-        <div class="bg-white p-6 rounded-lg shadow"><h3 class="text-gray-500">Low Stock Items</h3><p class="text-3xl font-bold">${lowStockItems}</p></div>
-    </div>
+        
+        <div class="bg-white p-6 rounded-lg shadow cursor-pointer hover:bg-gray-50 dashboard-kpi-box" data-page="assets">
+            <h3 class="text-gray-500">Total Assets</h3>
+            <p class="text-3xl font-bold">${assets.length}</p>
+        </div>
+        <div class="bg-white p-6 rounded-lg shadow cursor-pointer hover:bg-gray-50 dashboard-kpi-box" data-page="workOrders">
+            <h3 class="text-gray-500">Open Work Orders</h3>
+            <p class="text-3xl font-bold">${openWOs}</p>
+        </div>
+        <div class="bg-white p-6 rounded-lg shadow cursor-pointer hover:bg-gray-50 dashboard-kpi-box" data-page="partRequests">
+            <h3 class="text-gray-500">Pending Part Requests</h3>
+            <p class="text-3xl font-bold">${pendingRequests}</p>
+        </div>
+        <div class="bg-white p-6 rounded-lg shadow cursor-pointer hover:bg-gray-50 dashboard-kpi-box" data-page="parts">
+            <h3 class="text-gray-500">Low Stock Items</h3>
+            <p class="text-3xl font-bold">${lowStockItems}</p>
+        </div>
+        </div>
     
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        
         <div class="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div>
+             <div>
                 <h2 class="text-2xl font-bold mb-4">Upcoming PMs (Next 7 Days)</h2>
-                <div class="bg-white p-4 rounded-lg shadow">
+                <div class="bg-white p-4 rounded-lg shadow min-h-[200px]">
                     ${upcomingPMs.length > 0 ? `
                         <table class="w-full">
                             <thead><tr class="border-b"><th class="text-left p-2">Title</th><th class="text-left p-2">Asset</th><th class="text-left p-2">Start Date</th></tr></thead>
@@ -56,10 +68,9 @@ export function renderDashboard() {
                         </table>` : `<p class="text-gray-500">No upcoming PMs in the next 7 days.</p>`}
                 </div>
             </div>
-
             <div class="lg:col-span-2">
                 <h2 class="text-2xl font-bold mb-4">Overdue Work Orders</h2>
-                <div class="bg-white p-4 rounded-lg shadow">
+                <div class="bg-white p-4 rounded-lg shadow min-h-[200px]">
                     ${overdueWOs.length > 0 ? `
                         <table class="w-full">
                             <thead><tr class="border-b"><th class="text-left p-2">Title</th><th class="text-left p-2">Asset</th><th class="text-left p-2">Days Overdue</th></tr></thead>
@@ -78,7 +89,7 @@ export function renderDashboard() {
                 <canvas id="woStatusChart"></canvas>
             </div>
         </div>
-        </div>`;
+    </div>`;
 }
 
 // js/ui.js

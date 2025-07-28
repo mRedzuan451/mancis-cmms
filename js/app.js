@@ -1362,7 +1362,18 @@ function attachGlobalEventListeners() {
     // Global click handler for delegated events
     document.body.addEventListener("click", (e) => {
         const target = e.target;
-        const button = target.closest("button");
+
+        const kpiBox = target.closest('.dashboard-kpi-box');
+        if (kpiBox) {
+            const page = kpiBox.dataset.page;
+            if (page) {
+                state.currentPage = page;
+                render();
+            }
+            return; // Stop further execution
+        }
+
+        const button = target.closest('button');
 
         if (e.target.id === "refreshDataBtn") refreshAllDataAndRender();
         if (target.closest("[data-close-modal]")) {
