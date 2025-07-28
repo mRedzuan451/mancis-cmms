@@ -1740,9 +1740,10 @@ export function renderStockTakeCountPage(items, details) {
     const isInProgress = details.status === 'In Progress';
 
     let buttons = [];
+    buttons.push('<button id="printStockTakeBtn" class="bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-2 px-4 rounded"><i class="fas fa-print mr-2"></i>Print Count Sheet</button>');
+    
     if (isInProgress) {
         buttons.push('<button id="saveStockTakeProgressBtn" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded"><i class="fas fa-save mr-2"></i>Save Progress</button>');
-        buttons.push('<button id="printStockTakeBtn" class="bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-2 px-4 rounded"><i class="fas fa-print mr-2"></i>Print Count Sheet</button>');
         buttons.push('<button id="submitStockTakeBtn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded">Submit for Review</button>');
     }
     if (isPending && canApprove) {
