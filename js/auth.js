@@ -100,6 +100,8 @@ export const can = {
       userManagement: 'user_view',
       activityLog: 'log_view',
       feedback: 'feedback_view', // This is the new rule
+      costReport: 'report_cost_view',
+      kpiReport: 'report_kpi_view',
     };
 
     const requiredPermission = pagePermissions[page];
