@@ -626,12 +626,13 @@ export function renderSidebar() {
         },
         {
             type: 'group',
-            id: 'reports', // <-- NEW GROUP
+            id: 'reports',
             title: 'Reports',
             icon: 'fa-chart-pie',
             links: [
                 { page: "inventoryReport", icon: "fa-chart-line", text: "Inventory Report" },
                 { page: "costReport", icon: "fa-dollar-sign", text: "Cost Report" },
+                { page: "kpiReport", icon: "fa-tachometer-alt", text: "KPI Report" },
             ]
         },
         {
@@ -1907,6 +1908,34 @@ export function renderCostReportPage() {
         </div>
         <div id="reportResultContainer" class="bg-white p-4 rounded-lg shadow">
             <p class="text-gray-500">Please select a date range and click "Generate Report".</p>
+        </div>
+    `;
+}
+
+export function renderKpiReportPage() {
+    const today = new Date();
+    const firstDayOfYear = new Date(today.getFullYear(), 0, 1).toISOString().split('T')[0];
+    const todayStr = today.toISOString().split('T')[0];
+    
+    return `
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-3xl font-bold">Maintenance KPI Report</h1>
+        </div>
+        <div class="bg-white p-4 rounded-lg shadow mb-6">
+            <form id="kpiReportForm" class="flex items-end gap-4">
+                <div>
+                    <label for="startDate" class="block text-sm font-medium text-gray-700">Start Date</label>
+                    <input type="date" id="startDate" value="${firstDayOfYear}" class="mt-1 px-3 py-2 border rounded w-full">
+                </div>
+                <div>
+                    <label for="endDate" class="block text-sm font-medium text-gray-700">End Date</label>
+                    <input type="date" id="endDate" value="${todayStr}" class="mt-1 px-3 py-2 border rounded w-full">
+                </div>
+                <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded">Generate Report</button>
+            </form>
+        </div>
+        <div id="reportResultContainer">
+            <p class="text-gray-500">Please select a date range and click "Generate Report" to view KPIs.</p>
         </div>
     `;
 }

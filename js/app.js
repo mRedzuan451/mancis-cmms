@@ -47,6 +47,7 @@ import {
     addPmPartRow,
     showUploadModal,
     renderCostReportPage,
+    renderKpiReportPage,
 } from './ui.js';
 
 
@@ -68,6 +69,7 @@ function renderMainContent() {
         case "locations":           content = renderLocationsPage(); break;
         case "inventoryReport":     content = renderInventoryReportPage(); break;
         case "costReport":          content = renderCostReportPage(); break;
+        case "kpiReport":           content = renderKpiReportPage(); break;
         case "activityLog":         content = renderActivityLogPage(); break;
         case "partRequests":        content = renderPartsRequestPage(); break;
         case "pmSchedules":         content = renderPmSchedulesPage(); break;
@@ -1183,6 +1185,53 @@ function attachPageSpecificEventListeners(page) {
                 container.innerHTML = tableHTML;
             } catch (error) {
                 container.innerHTML = `<p class="text-red-500">Error generating report: ${error.message}</p>`;
+            }
+        });
+    } else if (page === 'kpiReport') {
+        document.getElementById('kpiReportForm')?.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+            const container = document.getElementById('reportResultContainer');
+            container.innerHTML = '<p>Calculating KPIs, please wait...</p>';
+            
+            try {
+                const reportData = await api.getKpiReport({ startDate, endDate });
+                
+                let resultHTML = `
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                        <div class="bg-white p-6 rounded-lg shadow">
+                            <h3 class="text-gray-500">Overall MTTR (Mean Time To Repair)</h3>
+                            <p class="text-3xl font-bold">${reportData.overall_mttr_hours} Hours</p>
+                        </div>
+                        <div class="bg-white p-6 rounded-lg shadow">
+                            <h3 class="text-gray-500">Overall MTBF (Mean Time Between Failures)</h3>
+                            <p class="text-3xl font-bold">${reportData.overall_mtbf_days} Days</p>
+                        </div>
+                    </div>
+                    <h2 class="text-2xl font-bold mb-4">KPIs by Asset</h2>
+                    <div class="bg-white p-4 rounded-lg shadow">
+                        <table class="w-full">
+                            <thead><tr class="border-b">
+                                <th class="p-2 text-left">Asset Name</th>
+                                <th class="p-2 text-right">MTTR (Hours)</th>
+                                <th class="p-2 text-right">MTBF (Days)</th>
+                            </tr></thead><tbody>`;
+                
+                reportData.asset_kpis.forEach(item => {
+                    resultHTML += `
+                        <tr class="border-b hover:bg-gray-50">
+                            <td class="p-2">${item.assetName}</td>
+                            <td class="p-2 text-right">${item.mttr_hours}</td>
+                            <td class="p-2 text-right">${item.mtbf_days}</td>
+                        </tr>`;
+                });
+
+                resultHTML += `</tbody></table></div>`;
+                container.innerHTML = resultHTML;
+
+            } catch (error) {
+                container.innerHTML = `<p class="text-red-500">Error generating KPI report: ${error.message}</p>`;
             }
         });
     } else if (page === 'stockTake') {
