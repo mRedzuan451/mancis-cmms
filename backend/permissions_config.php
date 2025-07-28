@@ -73,7 +73,8 @@ $role_permissions = [
         'pm_schedule_view', 'pm_schedule_create',
         'user_view','part_restock',
         'location_management',
-        'stock_take_create', 'stock_take_approve','report_cost_view'
+        'stock_take_create', 'stock_take_approve',
+        'report_cost_view','report_view','report_kpi_view',
     ],
 
     'Engineer' => [
