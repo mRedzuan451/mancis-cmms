@@ -935,7 +935,6 @@ export function showWorkOrderModal(woId = null) {
             document.getElementById("woDueDate").value = wo.dueDate;
             document.getElementById("woBreakdownTime").value = wo.breakdownTimestamp || "";
             document.getElementById("woPriority").value = wo.priority;
-            document.getElementById("woFrequency").value = wo.frequency;
             document.getElementById("woStatus").value = wo.status;
             if (wo.checklist && wo.checklist.length > 0) {
                 wo.checklist.forEach((item) => addChecklistItem(item.text));

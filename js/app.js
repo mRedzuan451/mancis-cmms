@@ -356,6 +356,7 @@ async function handleWorkOrderFormSubmit(e) {
         priority: document.getElementById("woPriority").value,
         frequency: document.getElementById("woFrequency").value,
         status: document.getElementById("woStatus").value,
+        frequency: "One-Time",
         checklist: checklistItems,
         requiredParts: requiredParts,
         wo_type: 'CM' 
