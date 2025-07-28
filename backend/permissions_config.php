@@ -83,7 +83,7 @@ $role_permissions = [
         'location_management','part_restock',
         'part_request_view', 'part_request_create',
         'pm_schedule_view','asset_create',
-        'pm_schedule_create'
+        'pm_schedule_create','stock_take_create',
     ],
 
     'Technician' => [
