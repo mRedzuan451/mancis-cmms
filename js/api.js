@@ -46,6 +46,8 @@ export const api = {
     getInventoryReport: (params) => request(`get_inventory_report.php?startDate=${params.startDate}&endDate=${params.endDate}`),
     getCostReport: (params) => request(`get_cost_report.php?startDate=${params.startDate}&endDate=${params.endDate}`),
     getKpiReport: (params) => request(`get_kpi_report.php?startDate=${params.startDate}&endDate=${params.endDate}`),
+    updateOverdueWorkOrders: () => request('update_overdue_wos.php', { method: 'POST' }),
+
 
     // AUTH operations
     login: (username, password) => request('login.php', {

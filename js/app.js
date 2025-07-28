@@ -158,6 +158,13 @@ async function loadInitialData() {
 
 async function loadAndRender() {
     await loadInitialData();
+    try {
+        await api.updateOverdueWorkOrders();
+        // Then, re-fetch the work orders to get the updated statuses.
+        state.cache.workOrders = await api.getWorkOrders();
+    } catch (error) {
+        console.error("Failed to update overdue work orders:", error);
+    }
     render();
     await checkForLowStockAndCreateRequests();
     await checkForNotifications();
