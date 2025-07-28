@@ -1890,6 +1890,24 @@ export function renderStatusChart(statusCounts) {
                 legend: {
                     position: 'top',
                 },
+                datalabels: {
+                    color: '#fff', // White text
+                    textAlign: 'center',
+                    font: {
+                        weight: 'bold',
+                        size: 14,
+                    },
+                    // This function formats the text that appears on the chart
+                    formatter: (value, context) => {
+                        const label = context.chart.data.labels[context.dataIndex];
+                        // If the value is 0, don't show a label
+                        if (value === 0) {
+                            return null;
+                        }
+                        // Use \n to create a new line between the name and the value
+                        return `${label}\n${value}`;
+                    }
+                }
             }
         }
     });
