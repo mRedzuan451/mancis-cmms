@@ -297,6 +297,7 @@ export function renderWorkOrderCalendar() {
 export function renderLocationsPage() {
     const { divisions = [], departments = [], subLines = [], productionLines = [], cabinets = [], shelves = [], boxes = [] } = state.cache.locations || {};
     const isAdmin = state.currentUser.role === "Admin";
+    const userDeptId = state.currentUser.departmentId;
     const header = renderPageHeader("Location Management", [
         '<button id="downloadLocationsBtn" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded"><i class="fas fa-download mr-2"></i>Download List</button>'
     ]);
