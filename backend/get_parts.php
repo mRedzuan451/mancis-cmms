@@ -14,9 +14,19 @@ $user_department_id = $_SESSION['user_department_id'];
 
 $sql = "";
 if ($user_role === 'Admin') {
-    $sql = "SELECT * FROM parts ORDER BY name ASC";
+    // --- START: MODIFICATION ---
+    // This query now joins all necessary tables to retrieve the department name for each part.
+    $sql = "SELECT p.*, d.name as departmentName 
+            FROM parts p
+            LEFT JOIN boxes b ON p.locationId = CONCAT('box-', b.id)
+            LEFT JOIN shelves sh ON b.shelfId = sh.id
+            LEFT JOIN cabinets cab ON sh.cabinetId = cab.id
+            LEFT JOIN departments d ON cab.departmentId = d.id
+            ORDER BY p.name ASC";
+    // --- END: MODIFICATION ---
     $stmt = $conn->prepare($sql);
 } else {
+    // This query remains unchanged for non-admin users, scoped to their department.
     $sql = "SELECT p.* FROM parts p
             JOIN boxes b ON p.locationId = CONCAT('box-', b.id)
             JOIN shelves sh ON b.shelfId = sh.id

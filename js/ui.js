@@ -126,8 +126,7 @@ export function renderAssetsPage() {
       </div>`;
 }
 
-// js/ui.js
-
+// --- START: MODIFICATION ---
 export function renderPartsPage() {
     const parts = state.cache.parts;
     
@@ -138,6 +137,11 @@ export function renderPartsPage() {
         '<button id="addPartBtn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded"><i class="fas fa-plus mr-2"></i>Add Parts</button>'
     ]);
     
+    // Conditionally add the Department header for Admins
+    const departmentHeader = state.currentUser.role === 'Admin' 
+        ? '<th class="p-2 text-left cursor-pointer" data-sort="departmentName">Department <i class="fas fa-sort"></i></th>' 
+        : '';
+
     return `
       ${header}
       <div class="bg-white p-4 rounded-lg shadow">
@@ -145,12 +149,12 @@ export function renderPartsPage() {
           <input type="text" id="partSearch" class="w-full mb-4 px-3 py-2 border rounded" placeholder="Search...">
           <div class="overflow-x-auto">
               <table class="w-full" id="partTable">
-
                   <thead><tr class="border-b">
                       <th class="p-2 w-4"><input type="checkbox" id="selectAllCheckbox"></th>
                       <th class="p-2 text-left cursor-pointer" data-sort="name">Part Name <i class="fas fa-sort"></i></th>
                       <th class="p-2 text-left cursor-pointer" data-sort="sku">SKU <i class="fas fa-sort"></i></th>
                       <th class="p-2 text-left cursor-pointer" data-sort="quantity">Quantity <i class="fas fa-sort"></i></th>
+                      ${departmentHeader}
                       <th class="p-2 text-left">Actions</th>
                   </tr></thead>
                   <tbody id="partTableBody">${generateTableRows("parts", parts)}</tbody>
@@ -158,6 +162,7 @@ export function renderPartsPage() {
           </div>
       </div>`;
 }
+// --- END: MODIFICATION ---
 
 export function renderWorkOrdersPage() {
     const workOrders = state.cache.workOrders.filter(can.view);
@@ -466,19 +471,30 @@ export function generateTableRows(type, data) {
                       ${asset.status !== "Decommissioned" && state.currentUser.permissions.asset_edit ? `<button class="dispose-asset-btn text-gray-500 hover:text-gray-700" data-id="${asset.id}" title="Dispose"><i class="fas fa-ban"></i></button>` : ""}
                   </td>
               </tr>`).join("");
+      
+      // --- START: MODIFICATION ---
       case "parts":
-        return data.map((part) => `
+        const isAdmin = state.currentUser.role === 'Admin';
+        return data.map((part) => {
+            const departmentCell = isAdmin 
+                ? `<td class="p-2">${part.departmentName || 'N/A'}</td>` 
+                : '';
+            return `
               <tr class="border-b hover:bg-gray-50 ${parseInt(part.quantity) <= parseInt(part.minQuantity) ? "bg-red-100" : ""}">
                   <td class="p-2"><input type="checkbox" class="row-checkbox" data-id="${part.id}"></td>
                   <td class="p-2">${part.name}</td>
                   <td class="p-2">${part.sku}</td>
                   <td class="p-2">${part.quantity} ${parseInt(part.quantity) <= parseInt(part.minQuantity) ? '<span class="text-red-600 font-bold">(Low)</span>' : ""}</td>
+                  ${departmentCell}
                   <td class="p-2 space-x-2">
                       <button class="view-part-btn text-blue-500 hover:text-blue-700" data-id="${part.id}" title="View Details"><i class="fas fa-eye"></i></button>
                       <button class="edit-part-btn text-yellow-500 hover:text-yellow-700" data-id="${part.id}" title="Edit"><i class="fas fa-edit"></i></button>
                       <button class="delete-part-btn text-red-500 hover:text-red-700" data-id="${part.id}"><i class="fas fa-trash"></i></button>
                   </td>
-              </tr>`).join("");
+              </tr>`;
+        }).join("");
+      // --- END: MODIFICATION ---
+
       case "workOrders":
         const woStatusColors = { Open: "bg-blue-200 text-blue-800", "In Progress": "bg-yellow-200 text-yellow-800", "On Hold": "bg-orange-200 text-orange-800", Delay: "bg-red-200 text-red-800", Completed: "bg-green-200 text-green-800" };
         return data.map((wo) => {
