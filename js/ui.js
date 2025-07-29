@@ -313,8 +313,6 @@ export function renderLocationsPage() {
     const filteredShelves = isAdmin ? shelves : shelves.filter(s => filteredCabinetIds.includes(s.cabinetId));
     const filteredShelfIds = filteredShelves.map(s => s.id);
     const filteredBoxes = isAdmin ? boxes : boxes.filter(b => filteredShelfIds.includes(b.shelfId));
-
-    // For the add cabinet form, Admins see all departments, others see only their own.
     const cabinetParentDepts = isAdmin ? departments : departments.filter(d => d.id === userDeptId);
 
     return `
@@ -322,42 +320,62 @@ export function renderLocationsPage() {
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
           
           ${isAdmin ? `
+            <!-- ADMIN VIEW: Production Locations -->
             <div class="bg-white p-4 rounded-lg shadow space-y-6">
+                <div>
+                  <h2 class="text-xl font-bold mb-4">Divisions</h2>
+                  <ul class="space-y-2 mb-4 max-h-40 overflow-y-auto">${divisions.map(d => `<li class="flex justify-between items-center p-2 bg-gray-50 rounded"><span>${d.name}</span><button class="delete-location-btn text-red-500" data-id="${d.id}" data-type="division"><i class="fas fa-trash"></i></button></li>`).join("") || '<li class="text-gray-500">No divisions.</li>'}</ul>
+                  <form id="addDivisionForm" class="flex gap-2 border-t pt-4"><input type="text" class="flex-grow px-2 py-1 border rounded" placeholder="New Division" required><button type="submit" class="bg-blue-500 text-white px-3 py-1 rounded">+</button></form>
                 </div>
-            <div class="bg-white p-4 rounded-lg shadow space-y-6">
+                <div>
+                  <h2 class="text-xl font-bold mb-4">Departments</h2>
+                  <ul class="space-y-2 mb-4 max-h-40 overflow-y-auto">${departments.map(d => `<li class="flex justify-between items-center p-2 bg-gray-50 rounded"><span>${d.name}</span><button class="delete-location-btn text-red-500" data-id="${d.id}" data-type="department"><i class="fas fa-trash"></i></button></li>`).join("") || '<li class="text-gray-500">No departments.</li>'}</ul>
+                  <form id="addDepartmentForm" class="border-t pt-4"><select class="w-full mb-2 px-2 py-1 border rounded" required><option value="">Select Division</option>${divisions.map(d => `<option value="${d.id}">${d.name}</option>`).join("")}</select><div class="flex gap-2"><input type="text" class="flex-grow px-2 py-1 border rounded" placeholder="New Department" required><button type="submit" class="bg-blue-500 text-white px-3 py-1 rounded">+</button></div></form>
                 </div>
+                <div>
+                  <h2 class="text-xl font-bold mb-4">Sub Lines</h2>
+                  <ul class="space-y-2 mb-4 max-h-40 overflow-y-auto">${subLines.map(sl => `<li class="flex justify-between items-center p-2 bg-gray-50 rounded"><span>${sl.name}</span><button class="delete-location-btn text-red-500" data-id="${sl.id}" data-type="subLine"><i class="fas fa-trash"></i></button></li>`).join("") || '<li class="text-gray-500">No sub lines.</li>'}</ul>
+                  <form id="addSubLineForm" class="border-t pt-4"><select class="w-full mb-2 px-2 py-1 border rounded" required><option value="">Select Department</option>${departments.map(d => `<option value="${d.id}">${d.name}</option>`).join("")}</select><div class="flex gap-2"><input type="text" class="flex-grow px-2 py-1 border rounded" placeholder="New Sub Line" required><button type="submit" class="bg-blue-500 text-white px-3 py-1 rounded">+</button></div></form>
+                </div>
+                <div>
+                  <h2 class="text-xl font-bold mb-4">Production Lines</h2>
+                  <ul class="space-y-2 mb-4 max-h-40 overflow-y-auto">${productionLines.map(pl => `<li class="flex justify-between items-center p-2 bg-gray-50 rounded"><span>${pl.name}</span><button class="delete-location-btn text-red-500" data-id="${pl.id}" data-type="productionLine"><i class="fas fa-trash"></i></button></li>`).join("") || '<li class="text-gray-500">No lines.</li>'}</ul>
+                  <form id="addProductionLineForm" class="border-t pt-4"><select class="w-full mb-2 px-2 py-1 border rounded" required><option value="">Select Sub Line</option>${subLines.map(sl => `<option value="${sl.id}">${sl.name}</option>`).join("")}</select><div class="flex gap-2"><input type="text" class="flex-grow px-2 py-1 border rounded" placeholder="New Line" required><button type="submit" class="bg-blue-500 text-white px-3 py-1 rounded">+</button></div></form>
+                </div>
+            </div>
           ` : `
+            <!-- NON-ADMIN VIEW: Production Locations (Read-Only) -->
             <div class="bg-white p-4 rounded-lg shadow">
                 <h2 class="text-xl font-bold mb-4">Production Locations</h2>
                 <p class="text-sm text-gray-600">Contact an administrator to manage production locations.</p>
             </div>
           `}
           
+          <!-- BOTH VIEWS: Storage Locations -->
           <div class="bg-white p-4 rounded-lg shadow space-y-4">
               <h2 class="text-xl font-bold mb-2">Storage Locations</h2>
               <p class="text-sm text-gray-500 mb-4">${isAdmin ? 'Manage all storage locations.' : 'Displaying storage for your department only.'}</p>
               
                <div>
                   <h3 class="font-semibold mb-2">Cabinets</h3>
-                   <ul class="space-y-2 mb-4 max-h-40 overflow-y-auto">
-                      ${filteredCabinets.map(c => `<li class="flex justify-between items-center p-2 bg-gray-50 rounded"><span>${c.name}</span>${isAdmin ? `<button class="delete-location-btn text-red-500" data-id="${c.id}" data-type="cabinet"><i class="fas fa-trash"></i></button>` : ''}</li>`).join("") || '<li class="text-gray-500">No cabinets found.</li>'}
-                  </ul>
-                  
-                  ${state.currentUser.permissions.location_management ? `
-                    <form id="addCabinetForm" class="border-t pt-2">
-                      ${isAdmin ? `
-                        <select class="w-full mb-2 px-2 py-1 border rounded" required><option value="">Select Department</option>${cabinetParentDepts.map(d => `<option value="${d.id}">${getFullLocationName(`dept-${d.id}`)}</option>`).join("")}</select>
-                      ` : ''}
-                      <div class="flex gap-2"><input type="text" id="newCabinetName" class="flex-grow px-2 py-1 border rounded" placeholder="New Cabinet Name" required><button type="submit" class="bg-blue-500 text-white px-3 py-1 rounded">+</button></div>
-                    </form>
-                  ` : ''}
-                  </div>
+                   <ul class="space-y-2 mb-4 max-h-40 overflow-y-auto">${filteredCabinets.map(c => `<li class="flex justify-between items-center p-2 bg-gray-50 rounded"><span>${c.name}</span>${isAdmin ? `<button class="delete-location-btn text-red-500" data-id="${c.id}" data-type="cabinet"><i class="fas fa-trash"></i></button>` : ''}</li>`).join("") || '<li class="text-gray-500">No cabinets found.</li>'}</ul>
+                  ${state.currentUser.permissions.location_management ? `<form id="addCabinetForm" class="border-t pt-2">${isAdmin ? `<select class="w-full mb-2 px-2 py-1 border rounded" required><option value="">Select Department</option>${cabinetParentDepts.map(d => `<option value="${d.id}">${getFullLocationName(`dept-${d.id}`)}</option>`).join("")}</select>` : ''}<div class="flex gap-2"><input type="text" id="newCabinetName" class="flex-grow px-2 py-1 border rounded" placeholder="New Cabinet Name" required><button type="submit" class="bg-blue-500 text-white px-3 py-1 rounded">+</button></div></form>` : ''}
+               </div>
+
                <div>
-                  </div>
+                  <h3 class="font-semibold mb-2">Shelves</h3>
+                   <ul class="space-y-2 mb-4 max-h-40 overflow-y-auto">${filteredShelves.map(s => `<li class="flex justify-between items-center p-2 bg-gray-50 rounded"><span>${s.name}</span>${isAdmin ? `<button class="delete-location-btn text-red-500" data-id="${s.id}" data-type="shelf"><i class="fas fa-trash"></i></button>` : ''}</li>`).join("") || '<li class="text-gray-500">No shelves found.</li>'}</ul>
+                  ${state.currentUser.permissions.location_management ? `<form id="addShelfForm" class="border-t pt-2"><select class="w-full mb-2 px-2 py-1 border rounded" required><option value="">Select Cabinet</option>${filteredCabinets.map(c => `<option value="${c.id}">${c.name}</option>`).join("")}</select><div class="flex gap-2"><input type="text" class="flex-grow px-2 py-1 border rounded" placeholder="New Shelf Name" required><button type="submit" class="bg-blue-500 text-white px-3 py-1 rounded">+</button></div></form>` : ''}
+               </div>
+
                <div>
-                  </div>
+                  <h3 class="font-semibold mb-2">Boxes</h3>
+                   <ul class="space-y-2 mb-4 max-h-40 overflow-y-auto">${filteredBoxes.map(b => `<li class="flex justify-between items-center p-2 bg-gray-50 rounded"><span>${b.name}</span>${isAdmin ? `<button class="delete-location-btn text-red-500" data-id="${b.id}" data-type="box"><i class="fas fa-trash"></i></button>` : ''}</li>`).join("") || '<li class="text-gray-500">No boxes found.</li>'}</ul>
+                   ${state.currentUser.permissions.location_management ? `<form id="addBoxForm" class="border-t pt-2"><select class="w-full mb-2 px-2 py-1 border rounded" required><option value="">Select Shelf</option>${filteredShelves.map(s => `<option value="${s.id}">${s.name}</option>`).join("")}</select><div class="flex gap-2"><input type="text" class="flex-grow px-2 py-1 border rounded" placeholder="New Box Name" required><button type="submit" class="bg-blue-500 text-white px-3 py-1 rounded">+</button></div></form>` : ''}
+               </div>
           </div>
-      </div>`;
+      </div>
+    `;
 }
 
 export function renderActivityLogPage() {
