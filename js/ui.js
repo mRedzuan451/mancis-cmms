@@ -8,10 +8,13 @@ import { getFullLocationName, getUserDepartment, showTemporaryMessage, calculate
 // Each function that creates a page view is now exported.
 
 export function renderDashboard() {
-  const assets = state.cache.assets;
-  const workOrders = state.cache.workOrders;
-  const parts = state.cache.parts;
-  const partRequests = state.cache.partRequests;
+  // --- START: FIX ---
+  // Filter all data by the user's department permissions at the beginning.
+  const assets = state.cache.assets.filter(can.view);
+  const workOrders = state.cache.workOrders.filter(can.view);
+  const parts = state.cache.parts.filter(can.view);
+  const partRequests = state.cache.partRequests.filter(can.view);
+  // --- END: FIX ---
   
   const openWOs = workOrders.filter((wo) => wo.status !== "Completed").length;
   const pendingRequests = partRequests.filter((pr) => pr.status === "Requested" || pr.status === "Requested from Storage").length;
