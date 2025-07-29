@@ -708,17 +708,6 @@ async function handleLocationFormSubmit(e) {
     }
 }
 
-    try {
-        await api.createLocation({ type, name, parentId });
-        await logActivity("Location Created", `Created new ${type}: ${name}`);
-        state.cache.locations = await api.getLocations();
-        renderMainContent();
-        showTemporaryMessage(`${type} created successfully.`);
-    } catch (error) {
-        showTemporaryMessage(`Failed to create ${type}. ${error.message}`, true);
-    }
-}
-
 
 async function deleteLocation(type, id) {
     if (!confirm(`Are you sure you want to delete this ${type}? This can affect assets, parts, and other locations.`)) return;
