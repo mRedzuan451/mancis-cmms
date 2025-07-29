@@ -524,10 +524,21 @@ async function handlePartRequestFormSubmit(e) {
 
 async function handleStorageRequestFormSubmit(e) {
     e.preventDefault();
+    const assetId = document.getElementById('storageRequestAssetId').value;
+    const purposeText = document.getElementById('storageRequestPurpose').value;
+    let finalPurpose = purposeText;
+
+    if (assetId) {
+        const asset = state.cache.assets.find(a => a.id === parseInt(assetId));
+        if (asset) {
+            // Prepend the asset information to the purpose
+            finalPurpose = `For asset "${asset.name}": ${purposeText}`;
+        }
+    }
     let requestData = {
         partId: parseInt(document.getElementById('storageRequestPartId').value),
         quantity: parseInt(document.getElementById('storageRequestQuantity').value),
-        purpose: document.getElementById('storageRequestPurpose').value,
+        purpose: finalPurpose, // Use the modified purpose string
         requesterId: state.currentUser.id,
         requestDate: new Date().toISOString().slice(0, 19).replace('T', ' '),
         status: 'Requested from Storage',

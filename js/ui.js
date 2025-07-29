@@ -1209,14 +1209,17 @@ export function showPartRequestModal() {
 
 export function showStorageRequestModal() {
      const partSelect = document.getElementById('storageRequestPartId');
-
-     // --- START: FIX ---
-     // The restrictive 'can.view(p)' filter has been removed.
-     // We now only check if the part has a quantity greater than 0.
      partSelect.innerHTML = '<option value="">Select a part...</option>' + state.cache.parts
         .filter(p => p.quantity > 0)
         .map(p => `<option value="${p.id}">${p.name} (SKU: ${p.sku}) (In Stock: ${p.quantity})</option>`).join('');
-     // --- END: FIX ---
+
+    // --- START: MODIFICATION ---
+    const assetSelect = document.getElementById('storageRequestAssetId');
+    // Filter assets the current user can view (i.e., in their department)
+    const viewableAssets = state.cache.assets.filter(can.view);
+    assetSelect.innerHTML = '<option value="">None / General Purpose</option>' + viewableAssets
+        .map(a => `<option value="${a.id}">${a.name} (Tag: ${a.tag})</option>`).join('');
+    // --- END: MODIFICATION ---
 
     document.getElementById('storageRequestModal').style.display = 'flex';
 }
