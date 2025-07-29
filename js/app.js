@@ -651,39 +651,62 @@ async function handleRestockPartsFormSubmit(e) {
 }
 
 async function handleLocationFormSubmit(e) {
-    if (e.preventDefault) e.preventDefault();
+    e.preventDefault(); // Prevent default form submission
     const form = e.target;
     const isAdmin = state.currentUser.role === 'Admin';
     let type, name, parentId;
 
-    if (e.type) { // It's our custom object
-        type = e.type;
-        name = e.name;
-        parentId = e.parentId;
-    } else { // It's a real form event
-        const formId = form.id;
-        switch(formId) {
-            case 'addDivisionForm':
-                type = 'division'; name = form.querySelector('input').value; break;
-            case 'addDepartmentForm':
-                type = 'department'; name = form.querySelector('input').value; parentId = form.querySelector('select').value; break;
-            case 'addSubLineForm':
-                type = 'subLine'; name = form.querySelector('input').value; parentId = form.querySelector('select').value; break;
-            case 'addProductionLineForm':
-                type = 'productionLine'; name = form.querySelector('input').value; parentId = form.querySelector('select').value; break;
-            case 'addCabinetForm':
+    const formId = form.id;
+    switch(formId) {
+        case 'addDivisionForm':
+            type = 'division';
+            name = form.querySelector('input').value;
+            break;
+        case 'addDepartmentForm':
+            type = 'department';
+            name = form.querySelector('input').value;
+            parentId = form.querySelector('select').value;
+            break;
+        case 'addSubLineForm':
+            type = 'subLine';
+            name = form.querySelector('input').value;
+            parentId = form.querySelector('select').value;
+            break;
+        case 'addProductionLineForm':
+            type = 'productionLine';
+            name = form.querySelector('input').value;
+            parentId = form.querySelector('select').value;
+            break;
+        case 'addCabinetForm':
             type = 'cabinet';
             name = form.querySelector('input').value;
-            // If Admin, get parent from dropdown. Otherwise, use the user's own department.
             parentId = isAdmin ? form.querySelector('select').value : state.currentUser.departmentId;
             break;
-            case 'addShelfForm':
-                type = 'shelf'; name = form.querySelector('input').value; parentId = form.querySelector('select').value; break;
-            case 'addBoxForm':
-                type = 'box'; name = form.querySelector('input').value; parentId = form.querySelector('select').value; break;
-            default: return;
-        }
+        case 'addShelfForm':
+            type = 'shelf';
+            name = form.querySelector('input').value;
+            parentId = form.querySelector('select').value;
+            break;
+        case 'addBoxForm':
+            type = 'box';
+            name = form.querySelector('input').value;
+            parentId = form.querySelector('select').value;
+            break;
+        default:
+            showTemporaryMessage('Unknown form submission.', true);
+            return;
     }
+
+    try {
+        await api.createLocation({ type, name, parentId });
+        await logActivity("Location Created", `Created new ${type}: ${name}`);
+        state.cache.locations = await api.getLocations();
+        renderMainContent();
+        showTemporaryMessage(`${type} created successfully.`);
+    } catch (error) {
+        showTemporaryMessage(`Failed to create ${type}. ${error.message}`, true);
+    }
+}
 
     try {
         await api.createLocation({ type, name, parentId });
