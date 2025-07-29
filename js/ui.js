@@ -8,13 +8,10 @@ import { getFullLocationName, getUserDepartment, showTemporaryMessage, calculate
 // Each function that creates a page view is now exported.
 
 export function renderDashboard() {
-  // --- START: FIX ---
-  // Filter all data by the user's department permissions at the beginning.
   const assets = state.cache.assets.filter(can.view);
   const workOrders = state.cache.workOrders.filter(can.view);
   const parts = state.cache.parts.filter(can.view);
   const partRequests = state.cache.partRequests.filter(can.view);
-  // --- END: FIX ---
   
   const openWOs = workOrders.filter((wo) => wo.status !== "Completed").length;
   const pendingRequests = partRequests.filter((pr) => pr.status === "Requested" || pr.status === "Requested from Storage").length;
@@ -129,7 +126,6 @@ export function renderAssetsPage() {
       </div>`;
 }
 
-// --- START: MODIFICATION ---
 export function renderPartsPage() {
     const parts = state.cache.parts;
     
@@ -165,7 +161,6 @@ export function renderPartsPage() {
           </div>
       </div>`;
 }
-// --- END: MODIFICATION ---
 
 export function renderWorkOrdersPage() {
     const workOrders = state.cache.workOrders.filter(can.view);
@@ -204,7 +199,6 @@ export function renderWorkOrdersPage() {
 export function renderUserManagementPage() {
     const users = state.cache.users;
     
-    // Add the "Delete Selected" button
     const header = renderPageHeader("User Management", [
         '<button id="addUserBtn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded"><i class="fas fa-user-plus mr-2"></i>Add User</button>',
         '<button id="deleteSelectedBtn" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded hidden"><i class="fas fa-trash-alt mr-2"></i>Delete Selected</button>',
@@ -270,8 +264,6 @@ export function renderWorkOrderCalendar() {
         const dayStr = String(day).padStart(2, '0');
         const dateStr = `${year}-${monthStr}-${dayStr}`;
 
-        // --- THIS IS THE FIX ---
-        // The filter now compares against 'start_date' instead of 'dueDate'.
         const wosOnThisDay = workOrders.filter((wo) => wo.start_date === dateStr);
         
         const hasEvents = wosOnThisDay.length > 0;
@@ -300,8 +292,6 @@ export function renderWorkOrderCalendar() {
     return calendarHtml;
 }
 
-// js/ui.js
-
 export function renderLocationsPage() {
     const { divisions = [], departments = [], subLines = [], productionLines = [], cabinets = [], shelves = [], boxes = [] } = state.cache.locations || {};
     const isAdmin = state.currentUser.role === "Admin";
@@ -316,6 +306,7 @@ export function renderLocationsPage() {
     const filteredShelves = isAdmin ? shelves : shelves.filter(s => filteredCabinetIds.includes(s.cabinetId));
     const filteredShelfIds = filteredShelves.map(s => s.id);
     const filteredBoxes = isAdmin ? boxes : boxes.filter(b => filteredShelfIds.includes(b.shelfId));
+    
     const cabinetParentDepts = isAdmin ? departments : departments.filter(d => d.id === userDeptId);
 
     return `
@@ -401,13 +392,9 @@ export function renderActivityLogPage() {
       </div>`;
 }
 
-// js/ui.js
-
 export function renderPartsRequestPage() {
     const partRequests = state.cache.partRequests;
 
-    // --- START: FIX ---
-    // The list of buttons is now built dynamically based on permissions.
     const buttons = [
         '<button id="refreshDataBtn" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded"><i class="fas fa-sync-alt mr-2"></i>Refresh</button>',
         '<button id="printPurchaseListBtn" class="bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 px-4 rounded"><i class="fas fa-file-invoice mr-2"></i>Print Purchase List</button>',
@@ -424,7 +411,6 @@ export function renderPartsRequestPage() {
     }
 
     const header = renderPageHeader("Part Requests", buttons);
-    // --- END: FIX ---
 
     return `
       ${header}
@@ -493,7 +479,6 @@ export function generateTableRows(type, data) {
                   </td>
               </tr>`).join("");
       
-      // --- START: MODIFICATION ---
       case "parts":
         const isAdmin = state.currentUser.role === 'Admin';
         return data.map((part) => {
@@ -514,7 +499,6 @@ export function generateTableRows(type, data) {
                   </td>
               </tr>`;
         }).join("");
-      // --- END: MODIFICATION ---
 
       case "workOrders":
         const woStatusColors = { Open: "bg-blue-200 text-blue-800", "In Progress": "bg-yellow-200 text-yellow-800", "On Hold": "bg-orange-200 text-orange-800", Delay: "bg-red-200 text-red-800", Completed: "bg-green-200 text-green-800" };
@@ -542,27 +526,26 @@ export function generateTableRows(type, data) {
               </tr>`;
           }).join("");
       case "users":
-    // Show the edit button if the current user has the 'user_edit' permission.
-    const canEditUsers = state.currentUser.permissions.user_edit;
-    return data.map((user) => `
-          <tr class="border-b hover:bg-gray-50">
-              <td class="p-2"><input type="checkbox" class="row-checkbox" data-id="${user.id}"></td>
-              <td class="p-2">${user.fullName}</td>
-              <td class="p-2">${user.username}</td>
-              <td class="p-2">${user.role}</td>
-              <td class="p-2">${getUserDepartment(user)}</td>
-              <td class="p-2 space-x-2">
-                  ${// Show edit button if user has permission AND the target user is not the primary admin.
-                    canEditUsers && user.id !== 1 ? `
-                      <button class="edit-user-btn text-yellow-500 hover:text-yellow-700" data-id="${user.id}" title="Edit Role"><i class="fas fa-user-shield"></i></button>
-                  ` : ''}
-                  ${// Admin-only delete button logic remains the same.
-                    state.currentUser.role === 'Admin' && user.id !== state.currentUser.id && user.id !== 1 ? `
-                      <button class="delete-user-btn text-red-500 hover:text-red-700" data-id="${user.id}" title="Delete User"><i class="fas fa-trash"></i></button>
-                  ` : ""}
-              </td>
-          </tr>`).join("");
-
+        const canEditUsers = state.currentUser.permissions.user_edit;
+        return data.map((user) => `
+              <tr class="border-b hover:bg-gray-50">
+                  <td class="p-2"><input type="checkbox" class="row-checkbox" data-id="${user.id}"></td>
+                  <td class="p-2">${user.fullName}</td>
+                  <td class="p-2">${user.username}</td>
+                  <td class="p-2">${user.role}</td>
+                  <td class="p-2">${getUserDepartment(user)}</td>
+                  <td class="p-2 space-x-2">
+                      ${
+                        canEditUsers && user.id !== 1 ? `
+                          <button class="edit-user-btn text-yellow-500 hover:text-yellow-700" data-id="${user.id}" title="Edit Role"><i class="fas fa-user-shield"></i></button>
+                      ` : ''}
+                      ${
+                        state.currentUser.role === 'Admin' && user.id !== state.currentUser.id && user.id !== 1 ? `
+                          <button class="delete-user-btn text-red-500 hover:text-red-700" data-id="${user.id}" title="Delete User"><i class="fas fa-trash"></i></button>
+                      ` : ""}
+                  </td>
+              </tr>`).join("");
+      
       case "partRequests":
         const prStatusColors = { 
             "Requested": "bg-blue-200 text-blue-800", 
@@ -577,9 +560,7 @@ export function generateTableRows(type, data) {
             const part = req.partId ? state.cache.parts.find((p) => p.id === req.partId) : null;
             const partName = part ? part.name : `<span class="italic text-gray-500">${req.newPartName} (New)</span>`;
             
-            // --- START: FIX ---
             const partNumber = part ? part.sku : (req.newPartNumber || 'N/A');
-            // --- END: FIX ---
 
             const statusColorClass = prStatusColors[req.status] || "bg-gray-200 text-gray-800";
             
@@ -610,17 +591,12 @@ export function generateTableRows(type, data) {
     }
 }
 
-// js/ui.js
-
-// js/ui.js
-
 export function renderSidebar() {
     const { fullName, role, permissions } = state.currentUser;
     document.getElementById("userFullName").textContent = fullName;
     document.getElementById("userRole").textContent = role;
     document.getElementById("userDepartment").textContent = getUserDepartment(state.currentUser);
 
-    // --- START: Redesigned navigation structure with groups ---
     const navStructure = [
         { type: 'link', page: "dashboard", icon: "fa-tachometer-alt", text: "Dashboard" },
         { type: 'link', page: "workOrderCalendar", icon: "fa-calendar-alt", text: "Calendar" },
@@ -697,7 +673,6 @@ export function renderSidebar() {
             }
         }
     });
-    // --- END: Redesigned navigation structure with groups ---
 
     const navMenu = document.getElementById("navMenu");
     navMenu.innerHTML = navHtml;
@@ -719,7 +694,7 @@ export function showAssetModal(assetId = null) {
     populateLocationDropdown(document.getElementById("assetLocation"), "operational");
 
     const partSelect = document.getElementById("assetRelatedParts");
-    partSelect.innerHTML = ''; // Clear previous options
+    partSelect.innerHTML = '';
 
     state.cache.parts.forEach(part => {
         const option = document.createElement('option');
@@ -727,8 +702,6 @@ export function showAssetModal(assetId = null) {
         option.textContent = `${part.name} (SKU: ${part.sku})`;
         partSelect.appendChild(option);
     });
-
-    // --- END: FIX ---
 
     if (assetId) {
         const asset = state.cache.assets.find((a) => a.id === assetId);
@@ -743,19 +716,13 @@ export function showAssetModal(assetId = null) {
             document.getElementById("assetCurrency").value = asset.currency;
             document.getElementById("assetLocation").value = asset.locationId;
 
-            // --- START: FIX ---
-
-            // 3. Pre-select the parts that are already linked to this asset.
             if (asset.relatedParts) {
                 Array.from(partSelect.options).forEach(option => {
-                    // Note: asset.relatedParts may contain numbers or strings, so we use '==' for loose comparison.
                     if (asset.relatedParts.includes(option.value)) {
                         option.selected = true;
                     }
                 });
             }
-
-            // --- END: FIX ---
         }
     } else {
         document.getElementById("assetModalTitle").textContent = "Add Asset";
@@ -776,14 +743,10 @@ export function showAssetDetailModal(asset) {
         log.action === "Asset Transferred" && log.details.includes(asset.name)
     );
 
-    // --- START: FIX ---
-
-    // 1. Find all work orders related to this asset.
     const workOrderHistory = state.cache.workOrders
         .filter(wo => wo.assetId === asset.id)
-        .sort((a, b) => new Date(b.dueDate) - new Date(a.dueDate)); // Sort by most recent due date
+        .sort((a, b) => new Date(b.dueDate) - new Date(a.dueDate));
 
-    // 2. Build the HTML for the work order history section.
     const workOrderHistoryHtml = `
         <h3 class="text-lg font-bold mt-6 mb-2">Work Order History</h3>
         <div class="bg-gray-50 p-3 rounded-md text-sm max-h-48 overflow-y-auto">
@@ -810,7 +773,6 @@ export function showAssetDetailModal(asset) {
         </div>
     `;
     
-    // 3. Update the modal's full content, including the new section.
     contentEl.innerHTML = `
         <h2 class="text-2xl font-bold mb-4">${asset.name}</h2>
         <div class="grid grid-cols-2 gap-4 text-sm">
@@ -847,8 +809,6 @@ export function showAssetDetailModal(asset) {
         
         ${workOrderHistoryHtml}
     `;
-
-    // --- END: FIX ---
     
     document.getElementById('assetDetailModal').style.display = 'flex';
 }
@@ -865,18 +825,15 @@ export function showPartModal(partId = null) {
     form.reset();
     document.getElementById("partId").value = "";
     
-    // Populate the Related Assets dropdown
     const assetSelect = document.getElementById("partRelatedAssets");
-    assetSelect.innerHTML = ''; // Clear existing options
+    assetSelect.innerHTML = '';
     state.cache.assets.filter(can.view).forEach(asset => {
         const option = document.createElement('option');
         option.value = asset.id;
-        // --- THIS LINE HAS BEEN UPDATED ---
         option.textContent = `${asset.name} (Tag: ${asset.tag})`;
         assetSelect.appendChild(option);
     });
 
-    // Populate the Storage Location dropdown
     populateLocationDropdown(document.getElementById("partLocation"), "storage");
 
     if (partId) {
@@ -895,7 +852,6 @@ export function showPartModal(partId = null) {
             document.getElementById("partCurrency").value = part.currency;
             document.getElementById("partLocation").value = part.locationId;
             
-            // Pre-select related assets if they exist
             if (part.relatedAssets) {
                 Array.from(assetSelect.options).forEach(option => {
                     if (part.relatedAssets.includes(option.value)) {
@@ -909,10 +865,6 @@ export function showPartModal(partId = null) {
     }
     document.getElementById("partModal").style.display = "flex";
 }
-
-// In js/ui.js
-
-// In js/ui.js
 
 export function showWorkOrderModal(woId = null) {
     const form = document.getElementById("workOrderForm");
@@ -942,8 +894,6 @@ export function showWorkOrderModal(woId = null) {
             document.getElementById("woAssignedTo").value = wo.assignedTo;
             document.getElementById("woTask").value = wo.task;
             
-            // --- THIS IS THE FIX ---
-            // This line was missing. It populates the start date field when editing.
             document.getElementById("woStartDate").value = wo.start_date;
             
             document.getElementById("woDueDate").value = wo.dueDate;
@@ -982,19 +932,15 @@ export async function showEditUserModal(userId) {
     const user = state.cache.users.find(u => u.id === userId);
     if (!user) return;
 
-    // --- START: FIX ---
     const modal = document.getElementById('editUserModal');
     const roleSelect = document.getElementById('editUserRole');
     const permissionsContainer = document.getElementById('userPermissionsContainer');
 
     const allRoles = ['Manager', 'Supervisor', 'Engineer', 'Technician', 'Clerk'];
-    // If the current user is an Admin, they can also assign the 'Admin' role.
     const availableRoles = state.currentUser.role === 'Admin' ? ['Admin', ...allRoles] : allRoles;
 
-    // Populate the dropdown with only the roles the current user is allowed to assign.
     roleSelect.innerHTML = availableRoles.map(role => `<option value="${role}">${role}</option>`).join('');
-    
-    // Set static user info
+
     document.getElementById('editUserId').value = user.id;
     document.getElementById('editUserFullName').textContent = user.fullName;
     roleSelect.value = user.role;
@@ -1003,16 +949,14 @@ export async function showEditUserModal(userId) {
     modal.style.display = 'flex';
 
     try {
-        // Fetch all required data in parallel
         const [permissionData, userPermissions] = await Promise.all([
-            api.getPermissions(), // Fetches the new object with 'all' and 'roles'
+            api.getPermissions(),
             api.getUserPermissions(userId)
         ]);
         
         const allPermissions = permissionData.all;
         const roleDefaults = permissionData.roles;
 
-        // Build the checkbox HTML from the master list
         let permissionsHtml = '';
         for (const key in allPermissions) {
             const label = allPermissions[key];
@@ -1034,10 +978,8 @@ export async function showEditUserModal(userId) {
             const newRole = e.target.value;
             const newRoleDefaults = roleDefaults[newRole] || [];
             
-            // Go through each checkbox
             document.querySelectorAll('#userPermissionsContainer input[type="checkbox"]').forEach(checkbox => {
                 const permissionKey = checkbox.dataset.key;
-                // Check the box if the permission key is in the new role's default list
                 checkbox.checked = newRoleDefaults.includes(permissionKey);
             });
         });
@@ -1049,7 +991,7 @@ export async function showEditUserModal(userId) {
 
 export function addChecklistItem(text, containerId) {
     const container = document.getElementById(containerId);
-    if (!container) return; // Exit if the container doesn't exist
+    if (!container) return;
 
     const itemDiv = document.createElement("div");
     itemDiv.className = "flex items-center gap-2 checklist-item";
@@ -1117,13 +1059,11 @@ export function populateLocationDropdown(selectElement, type = "all") {
 export function showCompleteWorkOrderModal(workOrder) {
     if (!workOrder) return;
     
-    // Set the hidden ID and the title in the modal
     document.getElementById('completeWorkOrderId').value = workOrder.id;
     document.getElementById('completeWoTitle').textContent = workOrder.title;
 
-    // Populate the checklist for confirmation
     const checklistContainer = document.getElementById('completeWoChecklist');
-    checklistContainer.innerHTML = ''; // Clear previous items
+    checklistContainer.innerHTML = '';
     if (workOrder.checklist && workOrder.checklist.length > 0) {
         workOrder.checklist.forEach(item => {
             const itemEl = document.createElement('div');
@@ -1138,23 +1078,17 @@ export function showCompleteWorkOrderModal(workOrder) {
         checklistContainer.innerHTML = '<p class="text-gray-500">No checklist items for this work order.</p>';
     }
 
-    // Clear previous notes and show the modal
     document.getElementById('completionNotes').value = '';
     document.getElementById('completeWorkOrderModal').style.display = 'flex';
 }
-
-// --- ADD ALL OF THE FOLLOWING FUNCTIONS TO THE END OF YOUR UI.JS FILE ---
 
 export function showPartDetailModal(part) {
     if (!part) return;
     const contentEl = document.getElementById('partDetailContent');
     const locationName = getFullLocationName(part.locationId);
     
-    // --- THIS IS THE FIX ---
-    // Get the array of asset IDs and convert them all from strings to numbers.
     const relatedAssetIds = (part.relatedAssets || []).map(id => Number(id));
 
-    // Now, find the full asset objects by comparing numbers to numbers.
     const relatedAssets = state.cache.assets.filter(asset => 
         relatedAssetIds.includes(asset.id)
     );
@@ -1225,7 +1159,6 @@ export function showPartRequestModal() {
         newPartContainer.classList.toggle('hidden', !checkbox.checked);
         existingPartContainer.classList.toggle('hidden', checkbox.checked);
     });
-    // Reset state
     checkbox.checked = false;
     newPartContainer.classList.add('hidden');
     existingPartContainer.classList.remove('hidden');
@@ -1238,14 +1171,11 @@ export function showStorageRequestModal() {
      partSelect.innerHTML = '<option value="">Select a part...</option>' + state.cache.parts
         .filter(p => p.quantity > 0)
         .map(p => `<option value="${p.id}">${p.name} (SKU: ${p.sku}) (In Stock: ${p.quantity})</option>`).join('');
-
-    // --- START: MODIFICATION ---
+    
     const assetSelect = document.getElementById('storageRequestAssetId');
-    // Filter assets the current user can view (i.e., in their department)
     const viewableAssets = state.cache.assets.filter(can.view);
     assetSelect.innerHTML = '<option value="">None / General Purpose</option>' + viewableAssets
         .map(a => `<option value="${a.id}">${a.name} (Tag: ${a.tag})</option>`).join('');
-    // --- END: MODIFICATION ---
 
     document.getElementById('storageRequestModal').style.display = 'flex';
 }
@@ -1292,7 +1222,6 @@ export async function showRestockPartsModal() {
     const existingPartSelector = document.getElementById('existingPartSelector');
     const newPartInputs = document.getElementById('newPartInputs');
     
-    // --- Get all the relevant input elements once ---
     const restockPartIdInput = document.getElementById('restockPartId');
     const directStockPartIdInput = document.getElementById('directStockPartId');
     const directStockQuantityInput = document.getElementById('directStockQuantity');
@@ -1315,12 +1244,9 @@ export async function showRestockPartsModal() {
         fromRequestContainer.style.display = isRequestMode ? 'block' : 'none';
         directStockContainer.style.display = isRequestMode ? 'none' : 'block';
 
-        // --- UPDATE THIS LOGIC TO INCLUDE .disabled ---
-        // Toggle fields for "From Request" mode
         restockPartIdInput.required = isRequestMode;
         restockPartIdInput.disabled = !isRequestMode;
 
-        // Toggle fields for "Direct Stock" mode
         directStockPartIdInput.required = !isRequestMode;
         directStockPartIdInput.disabled = isRequestMode;
         directStockQuantityInput.required = !isRequestMode;
@@ -1348,9 +1274,7 @@ export async function showRestockPartsModal() {
     setMode('request');
     document.getElementById('restockPartsModal').style.display = 'flex';
 }
-// This function was also missing from your original ui.js
 export function populateLocationDropdowns(divisionSelect, departmentSelect, data = null) {
-    // If no specific data is passed, use the cached state. Otherwise, use the provided data.
     const locationData = data || state.cache.locations;
     const { divisions = [], departments = [] } = locationData || {};
 
@@ -1407,8 +1331,6 @@ export function renderInventoryReportPage() {
     `;
 }
 
-// js/ui.js
-
 export function showPartRequestDetailModal(req) {
     const contentEl = document.getElementById('partRequestDetailContent');
     if (!req) {
@@ -1438,19 +1360,16 @@ export function showPartRequestDetailModal(req) {
 export function showEditPartRequestModal(req) {
     if (!req) return;
     
-    // Reset and configure the main request modal for editing
     const modal = document.getElementById('partRequestModal');
     modal.querySelector('h2').textContent = 'Edit Part Request';
     
     const form = document.getElementById('partRequestForm');
     form.reset();
 
-    // Hide the "new part" functionality for editing
     document.getElementById('requestNewPartCheckbox').closest('div').style.display = 'none';
     document.getElementById('newPartContainer').classList.add('hidden');
     document.getElementById('existingPartContainer').classList.remove('hidden');
 
-    // Populate form with existing data
     document.getElementById('partRequestId').value = req.id;
     document.getElementById('requestPartId').value = req.partId;
     document.getElementById('requestQuantity').value = req.quantity;
@@ -1458,8 +1377,6 @@ export function showEditPartRequestModal(req) {
 
     modal.style.display = 'flex';
 }
-
-// In js/ui.js
 
 export function renderPmSchedulesPage() {
     const schedules = state.cache.pmSchedules || [];
@@ -1506,21 +1423,18 @@ export function renderPmSchedulesPage() {
                 const assetName = state.cache.assets.find(a => a.id === s.assetId)?.name || 'N/A';
                 const openWoForSchedule = openWorkOrders.find(wo => wo.pm_schedule_id === s.id);
                 
-                // --- START: New Date and Status Logic ---
                 let nextStartDateStr = calculateNextPmDate(s);
                 let nextDueDateStr = 'N/A';
                 let status = s.is_active ? 'Active' : 'Inactive';
                 
                 if (openWoForSchedule) {
-                    // If a WO already exists, use its dates and status
                     nextStartDateStr = openWoForSchedule.start_date;
                     nextDueDateStr = openWoForSchedule.dueDate;
                     status = openWoForSchedule.status;
                 } else if (s.is_active) {
-                    // If no WO exists yet, calculate the next due date based on the buffer
                     const nextStartDate = new Date(nextStartDateStr + 'T00:00:00');
                     if (!isNaN(nextStartDate.getTime())) {
-                        const bufferDays = s.due_date_buffer || 7; // Default to 7 days if no buffer is set
+                        const bufferDays = s.due_date_buffer || 7;
                         nextStartDate.setDate(nextStartDate.getDate() + bufferDays);
                         nextDueDateStr = nextStartDate.toISOString().split('T')[0];
                     }
@@ -1528,7 +1442,6 @@ export function renderPmSchedulesPage() {
                 
                 const followingPmDate = calculateNextPmDate({ ...s, last_generated_date: nextStartDateStr });
                 const statusColorClass = statusColors[status] || 'bg-gray-200';
-                // --- END: New Date and Status Logic ---
 
                 const frequencyText = `${s.frequency_interval} ${s.frequency_unit}(s)`;
 
@@ -1553,12 +1466,10 @@ export function renderPmSchedulesPage() {
     `;
 }
 
-// This function now correctly handles the new flexible frequency and due date buffer fields.
 export function showPmScheduleModal(schedule = null) {
     const form = document.getElementById("pmScheduleForm");
     form.reset();
     
-    // Clear the new containers
     document.getElementById("pmChecklistContainer").innerHTML = "";
     document.getElementById("pmPartsContainer").innerHTML = "";
     
@@ -1590,7 +1501,6 @@ export function showPmScheduleModal(schedule = null) {
         document.getElementById("pmDescription").value = schedule.description;
         document.getElementById('pmIsActive').checked = !!schedule.is_active;
 
-        // Populate existing checklist and parts
         if (schedule.checklist && schedule.checklist.length > 0) {
             schedule.checklist.forEach(item => addChecklistItem(item.text, 'pmChecklistContainer'));
         }
@@ -1614,10 +1524,7 @@ export function showPmScheduleDetailModal(schedule) {
     const asset = state.cache.assets.find(a => a.id === schedule.assetId);
     const assignedUser = state.cache.users.find(u => u.id === schedule.assignedTo);
     
-    // --- THIS IS THE FIX ---
-    // Use the new flexible frequency fields to create the display text.
     const frequencyText = `${schedule.frequency_interval} ${schedule.frequency_unit}(s)`;
-    // Call the updated function to correctly calculate the next PM date.
     const nextPmDate = calculateNextPmDate(schedule);
 
     contentEl.innerHTML = `
@@ -1637,7 +1544,6 @@ export function showPmScheduleDetailModal(schedule) {
     document.getElementById('pmScheduleDetailModal').style.display = 'flex';
 }
 
-// THIS IS A NEW HELPER FUNCTION
 function renderPageHeader(title, buttons = []) {
   return `
     <div class="flex justify-between items-center mb-6">
@@ -1685,7 +1591,6 @@ export function showUploadModal(type) {
     const instructions = document.getElementById('uploadInstructions');
     const resultDiv = document.getElementById('uploadResult');
 
-    // Reset modal state
     instructions.style.display = 'block';
     resultDiv.style.display = 'none';
     resultDiv.innerHTML = '';
@@ -1702,8 +1607,6 @@ export function showUploadModal(type) {
 
     modal.style.display = 'flex';
 }
-
-// js/ui.js
 
 export function renderStockTakePage() {
     const header = renderPageHeader("Stock Take Sessions", [
@@ -1752,8 +1655,6 @@ export function renderStockTakePage() {
     `;
 }
 
-// js/ui.js
-
 export function renderStockTakeCountPage(items, details) {
     const canApprove = state.currentUser.permissions.stock_take_approve;
     const isPending = details.status === 'Pending Approval';
@@ -1770,8 +1671,6 @@ export function renderStockTakeCountPage(items, details) {
         buttons.push('<button id="approveStockTakeBtn" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded"><i class="fas fa-check mr-2"></i>Approve & Adjust Inventory</button>');
     }
     
-    // --- START: FIX ---
-    // The h1 tag now includes the necessary class and data-id for the event listeners to work.
     const header = `
       <div class="flex justify-between items-center mb-6">
           <h1 class="text-3xl font-bold page-header-title" data-id="${details.id}">Stock Take Session #${details.id}</h1>
@@ -1780,7 +1679,6 @@ export function renderStockTakeCountPage(items, details) {
           </div>
       </div>
     `;
-    // --- END: FIX ---
 
     return `
         ${header}
@@ -1821,16 +1719,17 @@ export function showFeedbackModal() {
     document.getElementById('feedbackModal').style.display = 'flex';
 }
 
-// js/ui.js
-
+// --- START: MODIFICATION ---
 export function renderFeedbackPage() {
     const toggleButtonText = state.showArchivedFeedback ? 'Hide Archived' : 'Show Archived';
+    // Add the refresh button to the header
     const header = renderPageHeader("Feedback Inbox", [
+        '<button id="refreshDataBtn" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded"><i class="fas fa-sync-alt mr-2"></i>Refresh</button>',
         `<button id="toggleArchivedFeedbackBtn" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded">${toggleButtonText}</button>`
     ]);
     
     const feedbackList = (state.cache.feedback || [])
-        .filter(item => state.showArchivedFeedback || item.status !== 'Archived'); // Filter based on state
+        .filter(item => state.showArchivedFeedback || item.status !== 'Archived');
 
     const statusStyles = {
         'New': 'border-blue-500',
@@ -1860,12 +1759,12 @@ export function renderFeedbackPage() {
         </div>
     `;
 }
+// --- END: MODIFICATION ---
 
 export function renderStatusChart(statusCounts) {
     const ctx = document.getElementById('woStatusChart');
-    if (!ctx) return; // Exit if the canvas element isn't on the page
+    if (!ctx) return;
 
-    // If a chart instance already exists, destroy it before creating a new one
     if (state.charts.statusChart) {
         state.charts.statusChart.destroy();
     }
@@ -1874,14 +1773,13 @@ export function renderStatusChart(statusCounts) {
     const data = Object.values(statusCounts);
 
     const chartColors = {
-        'Open': '#3B82F6', // blue-500
-        'In Progress': '#F59E0B', // amber-500
-        'On Hold': '#F97316', // orange-500
-        'Completed': '#16A34A', // green-600
-        'Delay': '#EF4444', // red-500
+        'Open': '#3B82F6',
+        'In Progress': '#F59E0B',
+        'On Hold': '#F97316',
+        'Completed': '#16A34A',
+        'Delay': '#EF4444',
     };
     
-    // Create a new chart instance and store it in the state
     state.charts.statusChart = new Chart(ctx, {
         type: 'doughnut',
         data: {
@@ -1889,7 +1787,7 @@ export function renderStatusChart(statusCounts) {
             datasets: [{
                 label: 'Work Orders',
                 data: data,
-                backgroundColor: labels.map(label => chartColors[label] || '#6B7280'), // gray-500 for others
+                backgroundColor: labels.map(label => chartColors[label] || '#6B7280'),
                 hoverOffset: 4
             }]
         },
@@ -1901,20 +1799,17 @@ export function renderStatusChart(statusCounts) {
                     position: 'top',
                 },
                 datalabels: {
-                    color: '#fff', // White text
+                    color: '#fff',
                     textAlign: 'center',
                     font: {
                         weight: 'bold',
                         size: 14,
                     },
-                    // This function formats the text that appears on the chart
                     formatter: (value, context) => {
                         const label = context.chart.data.labels[context.dataIndex];
-                        // If the value is 0, don't show a label
                         if (value === 0) {
                             return null;
                         }
-                        // Use \n to create a new line between the name and the value
                         return `${label}\n${value}`;
                     }
                 }
