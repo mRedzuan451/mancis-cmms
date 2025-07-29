@@ -24,7 +24,9 @@ export function renderDashboard() {
 
   const upcomingPMs = workOrders.filter(wo => {
       if (wo.wo_type !== 'PM' || wo.status === 'Completed') return false;
-      const woStartDate = new Date(wo.start_date);
+      // By adding 'T00:00:00', we ensure the date is parsed in the user's local timezone,
+      // making the comparison with 'today' accurate.
+      const woStartDate = new Date(wo.start_date + 'T00:00:00');
       return woStartDate >= today && woStartDate <= sevenDaysFromNow;
   }).sort((a, b) => new Date(a.start_date) - new Date(b.start_date));
   
