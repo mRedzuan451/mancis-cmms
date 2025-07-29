@@ -5,7 +5,6 @@
  * CORRECTED with full CORS and session headers.
  */
 
-// --- START: FIX ---
 // This entire block of headers and session configuration is required.
 
 // 1. SET UP CORS AND HANDLE PREFLIGHT REQUEST

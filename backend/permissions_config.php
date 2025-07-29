@@ -6,7 +6,7 @@ $permissions = [
     'asset_create' => 'Create Assets',
     'asset_edit'   => 'Edit Assets',
     'asset_delete' => 'Delete Assets',
-    'asset_transfer' => 'Transfer Assets to New Locations', // <-- ADD THIS
+    'asset_transfer' => 'Transfer Assets to New Locations',
 
     'part_view'    => 'View Parts',
     'part_create'  => 'Create Parts',
@@ -46,8 +46,6 @@ $permissions = [
     'report_kpi_view'     => 'View maintenance KPI reports',
 ];
 
-// --- THIS IS THE FIX ---
-// This defines the DEFAULT set of permissions for each role.
 $role_permissions = [
     'Admin' => array_keys($permissions), // Admins get all permissions
 
