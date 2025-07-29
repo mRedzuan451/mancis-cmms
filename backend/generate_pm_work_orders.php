@@ -40,7 +40,17 @@ foreach ($schedules as $schedule) {
         $next_pm_date->modify("+$interval $unit");
     }
 
-    if ($today >= $next_pm_date) {
+    // --- START: ISSUE FIX ---
+    // Before generating, check if an open work order for this schedule already exists.
+    $stmt_check = $conn->prepare("SELECT id FROM workorders WHERE pm_schedule_id = ? AND status NOT IN ('Completed', 'Cancelled')");
+    $stmt_check->bind_param("i", $schedule['id']);
+    $stmt_check->execute();
+    $existing_wo_result = $stmt_check->get_result();
+    $stmt_check->close();
+
+    // Only proceed if today is on or after the next PM date AND no open WO exists.
+    if ($today >= $next_pm_date && $existing_wo_result->num_rows === 0) {
+    // --- END: ISSUE FIX ---
         $conn->begin_transaction();
         try {
             $new_start_date_str = $next_pm_date->format('Y-m-d');
@@ -50,8 +60,10 @@ foreach ($schedules as $schedule) {
             $wo_priority = 'Medium';
             $wo_status = 'Open';
             $wo_type = 'PM';
-            $checklistJson = '[]';
-            $requiredPartsJson = '[]';
+            
+            // Get checklist and parts from the schedule itself
+            $checklistJson = $schedule['checklist'] ?? '[]';
+            $requiredPartsJson = $schedule['requiredParts'] ?? '[]';
             
             $frequency_text = "{$schedule['frequency_interval']} {$schedule['frequency_unit']}(s)";
 
