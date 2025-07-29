@@ -1,7 +1,5 @@
 <?php
 
-require_once 'auth_check.php';
-
 header("Access-Control-Allow-Origin: *");
 header("Content-Type: application/json; charset=UTF-8");
 header("Access-Control-Allow-Methods: POST");
@@ -18,7 +16,6 @@ if ($conn->connect_error) {
 
 $data = json_decode(file_get_contents("php://input"));
 
-// More complete validation based on what the form sends
 if (
     empty($data->fullName) || empty($data->employeeId) || empty($data->username) || 
     empty($data->password) || empty($data->role) || !isset($data->divisionId) || !isset($data->departmentId)
@@ -28,7 +25,6 @@ if (
     exit();
 }
 
-// Check if username already exists
 $stmt_check = $conn->prepare("SELECT id FROM users WHERE username = ?");
 $stmt_check->bind_param("s", $data->username);
 $stmt_check->execute();
@@ -42,22 +38,20 @@ if ($result->num_rows > 0) {
 }
 $stmt_check->close();
 
-// --- KEY CHANGE: Hash the password before storing ---
-// This takes the plain password from the form and creates a secure hash.
 $hashedPassword = password_hash($data->password, PASSWORD_DEFAULT);
 
 // Insert new user with the HASHED password
-$stmt = $conn->prepare("INSERT INTO users (fullName, employeeId, username, password, role, divisionId, departmentId) VALUES (?, ?, ?, ?, ?, ?, ?)");
-$stmt->bind_param("sssssii", 
+$stmt = $conn->prepare("INSERT INTO users (fullName, employeeId, username, password, role, divisionId, departmentId, email, contact_number) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+$stmt->bind_param("sssssiiss", 
     $data->fullName, 
     $data->employeeId, 
     $data->username, 
     $hashedPassword, // Use the new $hashedPassword variable here
-    $data->email, // New field
-    $data->contact_number,
     $data->role,
     $data->divisionId,
-    $data->departmentId
+    $data->departmentId,
+    $data->email,
+    $data->contact_number
 );
 
 if ($stmt->execute()) {
