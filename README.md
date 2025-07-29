@@ -7,66 +7,41 @@ Core Functionality
 The system is divided into several key modules, each with specific features and access levels based on user roles.
 
 Dashboard
-+ At-a-Glance KPIs
-- Displays key performance indicators like open work orders, pending part requests, and low-stock items.
-+ Work Order Status Chart
-- Visualizes the current status of all work orders in a doughnut chart.
-+ Upcoming & Overdue WO Lists
-- Highlights upcoming Preventive Maintenance (PM) tasks and alerts for overdue work orders.
-+ Inventory & Cost Reports
-- Generates detailed reports on inventory movement and maintenance costs for a selected date range.
-+ KPI Reports
-- Calculates and displays key maintenance metrics like Mean Time To Repair (MTTR) and Mean Time Between Failures (MTBF).
++ At-a-Glance KPIs - Displays key performance indicators like open work orders, pending part requests, and low-stock items.
++ Work Order Status Chart - Visualizes the current status of all work orders in a doughnut chart.
++ Upcoming & Overdue WO Lists - Highlights upcoming Preventive Maintenance (PM) tasks and alerts for overdue work orders.
++ Inventory & Cost Reports - Generates detailed reports on inventory movement and maintenance costs for a selected date range.
++ KPI Reports - Calculates and displays key maintenance metrics like Mean Time To Repair (MTTR) and Mean Time Between Failures (MTBF).
 
 Assets management
-+ Centralized Asset Registry
-- Create, read, update, and delete (CRUD) operations for all company assets, including machinery and equipment.
-+ Asset Hierarchy & Location
-- Assign assets to specific, multi-level locations (e.g., Division > Department > Production Line).
-+ Status Tracking
-- Track the status of assets (e.g., Active, Inactive, Decommissioned).
-+ Bulk Upload
-- Upload and update a list of assets from a CSV file.
-+ History Tracking
-- View a complete history of work orders and transfers for each asset.
++ Centralized Asset Registry - Create, read, update, and delete (CRUD) operations for all company assets, including machinery and equipment.
++ Asset Hierarchy & Location - Assign assets to specific, multi-level locations (e.g., Division > Department > Production Line).
++ Status Tracking - Track the status of assets (e.g., Active, Inactive, Decommissioned).
++ Bulk Upload - Upload and update a list of assets from a CSV file.
++ History Tracking - View a complete history of work orders and transfers for each asset.
 
 Inventory & Parts
-+ Spare Parts Database
-- Full CRUD operations for all spare parts, including details like SKU, maker, supplier, and price.
-+ Low-Stock Alerts
-- Automatically identifies parts that have fallen below their minimum quantity threshold.
-+ Automated Part Requests
-- Automatically generates purchase requests for low-stock items that do not already have an open request.
-+ Multi-Step Request Workflow
-- A complete workflow: Request -> Approve/Reject -> Receive -> Restock.
-+ Stock Take Module
-- Initiate, perform, and approve physical stock counts to reconcile system quantities with actual on-hand inventory.
++ Spare Parts Database - Full CRUD operations for all spare parts, including details like SKU, maker, supplier, and price.
++ Low-Stock Alerts - Automatically identifies parts that have fallen below their minimum quantity threshold.
++ Automated Part Requests - Automatically generates purchase requests for low-stock items that do not already have an open request.
++ Multi-Step Request Workflow - A complete workflow: Request -> Approve/Reject -> Receive -> Restock.
++ Stock Take Module - Initiate, perform, and approve physical stock counts to reconcile system quantities with actual on-hand inventory.
 
 Work Order Management
-+ Corrective & Preventive WOs
-- Create both reactive (Corrective) and scheduled (Preventive) work orders.
-+ Task & Checklist Management
-- Assign specific tasks (e.g., Inspection, Replacement) and create detailed checklists for each work order.
-+ Assignment & Scheduling
-- Assign work orders to specific users (Technicians, Engineers) and set start/due dates.
-+ Calendar View
-- Visualize all scheduled work orders on a monthly calendar, color-coded by priority and status.
-+ Automated PM Generation
-- Automatically create work orders based on pre-defined PM schedules (e.g., weekly, monthly).
++ Corrective & Preventive WOs - Create both reactive (Corrective) and scheduled (Preventive) work orders.
++ Task & Checklist Management - Assign specific tasks (e.g., Inspection, Replacement) and create detailed checklists for each work order.
++ Assignment & Scheduling - Assign work orders to specific users (Technicians, Engineers) and set start/due dates.
++ Calendar View - Visualize all scheduled work orders on a monthly calendar, color-coded by priority and status.
++ Automated PM Generation - Automatically create work orders based on pre-defined PM schedules (e.g., weekly, monthly).
 
 User & Location Mgmt.
-+ Role-Based Access Control
-- A granular permission system controls user access to every feature (e.g., view, create, edit, delete).
-+ User Management
-- Admins can create, edit, and delete user accounts and assign roles (e.g., Admin, Manager, Technician).
-+ Hierarchical Location Management
-- Admins can define the physical and storage location hierarchy of the entire facility.
++ Role-Based Access Control - A granular permission system controls user access to every feature (e.g., view, create, edit, delete).
++ User Management - Admins can create, edit, and delete user accounts and assign roles (e.g., Admin, Manager, Technician).
++ Hierarchical Location Management - Admins can define the physical and storage location hierarchy of the entire facility.
 
 Administrative
-+ Activity Log
-- Records all significant user actions, providing a complete audit trail for accountability.
-+ Feedback System
-- Allows any user to send feedback, suggestions, or bug reports directly to the system administrator.
++ Activity Log - Records all significant user actions, providing a complete audit trail for accountability.
++ Feedback System - Allows any user to send feedback, suggestions, or bug reports directly to the system administrator.
 
 How It Operates
 ManCIS is a classic client-server web application built with a focus on simplicity and maintainability.
