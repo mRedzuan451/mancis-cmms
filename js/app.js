@@ -486,6 +486,21 @@ async function handlePartRequestFormSubmit(e) {
     const requestId = document.getElementById('partRequestId').value;
     const isEditing = !!requestId;
 
+    // --- START: MODIFICATION ---
+    const assetId = document.getElementById('requestAssetId').value;
+    const purposeText = document.getElementById('requestPurpose').value;
+    let finalPurpose = purposeText;
+
+    // Only add asset info on creation, not when editing an existing request.
+    if (assetId && !isEditing) {
+        const asset = state.cache.assets.find(a => a.id === parseInt(assetId));
+        if (asset) {
+            // Prepend the asset information to the purpose
+            finalPurpose = `For asset "${asset.name}": ${purposeText}`;
+        }
+    }
+    // --- END: MODIFICATION ---
+
     try {
         if (isEditing) {
             const requestData = {
@@ -500,7 +515,7 @@ async function handlePartRequestFormSubmit(e) {
             let requestData = {
                 partId: isNewPart ? null : parseInt(document.getElementById('requestPartId').value),
                 quantity: parseInt(document.getElementById('requestQuantity').value),
-                purpose: document.getElementById('requestPurpose').value,
+                purpose: finalPurpose, // Use the modified purpose string
                 requesterId: state.currentUser.id,
                 requestDate: new Date().toISOString().slice(0, 19).replace('T', ' '),
                 status: 'Requested',

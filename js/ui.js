@@ -1152,6 +1152,13 @@ export function showPartRequestModal() {
     partSelect.innerHTML = state.cache.parts
         .map(p => `<option value="${p.id}">${p.name} (SKU: ${p.sku})</option>`).join('');
 
+    // --- START: MODIFICATION ---
+    const assetSelect = document.getElementById('requestAssetId');
+    const viewableAssets = state.cache.assets.filter(can.view);
+    assetSelect.innerHTML = '<option value="">None / General Purpose</option>' + viewableAssets
+        .map(a => `<option value="${a.id}">${a.name} (Tag: ${a.tag})</option>`).join('');
+    // --- END: MODIFICATION ---
+
     const checkbox = document.getElementById('requestNewPartCheckbox');
     const newPartContainer = document.getElementById('newPartContainer');
     const existingPartContainer = document.getElementById('existingPartContainer');
@@ -1159,6 +1166,7 @@ export function showPartRequestModal() {
         newPartContainer.classList.toggle('hidden', !checkbox.checked);
         existingPartContainer.classList.toggle('hidden', checkbox.checked);
     });
+    // Reset state
     checkbox.checked = false;
     newPartContainer.classList.add('hidden');
     existingPartContainer.classList.remove('hidden');

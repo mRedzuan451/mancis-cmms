@@ -862,18 +862,28 @@
           </div>
 
           <div class="mb-4">
-            <label
-              for="requestPurpose"
-              class="block text-sm font-medium text-gray-700"
-              >Purpose</label
-            >
-            <textarea
-              id="requestPurpose"
-              rows="2"
-              class="w-full mt-1 px-3 py-2 border rounded"
-              placeholder="e.g., For urgent repair of Asset-X"
-              required
-            ></textarea>
+              <label for="requestAssetId" class="block text-sm font-medium text-gray-700">
+                  For Asset (Optional)
+              </label>
+              <select id="requestAssetId" class="w-full mt-1 px-3 py-2 border rounded">
+                  <option value="">None / General Purpose</option>
+                  <!-- Asset options will be populated by JavaScript -->
+              </select>
+          </div>
+
+          <div class="mb-4">
+              <label
+                for="requestPurpose"
+                class="block text-sm font-medium text-gray-700"
+                >Purpose / Notes</label
+              >
+              <textarea
+                id="requestPurpose"
+                rows="2"
+                class="w-full mt-1 px-3 py-2 border rounded"
+                placeholder="e.g., For urgent repair of Asset-X"
+                required
+              ></textarea>
           </div>
 
           <div class="mt-6 flex justify-end space-x-4">
