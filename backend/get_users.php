@@ -12,37 +12,27 @@ if ($conn->connect_error) {
     exit();
 }
 
+$user_role = $_SESSION['user_role'];
+$user_department_id = $_SESSION['user_department_id'];
+
+$sql = "";
 // Select all fields EXCEPT the password for security
-$sql = "SELECT id, fullName, employeeId, username, email, contact_number, role, divisionId, departmentId FROM users ORDER BY fullName ASC";
-$result = $conn->query($sql);
+$base_sql = "SELECT id, fullName, employeeId, username, email, contact_number, role, divisionId, departmentId FROM users";
 
-// **DEBUGGING STEP 2: Check for query errors**
-if (!$result) {
-    // If you see this, the SQL query itself is wrong (e.g., table name typo).
-    http_response_code(500);
-    echo json_encode([
-        "message" => "SQL Query Failed",
-        "error" => $conn->error,
-        "query" => $sql
-    ]);
-    exit();
+if ($user_role === 'Admin') {
+    // Admin gets all users
+    $sql = "$base_sql ORDER BY fullName ASC";
+    $stmt = $conn->prepare($sql);
+} else {
+    // Non-Admins (like Managers) only see users within their own department.
+    $sql = "$base_sql WHERE departmentId = ? ORDER BY fullName ASC";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("i", $user_department_id);
 }
 
-// **DEBUGGING STEP 3: Check the number of rows found**
-if ($result->num_rows === 0) {
-    // If you see this, the query worked but found no data.
-    // This is the most likely current problem. It means you are connected to the wrong database
-    // or the 'users' table in this 'mancis_db' is actually empty.
-    http_response_code(200); // It's not an error, just empty
-    echo json_encode([
-        "message" => "Query successful, but no users were found in the database.",
-        "query" => $sql,
-        "rows_found" => $result->num_rows
-    ]);
-    exit();
-}
+$stmt->execute();
+$result = $stmt->get_result();
 
-// If the script reaches here, it means data was found.
 $output_array = array();
 while($row = $result->fetch_assoc()) {
     $row['id'] = intval($row['id']);
@@ -51,6 +41,7 @@ while($row = $result->fetch_assoc()) {
     $output_array[] = $row;
 }
 
+$stmt->close();
 $conn->close();
 echo json_encode($output_array);
 ?>

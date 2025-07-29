@@ -56,7 +56,7 @@ $role_permissions = [
         'wo_view', 'wo_create', 'wo_edit',
         'part_request_view', 'part_request_create', 'part_request_approve', 'part_request_delete',
         'pm_schedule_view', 'pm_schedule_create', 'pm_schedule_delete',
-        'user_view',
+        'user_view','user_edit',
         'location_management',
         'report_view',
         'stock_take_create', 'stock_take_approve',

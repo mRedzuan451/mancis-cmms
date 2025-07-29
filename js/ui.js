@@ -521,25 +521,26 @@ export function generateTableRows(type, data) {
               </tr>`;
           }).join("");
       case "users":
-        // Only show the edit and delete buttons if the current user is an Admin
-        const showAdminActions = state.currentUser.role === 'Admin';
-        return data.map((user) => `
-              <tr class="border-b hover:bg-gray-50">
-                  <td class="p-2"><input type="checkbox" class="row-checkbox" data-id="${user.id}"></td>
-                  <td class="p-2">${user.fullName}</td>
-                  <td class="p-2">${user.username}</td>
-                  <td class="p-2">${user.role}</td>
-                  <td class="p-2">${getUserDepartment(user)}</td>
-                  <td class="p-2 space-x-2">
-                      ${showAdminActions && user.id !== 1 ? `
-                          <button class="edit-user-btn text-yellow-500 hover:text-yellow-700" data-id="${user.id}" title="Edit Role"><i class="fas fa-user-shield"></i></button>
-                      ` : ''}
-                      ${showAdminActions && user.id !== state.currentUser.id && user.id !== 1 ? `
-                          <button class="delete-user-btn text-red-500 hover:text-red-700" data-id="${user.id}" title="Delete User"><i class="fas fa-trash"></i></button>
-                      ` : ""}
-                  </td>
-              </tr>`).join("");
-      // js/ui.js --> inside generateTableRows()
+    // Show the edit button if the current user has the 'user_edit' permission.
+    const canEditUsers = state.currentUser.permissions.user_edit;
+    return data.map((user) => `
+          <tr class="border-b hover:bg-gray-50">
+              <td class="p-2"><input type="checkbox" class="row-checkbox" data-id="${user.id}"></td>
+              <td class="p-2">${user.fullName}</td>
+              <td class="p-2">${user.username}</td>
+              <td class="p-2">${user.role}</td>
+              <td class="p-2">${getUserDepartment(user)}</td>
+              <td class="p-2 space-x-2">
+                  ${// Show edit button if user has permission AND the target user is not the primary admin.
+                    canEditUsers && user.id !== 1 ? `
+                      <button class="edit-user-btn text-yellow-500 hover:text-yellow-700" data-id="${user.id}" title="Edit Role"><i class="fas fa-user-shield"></i></button>
+                  ` : ''}
+                  ${// Admin-only delete button logic remains the same.
+                    state.currentUser.role === 'Admin' && user.id !== state.currentUser.id && user.id !== 1 ? `
+                      <button class="delete-user-btn text-red-500 hover:text-red-700" data-id="${user.id}" title="Delete User"><i class="fas fa-trash"></i></button>
+                  ` : ""}
+              </td>
+          </tr>`).join("");
 
       case "partRequests":
         const prStatusColors = { 
@@ -965,6 +966,13 @@ export async function showEditUserModal(userId) {
     const roleSelect = document.getElementById('editUserRole');
     const permissionsContainer = document.getElementById('userPermissionsContainer');
 
+    const allRoles = ['Manager', 'Supervisor', 'Engineer', 'Technician', 'Clerk'];
+    // If the current user is an Admin, they can also assign the 'Admin' role.
+    const availableRoles = state.currentUser.role === 'Admin' ? ['Admin', ...allRoles] : allRoles;
+
+    // Populate the dropdown with only the roles the current user is allowed to assign.
+    roleSelect.innerHTML = availableRoles.map(role => `<option value="${role}">${role}</option>`).join('');
+    
     // Set static user info
     document.getElementById('editUserId').value = user.id;
     document.getElementById('editUserFullName').textContent = user.fullName;
@@ -1001,8 +1009,6 @@ export async function showEditUserModal(userId) {
         }
         permissionsContainer.innerHTML = permissionsHtml;
 
-        // --- ADD THIS EVENT LISTENER ---
-        // This is the core of the fix. It runs whenever the dropdown changes.
         roleSelect.addEventListener('change', (e) => {
             const newRole = e.target.value;
             const newRoleDefaults = roleDefaults[newRole] || [];
@@ -1018,7 +1024,6 @@ export async function showEditUserModal(userId) {
     } catch (error) {
         permissionsContainer.innerHTML = `<p class="text-red-500">Error loading permissions: ${error.message}</p>`;
     }
-    // --- END: FIX ---
 }
 
 export function addChecklistItem(text, containerId) {
