@@ -2,7 +2,7 @@
 
 import { state } from './config.js';
 import { can } from './auth.js';
-import { api } from './api.js'; // <-- ADD THIS LINE
+import { api } from './api.js';
 import { getFullLocationName, getUserDepartment, showTemporaryMessage, calculateNextPmDate } from './utils.js';
 
 // Each function that creates a page view is now exported.
@@ -24,8 +24,6 @@ export function renderDashboard() {
 
   const upcomingPMs = workOrders.filter(wo => {
       if (wo.wo_type !== 'PM' || wo.status === 'Completed') return false;
-      // By adding 'T00:00:00', we ensure the date is parsed in the user's local timezone,
-      // making the comparison with 'today' accurate.
       const woStartDate = new Date(wo.start_date + 'T00:00:00');
       return woStartDate >= today && woStartDate <= sevenDaysFromNow;
   }).sort((a, b) => new Date(a.start_date) - new Date(b.start_date));
@@ -94,8 +92,6 @@ export function renderDashboard() {
     </div>`;
 }
 
-// js/ui.js
-
 export function renderAssetsPage() {
     const assets = state.cache.assets;
 
@@ -138,7 +134,6 @@ export function renderPartsPage() {
         '<button id="addPartBtn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded"><i class="fas fa-plus mr-2"></i>Add Parts</button>'
     ]);
     
-    // Conditionally add the Department header for Admins
     const departmentHeader = state.currentUser.role === 'Admin' 
         ? '<th class="p-2 text-left cursor-pointer" data-sort="departmentName">Department <i class="fas fa-sort"></i></th>' 
         : '';
@@ -167,7 +162,6 @@ export function renderPartsPage() {
 export function renderWorkOrdersPage() {
     const workOrders = state.cache.workOrders.filter(can.view);
 
-    // Add the "Delete Selected" button
     const header = renderPageHeader("Work Order Management", [
         '<button id="deleteSelectedBtn" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded hidden"><i class="fas fa-trash-alt mr-2"></i>Delete Selected</button>',
         '<button id="addWorkOrderBtn" class="bg-blue-500 text-white font-bold py-2 px-4 rounded"><i class="fas fa-plus mr-2"></i>Create Corrective WO</button>'
@@ -290,9 +284,7 @@ export function renderWorkOrderCalendar() {
         calendarHtml += `<div class="calendar-day other-month"></div>`;
     }
     calendarHtml += `</div></div>`;
-
-    // --- START: MODIFICATION ---
-    // Add the legend HTML after the calendar grid.
+    
     calendarHtml += `
         <div class="mt-6 p-4 bg-white rounded-lg shadow">
             <h3 class="text-lg font-bold mb-3">Legend</h3>
@@ -316,7 +308,6 @@ export function renderWorkOrderCalendar() {
             </div>
         </div>
     `;
-    // --- END: MODIFICATION ---
     
     return calendarHtml;
 }
@@ -1181,12 +1172,10 @@ export function showPartRequestModal() {
     partSelect.innerHTML = state.cache.parts
         .map(p => `<option value="${p.id}">${p.name} (SKU: ${p.sku})</option>`).join('');
 
-    // --- START: MODIFICATION ---
     const assetSelect = document.getElementById('requestAssetId');
     const viewableAssets = state.cache.assets.filter(can.view);
     assetSelect.innerHTML = '<option value="">None / General Purpose</option>' + viewableAssets
         .map(a => `<option value="${a.id}">${a.name} (Tag: ${a.tag})</option>`).join('');
-    // --- END: MODIFICATION ---
 
     const checkbox = document.getElementById('requestNewPartCheckbox');
     const newPartContainer = document.getElementById('newPartContainer');
@@ -1195,7 +1184,6 @@ export function showPartRequestModal() {
         newPartContainer.classList.toggle('hidden', !checkbox.checked);
         existingPartContainer.classList.toggle('hidden', checkbox.checked);
     });
-    // Reset state
     checkbox.checked = false;
     newPartContainer.classList.add('hidden');
     existingPartContainer.classList.remove('hidden');
@@ -1203,42 +1191,47 @@ export function showPartRequestModal() {
     document.getElementById('partRequestModal').style.display = 'flex';
 }
 
-export function showStorageRequestModal() {
-     const partSelect = document.getElementById('storageRequestPartId');
-     partSelect.innerHTML = '<option value="">Select a part...</option>' + state.cache.parts
-        .filter(p => p.quantity > 0)
-        .map(p => `<option value="${p.id}">${p.name} (SKU: ${p.sku}) (In Stock: ${p.quantity})</option>`).join('');
-    
-    const assetSelect = document.getElementById('storageRequestAssetId');
-    const viewableAssets = state.cache.assets.filter(can.view);
-    assetSelect.innerHTML = '<option value="">None / General Purpose</option>' + viewableAssets
-        .map(a => `<option value="${a.id}">${a.name} (Tag: ${a.tag})</option>`).join('');
+// --- START: MODIFICATION ---
+export async function showStorageRequestModal() {
+    try {
+        showTemporaryMessage("Loading latest part quantities...");
+        // Fetch fresh part data and update the cache
+        state.cache.parts = await api.getParts();
+    } catch (error) {
+        showTemporaryMessage("Could not load latest parts list.", true);
+        return; // Stop if the data can't be loaded
+    }
 
-    document.getElementById('storageRequestModal').style.display = 'flex';
-}
+    const partSelect = document.getElementById('storageRequestPartId');
+    partSelect.innerHTML = '<option value="">Select a part...</option>' + state.cache.parts
+       .filter(p => p.quantity > 0)
+       .map(p => `<option value="${p.id}">${p.name} (SKU: ${p.sku}) (In Stock: ${p.quantity})</option>`).join('');
+   
+   const assetSelect = document.getElementById('storageRequestAssetId');
+   const viewableAssets = state.cache.assets.filter(can.view);
+   assetSelect.innerHTML = '<option value="">None / General Purpose</option>' + viewableAssets
+       .map(a => `<option value="${a.id}">${a.name} (Tag: ${a.tag})</option>`).join('');
 
-export function showReceivePartsModal() {
-    const requestSelect = document.getElementById('receiveRequestId');
-    const approvedRequests = state.cache.partRequests.filter(pr => pr.status === 'Approved' && can.view(pr));
-    requestSelect.innerHTML = '<option value="">Select an approved request...</option>' + approvedRequests.map(pr => {
-        const partName = pr.newPartName || state.cache.parts.find(p => p.id === pr.partId)?.name;
-        return `<option value="${pr.id}">Request #${pr.id} - ${pr.quantity} x ${partName}</option>`
-    }).join('');
-    document.getElementById('receivePartsModal').style.display = 'flex';
+   document.getElementById('storageRequestModal').style.display = 'flex';
 }
 
 export async function showRestockPartsModal() {
     try {
         showTemporaryMessage("Loading received parts...");
-        state.cache.receivedParts = await api.getReceivedParts();
+        // Fetch both received parts and the main parts list to ensure data is fresh
+        const [receivedParts, allParts] = await Promise.all([
+            api.getReceivedParts(),
+            api.getParts()
+        ]);
+        state.cache.receivedParts = receivedParts;
+        state.cache.parts = allParts;
     } catch (error) {
-        showTemporaryMessage("Failed to load received parts.", true);
+        showTemporaryMessage("Failed to load parts data.", true);
         return;
     }
 
     const requestSelect = document.getElementById('restockPartId');
-    const receivedParts = state.cache.receivedParts;
-    requestSelect.innerHTML = '<option value="">Select received parts...</option>' + receivedParts.map(rp => {
+    requestSelect.innerHTML = '<option value="">Select received parts...</option>' + state.cache.receivedParts.map(rp => {
         const partName = rp.newPartName || state.cache.parts.find(p => p.id === rp.partId)?.name;
         return `<option value="${rp.id}">Received #${rp.id} - ${rp.quantity} x ${partName}</option>`
     }).join('');
@@ -1311,6 +1304,8 @@ export async function showRestockPartsModal() {
     setMode('request');
     document.getElementById('restockPartsModal').style.display = 'flex';
 }
+// --- END: MODIFICATION ---
+
 export function populateLocationDropdowns(divisionSelect, departmentSelect, data = null) {
     const locationData = data || state.cache.locations;
     const { divisions = [], departments = [] } = locationData || {};
@@ -1756,10 +1751,8 @@ export function showFeedbackModal() {
     document.getElementById('feedbackModal').style.display = 'flex';
 }
 
-// --- START: MODIFICATION ---
 export function renderFeedbackPage() {
     const toggleButtonText = state.showArchivedFeedback ? 'Hide Archived' : 'Show Archived';
-    // Add the refresh button to the header
     const header = renderPageHeader("Feedback Inbox", [
         '<button id="refreshDataBtn" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded"><i class="fas fa-sync-alt mr-2"></i>Refresh</button>',
         `<button id="toggleArchivedFeedbackBtn" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded">${toggleButtonText}</button>`
@@ -1796,7 +1789,6 @@ export function renderFeedbackPage() {
         </div>
     `;
 }
-// --- END: MODIFICATION ---
 
 export function renderStatusChart(statusCounts) {
     const ctx = document.getElementById('woStatusChart');
