@@ -2078,3 +2078,20 @@ export function renderCostChart(reportData) {
         }
     });
 }
+
+export function showReceivePartsModal() {
+    const requestSelect = document.getElementById('receiveRequestId');
+    
+    // Filter the part requests to show only those that are 'Approved'
+    // and that the current user has permission to view.
+    const approvedRequests = state.cache.partRequests.filter(pr => pr.status === 'Approved' && can.view(pr));
+    
+    // Populate the dropdown with the filtered list of approved requests.
+    requestSelect.innerHTML = '<option value="">Select an approved request...</option>' + approvedRequests.map(pr => {
+        const partName = pr.newPartName || state.cache.parts.find(p => p.id === pr.partId)?.name;
+        return `<option value="${pr.id}">Request #${pr.id} - ${pr.quantity} x ${partName}</option>`
+    }).join('');
+    
+    // Display the modal.
+    document.getElementById('receivePartsModal').style.display = 'flex';
+}
