@@ -5,54 +5,16 @@ import { can } from './auth.js';
 import { api } from './api.js';
 import { getFullLocationName, getUserDepartment, showTemporaryMessage, calculateNextPmDate } from './utils.js';
 
-// Each function that creates a page view is now exported.
-export {
-    renderSidebar,
-    renderDashboard,
-    renderAssetsPage,
-    renderPartsPage,
-    renderWorkOrdersPage,
-    renderUserManagementPage,
-    renderWorkOrderCalendar,
-    renderLocationsPage,
-    renderActivityLogPage,
-    renderPartsRequestPage,
-    renderPmSchedulesPage,
-    renderInventoryReportPage,
-    renderStockTakePage,
-    renderStockTakeCountPage,
-    renderFeedbackPage,
-    generateTableRows,
-    showAssetModal,
-    showPartModal,
-    showWorkOrderModal,
-    showEditUserModal,
-    showCalendarDetailModal,
-    populateLocationDropdown,
-    populateLocationDropdowns,
-    showAssetDetailModal,
-    showPartDetailModal,
-    showWorkOrderDetailModal,
-    showPartRequestDetailModal,
-    showEditPartRequestModal,
-    showTransferAssetModal,
-    showCompleteWorkOrderModal,
-    showPartRequestModal,
-    showStorageRequestModal,
-    showReceivePartsModal, // This was the missing export
-    showRestockPartsModal,
-    showPmScheduleModal,
-    showPmScheduleDetailModal,
-    showFeedbackModal,
-    renderStatusChart,
-    addChecklistItem,
-    addPmPartRow,
-    showUploadModal,
-    renderCostReportPage,
-    renderKpiReportPage,
-    renderInventoryChart,
-    renderCostChart,
-};
+function renderPageHeader(title, buttons = []) {
+  return `
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="text-3xl font-bold">${title}</h1>
+        <div class="space-x-2">
+            ${buttons.join('\n')}
+        </div>
+    </div>
+  `;
+}
 
 export function renderDashboard() {
   const assets = state.cache.assets.filter(can.view);
@@ -84,7 +46,6 @@ export function renderDashboard() {
   return `
     <h1 class="text-3xl font-bold mb-6">Dashboard</h1>
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        
         <div class="bg-white p-6 rounded-lg shadow cursor-pointer hover:bg-gray-50 dashboard-kpi-box" data-page="assets">
             <h3 class="text-gray-500">Total Assets</h3>
             <p class="text-3xl font-bold">${assets.length}</p>
@@ -101,8 +62,7 @@ export function renderDashboard() {
             <h3 class="text-gray-500">Low Stock Items</h3>
             <p class="text-3xl font-bold">${lowStockItems}</p>
         </div>
-        </div>
-    
+    </div>
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div class="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-8">
              <div>
@@ -129,7 +89,6 @@ export function renderDashboard() {
                 </div>
             </div>
         </div>
-        
         <div>
             <h2 class="text-2xl font-bold mb-4">Work Order Status</h2>
             <div class="bg-white p-4 rounded-lg shadow" style="height: 350px;">
@@ -141,14 +100,12 @@ export function renderDashboard() {
 
 export function renderAssetsPage() {
     const assets = state.cache.assets;
-
     const header = renderPageHeader("Asset Management", [
         '<button id="deleteSelectedBtn" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded hidden"><i class="fas fa-trash-alt mr-2"></i>Delete Selected</button>',
         '<button id="uploadAssetsBtn" class="bg-teal-500 hover:bg-teal-600 text-white font-bold py-2 px-4 rounded"><i class="fas fa-upload mr-2"></i>Upload List</button>',
         '<button id="printAssetListBtn" class="bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-2 px-4 rounded"><i class="fas fa-print mr-2"></i>Print List</button>',
         '<button id="addAssetBtn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded"><i class="fas fa-plus mr-2"></i>Add Asset</button>'
     ]);
-
     return `
       ${header}
       <div class="bg-white p-4 rounded-lg shadow">
@@ -156,7 +113,6 @@ export function renderAssetsPage() {
           <input type="text" id="assetSearch" class="w-full mb-4 px-3 py-2 border rounded" placeholder="Search by name, tag, or category...">
           <div class="overflow-x-auto">
               <table class="w-full" id="assetTable">
-                  
                   <thead><tr class="border-b">
                       <th class="p-2 w-4"><input type="checkbox" id="selectAllCheckbox"></th>
                       <th class="p-2 text-left cursor-pointer" data-sort="name">Name <i class="fas fa-sort"></i></th>
@@ -166,25 +122,22 @@ export function renderAssetsPage() {
                       <th class="p-2 text-left">Actions</th>
                   </tr></thead>
                   <tbody id="assetTableBody">${generateTableRows("assets", assets)}</tbody>
-                  </table>
+              </table>
           </div>
       </div>`;
 }
 
 export function renderPartsPage() {
     const parts = state.cache.parts;
-    
     const header = renderPageHeader("Spare Parts Management", [
         '<button id="deleteSelectedBtn" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded hidden"><i class="fas fa-trash-alt mr-2"></i>Delete Selected</button>',
         '<button id="uploadPartsBtn" class="bg-teal-500 hover:bg-teal-600 text-white font-bold py-2 px-4 rounded"><i class="fas fa-upload mr-2"></i>Upload List</button>',
         '<button id="printPartListBtn" class="bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-2 px-4 rounded"><i class="fas fa-print mr-2"></i>Print List</button>',
         '<button id="addPartBtn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded"><i class="fas fa-plus mr-2"></i>Add Parts</button>'
     ]);
-    
     const departmentHeader = state.currentUser.role === 'Admin' 
         ? '<th class="p-2 text-left cursor-pointer" data-sort="departmentName">Department <i class="fas fa-sort"></i></th>' 
         : '';
-
     return `
       ${header}
       <div class="bg-white p-4 rounded-lg shadow">
@@ -201,19 +154,17 @@ export function renderPartsPage() {
                       <th class="p-2 text-left">Actions</th>
                   </tr></thead>
                   <tbody id="partTableBody">${generateTableRows("parts", parts)}</tbody>
-                  </table>
+              </table>
           </div>
       </div>`;
 }
 
 export function renderWorkOrdersPage() {
     const workOrders = state.cache.workOrders.filter(can.view);
-
     const header = renderPageHeader("Work Order Management", [
         '<button id="deleteSelectedBtn" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded hidden"><i class="fas fa-trash-alt mr-2"></i>Delete Selected</button>',
         '<button id="addWorkOrderBtn" class="bg-blue-500 text-white font-bold py-2 px-4 rounded"><i class="fas fa-plus mr-2"></i>Create Corrective WO</button>'
     ]);
-
     return `
       ${header}
       <div class="mb-4 border-b border-gray-200">
@@ -241,17 +192,14 @@ export function renderWorkOrdersPage() {
 
 export function renderUserManagementPage() {
     const users = state.cache.users;
-    
     const header = renderPageHeader("User Management", [
         '<button id="addUserBtn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded"><i class="fas fa-user-plus mr-2"></i>Add User</button>',
         '<button id="deleteSelectedBtn" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded hidden"><i class="fas fa-trash-alt mr-2"></i>Delete Selected</button>',
         '<button id="refreshDataBtn" class="bg-gray-500 text-white font-bold py-2 px-4 rounded"><i class="fas fa-sync-alt mr-2"></i>Refresh</button>'
     ]);
-
     return `
       ${header}
       <div class="bg-white p-4 rounded-lg shadow">
-          
           <input type="text" id="userSearch" class="w-full mb-4 px-3 py-2 border rounded" placeholder="Search by Name, Username, Role, or Department...">
           <div class="overflow-x-auto">
               <table class="w-full" id="userTable">
@@ -968,7 +916,7 @@ export function showWorkOrderModal(woId = null) {
             document.getElementById("woPriority").value = wo.priority;
             document.getElementById("woStatus").value = wo.status;
             if (wo.checklist && wo.checklist.length > 0) {
-                wo.checklist.forEach((item) => addChecklistItem(item.text));
+                wo.checklist.forEach((item) => addChecklistItem(item.text, 'woChecklistContainer'));
             }
             if (wo.requiredParts && wo.requiredParts.length > 0) {
                 document.getElementById("woPartsSection").style.display = "block";
@@ -1238,15 +1186,13 @@ export function showPartRequestModal() {
     document.getElementById('partRequestModal').style.display = 'flex';
 }
 
-// --- START: MODIFICATION ---
 export async function showStorageRequestModal() {
     try {
         showTemporaryMessage("Loading latest part quantities...");
-        // Fetch fresh part data and update the cache
         state.cache.parts = await api.getParts();
     } catch (error) {
         showTemporaryMessage("Could not load latest parts list.", true);
-        return; // Stop if the data can't be loaded
+        return;
     }
 
     const partSelect = document.getElementById('storageRequestPartId');
@@ -1262,10 +1208,19 @@ export async function showStorageRequestModal() {
    document.getElementById('storageRequestModal').style.display = 'flex';
 }
 
+export async function showReceivePartsModal() {
+    const requestSelect = document.getElementById('receiveRequestId');
+    const approvedRequests = state.cache.partRequests.filter(pr => pr.status === 'Approved' && can.view(pr));
+    requestSelect.innerHTML = '<option value="">Select an approved request...</option>' + approvedRequests.map(pr => {
+        const partName = pr.newPartName || state.cache.parts.find(p => p.id === pr.partId)?.name;
+        return `<option value="${pr.id}">Request #${pr.id} - ${pr.quantity} x ${partName}</option>`
+    }).join('');
+    document.getElementById('receivePartsModal').style.display = 'flex';
+}
+
 export async function showRestockPartsModal() {
     try {
         showTemporaryMessage("Loading received parts...");
-        // Fetch both received parts and the main parts list to ensure data is fresh
         const [receivedParts, allParts] = await Promise.all([
             api.getReceivedParts(),
             api.getParts()
@@ -1351,8 +1306,6 @@ export async function showRestockPartsModal() {
     setMode('request');
     document.getElementById('restockPartsModal').style.display = 'flex';
 }
-// --- END: MODIFICATION ---
-
 export function populateLocationDropdowns(divisionSelect, departmentSelect, data = null) {
     const locationData = data || state.cache.locations;
     const { divisions = [], departments = [] } = locationData || {};
@@ -1380,6 +1333,19 @@ export function renderInventoryReportPage() {
         </div>
         <div class="bg-white p-4 rounded-lg shadow mb-6">
             <form id="reportForm" class="flex items-end gap-4">
+
+                <div>
+                    <label for="dateRangeSelect" class="block text-sm font-medium text-gray-700">Date Range</label>
+                    <select id="dateRangeSelect" class="mt-1 px-3 py-2 border rounded w-full">
+                        <option value="custom">Custom Range</option>
+                        <option value="this-week">This Week</option>
+                        <option value="last-7-days">Last 7 Days</option>
+                        <option value="this-month">This Month</option>
+                        <option value="last-30-days">Last 30 Days</option>
+                        <option value="last-month">Last Month</option>
+                    </select>
+                </div>
+
                 <div>
                     <label for="startDate" class="block text-sm font-medium text-gray-700">Start Date</label>
                     <input type="date" id="startDate" value="${today}" class="mt-1 px-3 py-2 border rounded w-full">
@@ -1391,7 +1357,6 @@ export function renderInventoryReportPage() {
                 <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded">Generate Report</button>
             </form>
         </div>
-
         <div id="reportResultContainer" class="grid grid-cols-1 lg:grid-cols-5 gap-6">
             <div class="lg:col-span-3 bg-white p-4 rounded-lg shadow">
                 <div id="reportTableContainer">
@@ -1405,7 +1370,7 @@ export function renderInventoryReportPage() {
                 </div>
             </div>
         </div>
-        `;
+    `;
 }
 
 export function showPartRequestDetailModal(req) {
@@ -1619,17 +1584,6 @@ export function showPmScheduleDetailModal(schedule) {
         <p><strong>Description:</strong> ${schedule.description || 'None'}</p>
     `;
     document.getElementById('pmScheduleDetailModal').style.display = 'flex';
-}
-
-function renderPageHeader(title, buttons = []) {
-  return `
-    <div class="flex justify-between items-center mb-6">
-        <h1 class="text-3xl font-bold">${title}</h1>
-        <div class="space-x-2">
-            ${buttons.join('\n')}
-        </div>
-    </div>
-  `;
 }
 
 export function addPmPartRow(selectedPartId = "", quantity = 1) {
@@ -1914,7 +1868,6 @@ export function renderCostReportPage() {
                 <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded">Generate Report</button>
             </form>
         </div>
-        
         <div id="reportResultContainer" class="grid grid-cols-1 lg:grid-cols-5 gap-6">
             <div class="lg:col-span-3 bg-white p-4 rounded-lg shadow">
                 <div id="costTableContainer">
@@ -1928,7 +1881,7 @@ export function renderCostReportPage() {
                 </div>
             </div>
         </div>
-        `;
+    `;
 }
 
 export function renderKpiReportPage() {
@@ -1959,10 +1912,6 @@ export function renderKpiReportPage() {
     `;
 }
 
-/**
- * Renders an interactive bar chart for the inventory report.
- * @param {Array} reportData The data from the get_inventory_report API.
- */
 export function renderInventoryChart(reportData) {
     const ctx = document.getElementById('inventoryChart');
     if (!ctx) return;
@@ -1971,7 +1920,6 @@ export function renderInventoryChart(reportData) {
         state.charts.inventoryChart.destroy();
     }
 
-    // Sort data by total value and take the top 10
     const topParts = reportData
         .sort((a, b) => b.total_value - a.total_value)
         .slice(0, 10);
@@ -1992,12 +1940,12 @@ export function renderInventoryChart(reportData) {
             }]
         },
         options: {
-            indexAxis: 'y', // Makes the bar chart horizontal
+            indexAxis: 'y',
             responsive: true,
             maintainAspectRatio: false,
             plugins: {
                 legend: {
-                    display: false // Hide legend for a cleaner look
+                    display: false
                 }
             },
             scales: {
@@ -2013,10 +1961,6 @@ export function renderInventoryChart(reportData) {
     });
 }
 
-/**
- * Renders an interactive pie chart for the cost report.
- * @param {Array} reportData The data from the get_cost_report API.
- */
 export function renderCostChart(reportData) {
     const ctx = document.getElementById('costChart');
     if (!ctx) return;
@@ -2025,7 +1969,6 @@ export function renderCostChart(reportData) {
         state.charts.costChart.destroy();
     }
 
-    // Aggregate costs by department
     const costsByDept = reportData.reduce((acc, item) => {
         const dept = item.departmentName || 'Uncategorized';
         acc[dept] = (acc[dept] || 0) + item.totalCost;
@@ -2077,21 +2020,4 @@ export function renderCostChart(reportData) {
             }
         }
     });
-}
-
-export function showReceivePartsModal() {
-    const requestSelect = document.getElementById('receiveRequestId');
-    
-    // Filter the part requests to show only those that are 'Approved'
-    // and that the current user has permission to view.
-    const approvedRequests = state.cache.partRequests.filter(pr => pr.status === 'Approved' && can.view(pr));
-    
-    // Populate the dropdown with the filtered list of approved requests.
-    requestSelect.innerHTML = '<option value="">Select an approved request...</option>' + approvedRequests.map(pr => {
-        const partName = pr.newPartName || state.cache.parts.find(p => p.id === pr.partId)?.name;
-        return `<option value="${pr.id}">Request #${pr.id} - ${pr.quantity} x ${partName}</option>`
-    }).join('');
-    
-    // Display the modal.
-    document.getElementById('receivePartsModal').style.display = 'flex';
 }
