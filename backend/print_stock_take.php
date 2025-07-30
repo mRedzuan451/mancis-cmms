@@ -7,8 +7,25 @@ authorize('stock_take_create', $conn);
 
 $id = isset($_GET['id']) ? intval($_GET['id']) : 0;
 
-// --- START: FIX ---
-// This new SQL query joins all the location tables to build the full name directly.
+// --- START: MODIFICATION ---
+// 1. Get the Department Name for the Stock Take session.
+$departmentName = 'N/A';
+$stmt_dept = $conn->prepare(
+    "SELECT d.name as deptName 
+     FROM stock_takes st
+     JOIN users u ON st.creator_id = u.id
+     JOIN departments d ON u.departmentId = d.id
+     WHERE st.id = ?"
+);
+$stmt_dept->bind_param("i", $id);
+$stmt_dept->execute();
+$dept_result = $stmt_dept->get_result()->fetch_assoc();
+if ($dept_result) {
+    $departmentName = $dept_result['deptName'];
+}
+$stmt_dept->close();
+// --- END: MODIFICATION ---
+
 $sql = "SELECT 
             p.name, 
             p.sku, 
@@ -33,15 +50,19 @@ $sql = "SELECT
             sti.stock_take_id = ? 
         ORDER BY 
             p.name ASC";
-// --- END: FIX ---
         
 $stmt = $conn->prepare($sql);
 $stmt->bind_param("i", $id);
 $stmt->execute();
 $result = $stmt->get_result();
 
+// --- START: MODIFICATION ---
+// 2. Add the Department Name to the HTML header.
 $html = "<h1>Stock Take Counting Sheet (ID: $id)</h1>";
-$html .= "<p>Date Printed: " . date('Y-m-d H:i') . "</p>";
+$html .= "<p><strong>Department:</strong> " . htmlspecialchars($departmentName) . "</p>";
+$html .= "<p><strong>Date Printed:</strong> " . date('Y-m-d H:i') . "</p>";
+// --- END: MODIFICATION ---
+
 $html .= "<table border='1' style='width:100%; border-collapse: collapse;'><thead><tr>
     <th style='padding: 5px; text-align: left;'>Part Name</th>
     <th style='padding: 5px; text-align: left;'>SKU</th>
@@ -52,10 +73,7 @@ $html .= "<table border='1' style='width:100%; border-collapse: collapse;'><thea
     </tr></thead><tbody>";
 
 while ($row = $result->fetch_assoc()) {
-    // --- START: FIX ---
-    // We now get the location name directly from our new SQL query.
     $locationName = $row['fullLocationName'] ?? 'N/A';
-    // --- END: FIX ---
     
     $counted_qty = $row['counted_qty'] ?? 0;
     $variance = $counted_qty - $row['system_qty'];
