@@ -290,6 +290,33 @@ export function renderWorkOrderCalendar() {
         calendarHtml += `<div class="calendar-day other-month"></div>`;
     }
     calendarHtml += `</div></div>`;
+
+    // --- START: MODIFICATION ---
+    // Add the legend HTML after the calendar grid.
+    calendarHtml += `
+        <div class="mt-6 p-4 bg-white rounded-lg shadow">
+            <h3 class="text-lg font-bold mb-3">Legend</h3>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                <div>
+                    <h4 class="font-semibold mb-2">Priority (Background)</h4>
+                    <div class="space-y-1">
+                        <div class="flex items-center"><div class="w-4 h-4 rounded-full bg-red-100 mr-2"></div> High</div>
+                        <div class="flex items-center"><div class="w-4 h-4 rounded-full bg-yellow-100 mr-2"></div> Medium</div>
+                        <div class="flex items-center"><div class="w-4 h-4 rounded-full bg-blue-100 mr-2"></div> Low</div>
+                    </div>
+                </div>
+                <div>
+                    <h4 class="font-semibold mb-2">Status (Dot)</h4>
+                    <div class="space-y-1">
+                        <div class="flex items-center"><div class="w-3 h-3 rounded-full bg-green-500 mr-2"></div> Completed</div>
+                        <div class="flex items-center"><div class="w-3 h-3 rounded-full bg-yellow-500 mr-2"></div> Pending</div>
+                        <div class="flex items-center"><div class="w-3 h-3 rounded-full bg-red-500 mr-2"></div> Delayed</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    // --- END: MODIFICATION ---
     
     return calendarHtml;
 }
