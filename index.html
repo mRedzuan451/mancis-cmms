@@ -188,10 +188,27 @@
             </div>
           </div>
           <div id="userInfo" class="p-4 border-b border-gray-700">
-            <p id="userFullName" class="font-semibold"></p>
-            <p id="userRole" class="text-sm text-gray-400"></p>
-            <p id="userDepartment" class="text-sm text-gray-400"></p>
-          </div>
+            <div class="flex justify-between items-center">
+                <div>
+                    <p id="userFullName" class="font-semibold"></p>
+                    <p id="userRole" class="text-sm text-gray-400"></p>
+                </div>
+                <div class="relative">
+                    <button id="notificationBellBtn" class="relative text-gray-400 hover:text-white">
+                        <i class="fas fa-bell fa-lg"></i>
+                        <span id="notificationBadge" class="absolute -top-2 -right-2 h-5 w-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center border-2 border-gray-800 hidden"></span>
+                    </button>
+                    <div id="notificationPanel" class="absolute right-0 mt-2 w-80 bg-white rounded-md shadow-lg z-20 hidden">
+                        <div class="p-3 border-b border-gray-200">
+                            <h3 class="font-semibold text-gray-700">Notifications</h3>
+                        </div>
+                        <div id="notificationList" class="max-h-96 overflow-y-auto">
+                            </div>
+                    </div>
+                </div>
+            </div>
+            <p id="userDepartment" class="text-sm text-gray-400 mt-1"></p>
+            </div>
         </div>
 
         <nav id="navMenu" class="p-4 space-y-2 overflow-y-auto"></nav>

@@ -171,7 +171,7 @@ async function loadAndRender() {
     }
     render();
     await checkForLowStockAndCreateRequests();
-    await checkForNotifications();
+    await fetchAndDisplayNotifications();
 }
 
 async function refreshAllDataAndRender() {
@@ -1602,6 +1602,32 @@ function attachGlobalEventListeners() {
             }
         }
     });
+    document.getElementById('notificationBellBtn').addEventListener('click', async () => {
+        const panel = document.getElementById('notificationPanel');
+        const badge = document.getElementById('notificationBadge');
+        const isOpen = !panel.classList.contains('hidden');
+
+        if (isOpen) {
+            panel.classList.add('hidden');
+        } else {
+            panel.classList.remove('hidden');
+            // When the panel is opened, mark the notifications as read
+            const unreadCount = parseInt(badge.textContent);
+            if (unreadCount > 0) {
+                const notifications = await api.getNotifications();
+                const idsToMarkAsRead = notifications.map(n => n.id);
+                await api.markNotificationsRead({ ids: idsToMarkAsRead });
+                badge.classList.add('hidden');
+            }
+        }
+    });
+    document.addEventListener('click', (e) => {
+        const panel = document.getElementById('notificationPanel');
+        const bell = document.getElementById('notificationBellBtn');
+        if (!panel.classList.contains('hidden') && !panel.contains(e.target) && !bell.contains(e.target)) {
+            panel.classList.add('hidden');
+        }
+    });
 
     // Form Submissions
     document.getElementById("assetForm").addEventListener("submit", handleAssetFormSubmit);
@@ -1801,6 +1827,37 @@ async function loadAndRenderStockTakeDetails(stockTakeId) {
     }
 }
 
+async function fetchAndDisplayNotifications() {
+    try {
+        const notifications = await api.getNotifications();
+        const badge = document.getElementById('notificationBadge');
+        const list = document.getElementById('notificationList');
+
+        if (notifications && notifications.length > 0) {
+            badge.textContent = notifications.length;
+            badge.classList.remove('hidden');
+
+            list.innerHTML = notifications.map(req => {
+                const partName = req.newPartName || `request #${req.id}`;
+                const isRejected = req.status === 'Rejected';
+                const message = `Your request for <strong>${partName}</strong> has been <strong>${req.status}</strong>.`;
+                
+                return `
+                    <div class="p-3 text-sm text-gray-600 border-b border-gray-100 hover:bg-gray-50">
+                        <p class="${isRejected ? 'text-red-600' : ''}">${message}</p>
+                        <p class="text-xs text-gray-400 mt-1">${new Date(req.approvalDate || req.requestDate).toLocaleString()}</p>
+                    </div>
+                `;
+            }).join('');
+        } else {
+            badge.classList.add('hidden');
+            list.innerHTML = '<p class="p-4 text-sm text-gray-500">No new notifications.</p>';
+        }
+    } catch (error) {
+        console.error("Failed to fetch notifications:", error);
+    }
+}
+
 // js/app.js
 
 // --- APPLICATION INITIALIZATION ---
@@ -1809,4 +1866,6 @@ document.addEventListener("DOMContentLoaded", () => {
     render();
     const refreshInterval = 5 * 60 * 1000; 
     setInterval(refreshAllDataAndRender, refreshInterval);
+    const notificationInterval = 30 * 1000;
+    setInterval(fetchAndDisplayNotifications, notificationInterval);
 });
