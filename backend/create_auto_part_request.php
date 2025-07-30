@@ -29,6 +29,7 @@ $conn->begin_transaction();
 try {
     // --- START: FIX ---
     // 1. Check if an open request already exists for this part.
+    // An open request is one that is not yet 'Completed' or 'Rejected'.
     $open_statuses = "'Requested', 'Approved', 'Received', 'Requested from Storage'";
     $stmt_check = $conn->prepare("SELECT id FROM partrequests WHERE partId = ? AND status IN ($open_statuses)");
     $stmt_check->bind_param("i", $partId);
@@ -36,7 +37,7 @@ try {
     $result = $stmt_check->get_result();
 
     if ($result->num_rows > 0) {
-        // 2. If a request exists, do nothing and report success.
+        // 2. If a request exists, do nothing and report success to prevent the frontend from showing an error.
         $stmt_check->close();
         http_response_code(200); // OK, not 201 Created
         echo json_encode(["message" => "An open request already exists for part ID: " . $partId]);
