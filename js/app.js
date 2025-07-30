@@ -171,16 +171,18 @@ async function loadAndRender() {
 }
 
 async function refreshAllDataAndRender() {
+    // Check if any modal is currently displayed by looking for the 'flex' style.
     const isModalOpen = !!document.querySelector('.modal[style*="display: flex"]');
     if (isModalOpen) {
-        console.log("Refresh skipped: a modal is open.");
-        return;
+        console.log("Auto-refresh skipped: a modal is open.");
+        return; // Abort the refresh if a modal is open to not interrupt the user.
     }
-    console.log("Refreshing data...");
+
+    console.log("Refreshing application data...");
     showTemporaryMessage("Refreshing data...");
     try {
-        await loadInitialData();
-        renderMainContent();
+        await loadInitialData(); // Reload all data from the backend
+        renderMainContent(); // Re-render only the main content area with the new data
         console.log("Data refreshed successfully.");
     } catch (error) {
         showTemporaryMessage("Failed to refresh data.", true);
@@ -1782,8 +1784,6 @@ async function loadAndRenderStockTakeDetails(stockTakeId) {
 document.addEventListener("DOMContentLoaded", () => {
     attachGlobalEventListeners();
     render();
-    // --- ADD THIS BLOCK FOR AUTOMATIC REFRESHING ---
-    // Set an interval to automatically refresh data every 5 minutes (300,000 milliseconds)
     const refreshInterval = 5 * 60 * 1000; 
     setInterval(refreshAllDataAndRender, refreshInterval);
 });
