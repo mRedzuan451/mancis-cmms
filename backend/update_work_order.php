@@ -1,7 +1,9 @@
 <?php
 require_once 'auth_check.php';
 require_once 'calendar_integration.php';
-authorize('wo_edit');
+
+// The permission key 'wo_edit' is appropriate for updating/completing work orders.
+authorize('wo_edit', $conn); 
 
 header("Content-Type: application/json; charset=UTF-8");
 date_default_timezone_set('Asia/Kuala_Lumpur');
@@ -23,7 +25,7 @@ $conn->begin_transaction();
 
 try {
     // --- START: FIX ---
-    // The logic has been restructured to be more reliable.
+    // The logic has been restructured for safety and clarity.
 
     // Step 1: Update the main work order details first.
     $checklistJson = json_encode($data->checklist);
@@ -47,10 +49,9 @@ try {
     }
     $stmt_update_wo->close();
 
-    // Step 2: If the status was just changed to 'Completed', run the special logic.
+    // Step 2: If the status was just changed to 'Completed', run the part consumption logic.
     if (isset($data->status) && $data->status === 'Completed') {
         
-        // Block for Part Consumption
         $requiredParts = $data->requiredParts ?? [];
         if (!empty($requiredParts) && is_array($requiredParts)) {
             $details_array = [];
@@ -59,13 +60,22 @@ try {
                 $partId = intval($part['partId']);
                 $qty_to_deduct = intval($part['quantity']);
                 
+                // This is the atomic, safe update. It will only succeed if quantity >= qty_to_deduct.
                 $stmt_update_part = $conn->prepare("UPDATE parts SET quantity = quantity - ? WHERE id = ? AND quantity >= ?");
                 if ($stmt_update_part === false) { throw new Exception("Failed to prepare part update statement."); }
                 $stmt_update_part->bind_param("iii", $qty_to_deduct, $partId, $qty_to_deduct);
                 $stmt_update_part->execute();
 
+                // Check if the update failed (i.e., not enough stock).
                 if ($stmt_update_part->affected_rows === 0) { 
-                    throw new Exception("Not enough stock for Part ID: $partId, or part not found."); 
+                    // Get the part name for a user-friendly error message.
+                    $partNameStmt = $conn->prepare("SELECT name FROM parts WHERE id = ?");
+                    $partNameStmt->bind_param("i", $partId);
+                    $partNameStmt->execute();
+                    $partName = $partNameStmt->get_result()->fetch_assoc()['name'] ?? "ID $partId";
+                    $partNameStmt->close();
+
+                    throw new Exception("Not enough stock for part: '$partName'. Work order completion cancelled."); 
                 }
                 $stmt_update_part->close();
                 $details_array[] = "$qty_to_deduct x PartID $partId";
@@ -79,8 +89,6 @@ try {
                 $log_stmt->close();
             }
         }
-
-        // Block for PM Re-generation (This logic can be added here if needed in the future)
     }
 
     // --- END: FIX ---
