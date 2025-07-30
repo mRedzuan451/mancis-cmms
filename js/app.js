@@ -1156,7 +1156,6 @@ function attachPageSpecificEventListeners(page) {
         document.querySelector('#addShelfForm')?.addEventListener('submit', handleLocationFormSubmit);
         document.querySelector('#addBoxForm')?.addEventListener('submit', handleLocationFormSubmit);
     } else if (page === 'inventoryReport') {
-        // --- Report Generation Logic ---
         document.getElementById('reportForm')?.addEventListener('submit', async (e) => {
             e.preventDefault();
             const startDate = document.getElementById('startDate').value;
@@ -1165,8 +1164,13 @@ function attachPageSpecificEventListeners(page) {
                 showTemporaryMessage("End Date cannot be before Start Date.", true);
                 return;
             }
-            const container = document.getElementById('reportResultContainer');
-            container.innerHTML = '<p>Generating report, please wait...</p>';
+            // --- START: MODIFICATION ---
+            const tableContainer = document.getElementById('reportTableContainer');
+            const chartContainer = document.getElementById('inventoryChartContainer');
+            tableContainer.innerHTML = '<p>Generating report, please wait...</p>';
+            chartContainer.innerHTML = '<canvas id="inventoryChart"></canvas>'; // Reset canvas
+            // --- END: MODIFICATION ---
+
             try {
                 const reportData = await api.getInventoryReport({ startDate, endDate });
                 let grandTotalValue = 0;
@@ -1204,13 +1208,18 @@ function attachPageSpecificEventListeners(page) {
                         </tr>
                     </tfoot></table>`;
                 
-                container.innerHTML = tableHTML;
+                tableContainer.innerHTML = tableHTML;
+                
+                // --- START: MODIFICATION ---
+                // Call the new chart rendering function
+                renderInventoryChart(reportData);
+                // --- END: MODIFICATION ---
                 
                 document.getElementById('printReportBtn').addEventListener('click', () => {
-                    printReport(`Inventory Report: ${startDate} to ${endDate}`, container.innerHTML);
+                    printReport(`Inventory Report: ${startDate} to ${endDate}`, tableContainer.innerHTML);
                 });
             } catch (error) {
-                container.innerHTML = `<p class="text-red-500">Error generating report: ${error.message}</p>`;
+                tableContainer.innerHTML = `<p class="text-red-500">Error generating report: ${error.message}</p>`;
             }
         });
     } else if (page === 'costReport') {
@@ -1218,8 +1227,12 @@ function attachPageSpecificEventListeners(page) {
             e.preventDefault();
             const startDate = document.getElementById('startDate').value;
             const endDate = document.getElementById('endDate').value;
-            const container = document.getElementById('reportResultContainer');
-            container.innerHTML = '<p>Generating cost report, please wait...</p>';
+            // --- START: MODIFICATION ---
+            const tableContainer = document.getElementById('costTableContainer');
+            const chartContainer = document.getElementById('costChartContainer');
+            tableContainer.innerHTML = '<p>Generating cost report, please wait...</p>';
+            chartContainer.innerHTML = '<canvas id="costChart"></canvas>'; // Reset canvas
+            // --- END: MODIFICATION ---
             
             try {
                 const reportData = await api.getCostReport({ startDate, endDate });
@@ -1251,9 +1264,15 @@ function attachPageSpecificEventListeners(page) {
                         </tr>
                     </tfoot></table>`;
                 
-                container.innerHTML = tableHTML;
+                tableContainer.innerHTML = tableHTML;
+
+                // --- START: MODIFICATION ---
+                // Call the new chart rendering function
+                renderCostChart(reportData);
+                // --- END: MODIFICATION ---
+
             } catch (error) {
-                container.innerHTML = `<p class="text-red-500">Error generating report: ${error.message}</p>`;
+                tableContainer.innerHTML = `<p class="text-red-500">Error generating report: ${error.message}</p>`;
             }
         });
     } else if (page === 'kpiReport') {

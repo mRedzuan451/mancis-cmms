@@ -1333,19 +1333,6 @@ export function renderInventoryReportPage() {
         </div>
         <div class="bg-white p-4 rounded-lg shadow mb-6">
             <form id="reportForm" class="flex items-end gap-4">
-
-                <div>
-                    <label for="dateRangeSelect" class="block text-sm font-medium text-gray-700">Date Range</label>
-                    <select id="dateRangeSelect" class="mt-1 px-3 py-2 border rounded w-full">
-                        <option value="custom">Custom Range</option>
-                        <option value="this-week">This Week</option>
-                        <option value="last-7-days">Last 7 Days</option>
-                        <option value="this-month">This Month</option>
-                        <option value="last-30-days">Last 30 Days</option>
-                        <option value="last-month">Last Month</option>
-                    </select>
-                </div>
-
                 <div>
                     <label for="startDate" class="block text-sm font-medium text-gray-700">Start Date</label>
                     <input type="date" id="startDate" value="${today}" class="mt-1 px-3 py-2 border rounded w-full">
@@ -1357,10 +1344,21 @@ export function renderInventoryReportPage() {
                 <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded">Generate Report</button>
             </form>
         </div>
-        <div id="reportResultContainer" class="bg-white p-4 rounded-lg shadow">
-            <p class="text-gray-500">Please select a date range and click "Generate Report".</p>
+
+        <div id="reportResultContainer" class="grid grid-cols-1 lg:grid-cols-5 gap-6">
+            <div class="lg:col-span-3 bg-white p-4 rounded-lg shadow">
+                <div id="reportTableContainer">
+                    <p class="text-gray-500">Please select a date range and click "Generate Report".</p>
+                </div>
+            </div>
+            <div class="lg:col-span-2 bg-white p-4 rounded-lg shadow">
+                <h2 class="text-xl font-bold mb-4">Top 10 Most Valuable Parts</h2>
+                <div id="inventoryChartContainer" style="height: 400px;">
+                    <canvas id="inventoryChart"></canvas>
+                </div>
+            </div>
         </div>
-    `;
+        `;
 }
 
 export function showPartRequestDetailModal(req) {
@@ -1869,10 +1867,21 @@ export function renderCostReportPage() {
                 <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded">Generate Report</button>
             </form>
         </div>
-        <div id="reportResultContainer" class="bg-white p-4 rounded-lg shadow">
-            <p class="text-gray-500">Please select a date range and click "Generate Report".</p>
+        
+        <div id="reportResultContainer" class="grid grid-cols-1 lg:grid-cols-5 gap-6">
+            <div class="lg:col-span-3 bg-white p-4 rounded-lg shadow">
+                <div id="costTableContainer">
+                     <p class="text-gray-500">Please select a date range and click "Generate Report".</p>
+                </div>
+            </div>
+            <div class="lg:col-span-2 bg-white p-4 rounded-lg shadow">
+                <h2 class="text-xl font-bold mb-4">Cost Breakdown by Department</h2>
+                <div id="costChartContainer" style="height: 400px;">
+                    <canvas id="costChart"></canvas>
+                </div>
+            </div>
         </div>
-    `;
+        `;
 }
 
 export function renderKpiReportPage() {
@@ -1901,4 +1910,124 @@ export function renderKpiReportPage() {
             <p class="text-gray-500">Please select a date range and click "Generate Report" to view KPIs.</p>
         </div>
     `;
+}
+
+/**
+ * Renders an interactive bar chart for the inventory report.
+ * @param {Array} reportData The data from the get_inventory_report API.
+ */
+export function renderInventoryChart(reportData) {
+    const ctx = document.getElementById('inventoryChart');
+    if (!ctx) return;
+
+    if (state.charts.inventoryChart) {
+        state.charts.inventoryChart.destroy();
+    }
+
+    // Sort data by total value and take the top 10
+    const topParts = reportData
+        .sort((a, b) => b.total_value - a.total_value)
+        .slice(0, 10);
+
+    const labels = topParts.map(item => item.name);
+    const data = topParts.map(item => item.total_value);
+
+    state.charts.inventoryChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Total Value (RM)',
+                data: data,
+                backgroundColor: 'rgba(59, 130, 246, 0.7)',
+                borderColor: 'rgba(59, 130, 246, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            indexAxis: 'y', // Makes the bar chart horizontal
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false // Hide legend for a cleaner look
+                }
+            },
+            scales: {
+                x: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Value (RM)'
+                    }
+                }
+            }
+        }
+    });
+}
+
+/**
+ * Renders an interactive pie chart for the cost report.
+ * @param {Array} reportData The data from the get_cost_report API.
+ */
+export function renderCostChart(reportData) {
+    const ctx = document.getElementById('costChart');
+    if (!ctx) return;
+
+    if (state.charts.costChart) {
+        state.charts.costChart.destroy();
+    }
+
+    // Aggregate costs by department
+    const costsByDept = reportData.reduce((acc, item) => {
+        const dept = item.departmentName || 'Uncategorized';
+        acc[dept] = (acc[dept] || 0) + item.totalCost;
+        return acc;
+    }, {});
+
+    const labels = Object.keys(costsByDept);
+    const data = Object.values(costsByDept);
+
+    state.charts.costChart = new Chart(ctx, {
+        type: 'pie',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Total Cost (RM)',
+                data: data,
+                backgroundColor: [
+                    'rgba(239, 68, 68, 0.7)',
+                    'rgba(59, 130, 246, 0.7)',
+                    'rgba(245, 158, 11, 0.7)',
+                    'rgba(16, 185, 129, 0.7)',
+                    'rgba(139, 92, 246, 0.7)',
+                    'rgba(236, 72, 153, 0.7)',
+                ],
+                hoverOffset: 4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'top',
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            let label = context.label || '';
+                            if (label) {
+                                label += ': ';
+                            }
+                            if (context.parsed !== null) {
+                                label += new Intl.NumberFormat('en-US', { style: 'currency', currency: 'MYR' }).format(context.parsed);
+                            }
+                            return label;
+                        }
+                    }
+                }
+            }
+        }
+    });
 }
