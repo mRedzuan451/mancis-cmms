@@ -3,7 +3,9 @@
 import { state } from './config.js';
 import { api } from './api.js';
 import { handleLogin, handleLogout, handleRegistration, can } from './auth.js';
-import { logActivity, showTemporaryMessage, printReport, getFullLocationName } from './utils.js';
+import { logActivity, showTemporaryMessage, printReport, getFullLocationName, calculateNextPmDate } from './utils.js';
+// --- START: MODIFICATION ---
+// Ensure the import list matches the corrected export list from ui.js
 import {
     renderSidebar,
     renderDashboard,
@@ -48,6 +50,8 @@ import {
     showUploadModal,
     renderCostReportPage,
     renderKpiReportPage,
+    renderInventoryChart,
+    renderCostChart,
 } from './ui.js';
 
 

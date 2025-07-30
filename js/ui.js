@@ -6,6 +6,53 @@ import { api } from './api.js';
 import { getFullLocationName, getUserDepartment, showTemporaryMessage, calculateNextPmDate } from './utils.js';
 
 // Each function that creates a page view is now exported.
+export {
+    renderSidebar,
+    renderDashboard,
+    renderAssetsPage,
+    renderPartsPage,
+    renderWorkOrdersPage,
+    renderUserManagementPage,
+    renderWorkOrderCalendar,
+    renderLocationsPage,
+    renderActivityLogPage,
+    renderPartsRequestPage,
+    renderPmSchedulesPage,
+    renderInventoryReportPage,
+    renderStockTakePage,
+    renderStockTakeCountPage,
+    renderFeedbackPage,
+    generateTableRows,
+    showAssetModal,
+    showPartModal,
+    showWorkOrderModal,
+    showEditUserModal,
+    showCalendarDetailModal,
+    populateLocationDropdown,
+    populateLocationDropdowns,
+    showAssetDetailModal,
+    showPartDetailModal,
+    showWorkOrderDetailModal,
+    showPartRequestDetailModal,
+    showEditPartRequestModal,
+    showTransferAssetModal,
+    showCompleteWorkOrderModal,
+    showPartRequestModal,
+    showStorageRequestModal,
+    showReceivePartsModal, // This was the missing export
+    showRestockPartsModal,
+    showPmScheduleModal,
+    showPmScheduleDetailModal,
+    showFeedbackModal,
+    renderStatusChart,
+    addChecklistItem,
+    addPmPartRow,
+    showUploadModal,
+    renderCostReportPage,
+    renderKpiReportPage,
+    renderInventoryChart,
+    renderCostChart,
+};
 
 export function renderDashboard() {
   const assets = state.cache.assets.filter(can.view);
