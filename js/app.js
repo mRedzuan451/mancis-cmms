@@ -176,6 +176,9 @@ async function loadAndRender() {
 }
 
 async function refreshAllDataAndRender() {
+    if (!state.currentUser) {
+        return;
+    }
     // Check if any modal is currently displayed by looking for the 'flex' style.
     const isModalOpen = !!document.querySelector('.modal[style*="display: flex"]');
     if (isModalOpen) {
