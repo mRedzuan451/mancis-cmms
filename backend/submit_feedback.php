@@ -19,7 +19,6 @@ if (empty(trim($message))) {
     exit();
 }
 
-// Subordinates can only send to 'All'
 if (!in_array($user_role, ['Admin', 'Manager', 'Supervisor']) && $target_role !== 'All') {
     http_response_code(403);
     echo json_encode(['message' => 'You do not have permission to send targeted messages.']);
@@ -27,12 +26,26 @@ if (!in_array($user_role, ['Admin', 'Manager', 'Supervisor']) && $target_role !=
 }
 
 $department_id_to_log = $user_department_id;
-// Admins can target a specific department
-if ($user_role === 'Admin' && isset($data->department_id)) {
+if ($user_role === 'Admin' && isset($data->department_id) && !empty($data->department_id)) {
     $department_id_to_log = intval($data->department_id);
 }
 
-$stmt = $conn->prepare("INSERT INTO feedback (user_id, department_id, message, target_role) VALUES (?, ?, ?, ?)");
+$sql = "INSERT INTO feedback (user_id, department_id, message, target_role) VALUES (?, ?, ?, ?)";
+$stmt = $conn->prepare($sql);
+
+// --- START: FIX ---
+// This check prevents a 500 error if the SQL is invalid (e.g., columns are missing).
+if ($stmt === false) {
+    http_response_code(500);
+    echo json_encode([
+        "message" => "Failed to prepare the database query.",
+        "error" => "Please ensure the 'feedback' table has 'department_id' and 'target_role' columns.",
+        "sql_error" => $conn->error
+    ]);
+    exit();
+}
+// --- END: FIX ---
+
 $stmt->bind_param("iiss", $user_id, $department_id_to_log, $message, $target_role);
 
 if ($stmt->execute()) {
@@ -40,8 +53,9 @@ if ($stmt->execute()) {
     echo json_encode(['message' => 'Message sent successfully.']);
 } else {
     http_response_code(500);
-    echo json_encode(['message' => 'Failed to send message.']);
+    echo json_encode(['message' => 'Failed to send message.', 'error' => $stmt->error]);
 }
+
 $stmt->close();
 $conn->close();
 ?>
