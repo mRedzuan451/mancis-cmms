@@ -1025,7 +1025,6 @@ function attachPageSpecificEventListeners(page) {
         document.getElementById('receivePartsBtn')?.addEventListener('click', showReceivePartsModal);
         document.getElementById('restockPartsBtn')?.addEventListener('click', showRestockPartsModal);
         
-        // --- START: ADDED SEARCH LOGIC ---
         document.getElementById("partRequestSearch")?.addEventListener("input", (e) => {
             const searchTerm = e.target.value.toLowerCase();
             const filtered = state.cache.partRequests.filter(req => {
@@ -1056,6 +1055,9 @@ function attachPageSpecificEventListeners(page) {
 
             const title = "Part Purchase List";
             let content = `<h1>${title}</h1><p>Generated on: ${new Date().toLocaleString()}</p>`;
+            
+            // --- START: MODIFICATION ---
+            // Added a new "Department" header to the table
             content += `
                 <table border="1" style="width:100%; border-collapse: collapse;">
                     <thead>
@@ -1065,6 +1067,7 @@ function attachPageSpecificEventListeners(page) {
                             <th style="padding: 5px; text-align: right;">Quantity</th>
                             <th style="padding: 5px; text-align: left;">Maker</th>
                             <th style="padding: 5px; text-align: left;">Requester</th>
+                            <th style="padding: 5px; text-align: left;">Department</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -1078,7 +1081,10 @@ function attachPageSpecificEventListeners(page) {
                 const partNumber = part ? part.sku : (req.newPartNumber || 'N/A');
                 const maker = part ? part.maker : (req.newPartMaker || '');
                 const requesterName = requester ? requester.fullName : 'N/A';
+                // Get the department name using the utility function
+                const departmentName = requester ? getUserDepartment(requester) : 'N/A';
                 
+                // Add the new department cell to the table row
                 content += `
                     <tr>
                         <td style="padding: 5px;">${partName}</td>
@@ -1086,9 +1092,11 @@ function attachPageSpecificEventListeners(page) {
                         <td style="padding: 5px; text-align: right;">${req.quantity}</td>
                         <td style="padding: 5px;">${maker}</td>
                         <td style="padding: 5px;">${requesterName}</td>
+                        <td style="padding: 5px;">${departmentName}</td>
                     </tr>
                 `;
             });
+            // --- END: MODIFICATION ---
 
             content += `</tbody></table>`;
             printReport(title, content);
