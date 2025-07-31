@@ -26,26 +26,36 @@ export function renderDashboard() {
   const pendingRequests = partRequests.filter((pr) => pr.status === "Requested" || pr.status === "Requested from Storage").length;
   const lowStockItems = parts.filter((p) => parseInt(p.quantity) <= parseInt(p.minQuantity)).length;
   
+  // --- START: FIX ---
+  // This new date logic is more robust and avoids timezone inconsistencies.
   const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const sevenDaysFromNow = new Date();
-  sevenDaysFromNow.setDate(today.getDate() + 7);
+  today.setHours(0, 0, 0, 0); // Set to the beginning of the current day.
+
+  const sevenDaysFromNow = new Date(today);
+  sevenDaysFromNow.setDate(sevenDaysFromNow.getDate() + 7); // Set the end of our 7-day window.
 
   const upcomingPMs = workOrders.filter(wo => {
       if (wo.wo_type !== 'PM' || wo.status === 'Completed') return false;
+      
+      // Create a date object from the WO's start_date string in a way that avoids UTC conversion.
       const woStartDate = new Date(wo.start_date + 'T00:00:00');
-      return woStartDate >= today && woStartDate <= sevenDaysFromNow;
+      
+      // Check if the PM's start date falls within our 7-day window.
+      return woStartDate >= today && woStartDate < sevenDaysFromNow;
   }).sort((a, b) => new Date(a.start_date) - new Date(b.start_date));
   
   const overdueWOs = workOrders.filter(wo => {
       if (wo.status === 'Completed') return false;
-      const woDueDate = new Date(wo.dueDate);
+      // Use the same robust date creation for due dates.
+      const woDueDate = new Date(wo.dueDate + 'T00:00:00');
       return woDueDate < today;
   }).sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
+  // --- END: FIX ---
 
   return `
     <h1 class="text-3xl font-bold mb-6">Dashboard</h1>
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        
         <div class="bg-white p-6 rounded-lg shadow cursor-pointer hover:bg-gray-50 dashboard-kpi-box" data-page="assets">
             <h3 class="text-gray-500">Total Assets</h3>
             <p class="text-3xl font-bold">${assets.length}</p>
@@ -62,7 +72,8 @@ export function renderDashboard() {
             <h3 class="text-gray-500">Low Stock Items</h3>
             <p class="text-3xl font-bold">${lowStockItems}</p>
         </div>
-    </div>
+        </div>
+    
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div class="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-8">
              <div>
@@ -82,13 +93,14 @@ export function renderDashboard() {
                         <table class="w-full">
                             <thead><tr class="border-b"><th class="text-left p-2">Title</th><th class="text-left p-2">Asset</th><th class="text-left p-2">Days Overdue</th></tr></thead>
                             <tbody>${overdueWOs.map(wo => {
-                                const diffTime = Math.abs(today - new Date(wo.dueDate));
+                                const diffTime = Math.abs(today - new Date(wo.dueDate + 'T00:00:00'));
                                 const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
                                 return `<tr class="border-b hover:bg-gray-50"><td class="p-2">${wo.title}</td><td class="p-2">${state.cache.assets.find(a => a.id === parseInt(wo.assetId))?.name || "N/A"}</td><td class="p-2 text-red-600 font-bold">${diffDays} day(s)</td></tr>`}).join("")}</tbody>
                         </table>` : `<p class="text-gray-500">No overdue work orders. Great job!</p>`}
                 </div>
             </div>
         </div>
+        
         <div>
             <h2 class="text-2xl font-bold mb-4">Work Order Status</h2>
             <div class="bg-white p-4 rounded-lg shadow" style="height: 350px;">
