@@ -21,7 +21,7 @@ import {
     renderInventoryReportPage,
     renderStockTakePage,
     renderStockTakeCountPage,
-    renderFeedbackPage,
+    renderTeamMessagesPage as renderFeedbackPage,
     generateTableRows,
     showAssetModal,
     showPartModal,
@@ -43,7 +43,7 @@ import {
     showRestockPartsModal,
     showPmScheduleModal,
     showPmScheduleDetailModal,
-    showFeedbackModal,
+    showMessageModal,
     renderStatusChart,
     addChecklistItem,
     addPmPartRow,
@@ -106,7 +106,11 @@ async function loadInitialData() {
         const publicLocationsPromise = api.getPublicLocations();
 
         dataMap.users = api.getUsers();
+        dataMap.settings = api.getSystemSettings();
 
+        if (permissions.feedback_view) {
+            dataMap.feedback = api.getFeedback();
+        }
         if (permissions.asset_view) {
             dataMap.assets = api.getAssets();
         }
@@ -154,6 +158,8 @@ async function loadInitialData() {
         results.forEach((result, index) => {
             state.cache[keys[index]] = result;
         });
+        state.settings = state.cache.settings;
+        delete state.cache.settings;
 
     } catch (error) {
         showTemporaryMessage("Failed to load application data. Please try again.", true);
@@ -1428,6 +1434,31 @@ function attachPageSpecificEventListeners(page) {
             });
         });
     }
+    if (page === 'feedback') { // The page name is still 'feedback' internally
+        document.getElementById('newMessageBtn')?.addEventListener('click', () => {
+            // Check if messaging is enabled before showing the modal
+            if (state.settings.is_messaging_enabled !== '1' && state.currentUser.role !== 'Admin') {
+                showTemporaryMessage('The messaging feature is currently disabled by the administrator.', true);
+                return;
+            }
+            showMessageModal();
+        });
+
+        const toggle = document.getElementById('messagingToggle');
+        toggle?.addEventListener('change', async (e) => {
+            const isEnabled = e.target.checked;
+            try {
+                await api.updateSystemSettings('is_messaging_enabled', isEnabled ? '1' : '0');
+                state.settings.is_messaging_enabled = isEnabled ? '1' : '0';
+                showTemporaryMessage('Messaging settings updated.');
+                renderMainContent(); // Re-render to show text change
+            } catch (error) {
+                showTemporaryMessage('Failed to update settings.', true);
+                e.target.checked = !isEnabled; // Revert checkbox on failure
+            }
+        });
+    }
+}
 }
 
 function attachGlobalEventListeners() {
@@ -1574,7 +1605,6 @@ function attachGlobalEventListeners() {
                     });
                 }
             },
-            "sendFeedbackBtn": () => showFeedbackModal(), // <-- ADD THIS
             "toggleArchivedFeedbackBtn": () => {
                 state.showArchivedFeedback = !state.showArchivedFeedback;
                 renderMainContent();
@@ -1656,15 +1686,26 @@ function attachGlobalEventListeners() {
     document.getElementById("receivePartsForm").addEventListener("submit", handleReceivePartsFormSubmit);
     document.getElementById("restockPartsForm").addEventListener("submit", handleRestockPartsFormSubmit);
     document.getElementById("pmScheduleForm").addEventListener("submit", handlePmScheduleFormSubmit);
-    document.getElementById("feedbackForm").addEventListener("submit", async (e) => {
+    document.getElementById("messageForm").addEventListener("submit", async (e) => {
         e.preventDefault();
-        const message = document.getElementById("feedbackMessage").value;
+        const message = document.getElementById("messageBody").value;
+        const targetRole = document.getElementById("messageTargetRole").value;
+        const targetDept = document.getElementById("messageTargetDept").value;
+
+        const payload = { message, target_role: targetRole };
+        if (state.currentUser.role === 'Admin' && targetDept) {
+            payload.department_id = targetDept;
+        }
+
         try {
-            await api.submitFeedback(message);
-            showTemporaryMessage("Thank you! Your feedback has been sent.");
-            document.getElementById("feedbackModal").style.display = "none";
+            await api.submitFeedback(payload); // The API endpoint is the same
+            showTemporaryMessage("Message sent successfully!");
+            document.getElementById("messageModal").style.display = "none";
+            // Refresh messages after sending
+            state.cache.feedback = await api.getFeedback();
+            renderMainContent();
         } catch(error) {
-            showTemporaryMessage(`Submission failed: ${error.message}`, true);
+            showTemporaryMessage(`Failed to send message: ${error.message}`, true);
         }
     });
 }

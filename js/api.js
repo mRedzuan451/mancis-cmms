@@ -248,4 +248,10 @@ export const api = {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id })
     }),
+    getSystemSettings: () => request('get_system_settings.php'),
+    updateSystemSettings: (key, value) => request('update_system_settings.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ key, value })
+    }),
 };

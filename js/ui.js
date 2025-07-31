@@ -1792,47 +1792,81 @@ export function renderStockTakeCountPage(items, details) {
     `;
 }
 
-export function showFeedbackModal() {
-    const form = document.getElementById('feedbackForm');
+export function showMessageModal() {
+    const form = document.getElementById('messageForm');
     form.reset();
-    document.getElementById('feedbackModal').style.display = 'flex';
+    
+    const targetRoleContainer = document.getElementById('messageTargetRoleContainer');
+    const targetDeptContainer = document.getElementById('messageTargetDeptContainer');
+    const currentUserRole = state.currentUser.role;
+
+    // Logic to show/hide the role selector
+    if (['Admin', 'Manager', 'Supervisor'].includes(currentUserRole)) {
+        targetRoleContainer.style.display = 'block';
+    } else {
+        targetRoleContainer.style.display = 'none';
+    }
+
+    // Logic for Admin's department selector
+    if (currentUserRole === 'Admin') {
+        targetDeptContainer.style.display = 'block';
+        const deptSelect = document.getElementById('messageTargetDept');
+        deptSelect.innerHTML = '<option value="">Your Department (Default)</option>' +
+            (state.cache.locations.departments || [])
+            .map(d => `<option value="${d.id}">${d.name}</option>`)
+            .join('');
+    } else {
+        targetDeptContainer.style.display = 'none';
+    }
+
+    document.getElementById('messageModal').style.display = 'flex';
 }
 
-export function renderFeedbackPage() {
-    const toggleButtonText = state.showArchivedFeedback ? 'Hide Archived' : 'Show Archived';
-    const header = renderPageHeader("Feedback Inbox", [
+export function renderTeamMessagesPage() {
+    const header = renderPageHeader("Team Messages", [
         '<button id="refreshDataBtn" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded"><i class="fas fa-sync-alt mr-2"></i>Refresh</button>',
-        `<button id="toggleArchivedFeedbackBtn" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded">${toggleButtonText}</button>`
+        '<button id="newMessageBtn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded"><i class="fas fa-paper-plane mr-2"></i>Send New Message</button>'
     ]);
     
-    const feedbackList = (state.cache.feedback || [])
-        .filter(item => state.showArchivedFeedback || item.status !== 'Archived');
+    const messages = state.cache.feedback || [];
+    const isAdmin = state.currentUser.role === 'Admin';
 
-    const statusStyles = {
-        'New': 'border-blue-500',
-        'Read': 'border-gray-300',
-        'Archived': 'border-dashed border-gray-300 opacity-70'
-    };
+    // Admin settings section
+    const adminSettings = isAdmin ? `
+        <div class="bg-white p-4 rounded-lg shadow mb-6">
+            <h3 class="text-lg font-bold mb-2">Admin Controls</h3>
+            <div class="flex items-center">
+                <label for="messagingToggle" class="mr-4">Team Messaging Feature:</label>
+                <input type="checkbox" id="messagingToggle" class="h-6 w-6" ${state.settings.is_messaging_enabled === '1' ? 'checked' : ''}>
+                <span class="ml-2 text-sm text-gray-600">${state.settings.is_messaging_enabled === '1' ? 'Enabled' : 'Disabled'}</span>
+            </div>
+        </div>
+    ` : '';
 
     return `
         ${header}
+        ${adminSettings}
         <div class="space-y-4">
-        ${feedbackList.map(item => `
-            <div class="bg-white p-4 rounded-lg shadow border-l-4 ${statusStyles[item.status] || 'border-gray-300'}">
-                <div class="flex justify-between items-center mb-2">
-                    <p class="font-bold">${item.sender_name || 'Unknown User'}</p>
-                    <p class="text-sm text-gray-500">${new Date(item.timestamp).toLocaleString()}</p>
+        ${messages.map(item => {
+            const senderInfo = isAdmin ? `<p class="text-xs text-gray-500">${item.department_name || 'N/A'}</p>` : '';
+            return `
+            <div class="bg-white p-4 rounded-lg shadow border-l-4 border-blue-500">
+                <div class="flex justify-between items-start mb-2">
+                    <div>
+                        <p class="font-bold">${item.sender_name || 'Unknown User'}</p>
+                        ${senderInfo}
+                    </div>
+                    <div class="text-right">
+                        <p class="text-sm text-gray-500">${new Date(item.timestamp).toLocaleString()}</p>
+                        <p class="text-xs font-semibold text-gray-600 mt-1">To: ${item.target_role}</p>
+                    </div>
                 </div>
-                <p class="text-gray-700 mb-4">${item.message}</p>
+                <p class="text-gray-700 mb-4 whitespace-pre-wrap">${item.message}</p>
                 <div class="flex justify-end items-center space-x-2">
-                    <span class="text-sm font-semibold">Status: ${item.status}</span>
-                    ${item.status === 'New' ? `<button class="feedback-status-btn bg-gray-200 hover:bg-gray-300 text-xs py-1 px-2 rounded" data-id="${item.id}" data-status="Read">Mark as Read</button>` : ''}
-                    ${item.status !== 'Archived' ? `<button class="feedback-status-btn bg-gray-200 hover:bg-gray-300 text-xs py-1 px-2 rounded" data-id="${item.id}" data-status="Archived">Archive</button>` : ''}
-                    
                     ${state.currentUser.permissions.feedback_delete ? `<button class="feedback-delete-btn bg-red-100 hover:bg-red-200 text-red-700 text-xs py-1 px-2 rounded" data-id="${item.id}">Delete</button>` : ''}
                 </div>
             </div>
-        `).join('') || '<p>The feedback inbox is empty.</p>'}
+        `}).join('') || '<p>No messages in this logbook.</p>'}
         </div>
     `;
 }

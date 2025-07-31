@@ -1389,21 +1389,33 @@
         </div>
       </div>
     </div>
-    <div id="feedbackModal" class="modal">
-      <div class="modal-content">
-        <h2 class="text-xl font-bold mb-4">Send Feedback to Admin</h2>
-        <form id="feedbackForm">
-            <p class="text-sm text-gray-600 mb-4">
-                Have a suggestion or found a bug? Let us know! Your feedback will be sent directly to the site administrator.
-            </p>
-            <textarea id="feedbackMessage" rows="5" class="w-full mt-1 px-3 py-2 border rounded" placeholder="Type your message here..." required></textarea>
-            <div class="mt-6 flex justify-end space-x-4">
-                <button type="button" class="bg-gray-300 hover:bg-gray-400 text-black py-2 px-4 rounded" data-close-modal>Cancel</button>
-                <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded">Submit Feedback</button>
-            </div>
-        </form>
+      <div id="messageModal" class="modal">
+        <div class="modal-content">
+          <h2 class="text-xl font-bold mb-4">Send Team Message</h2>
+          <form id="messageForm">
+              <div id="messageTargetDeptContainer" class="mb-4" style="display: none;">
+                  <label for="messageTargetDept" class="block text-sm font-medium text-gray-700">Target Department (Admin)</label>
+                  <select id="messageTargetDept" class="w-full mt-1 px-3 py-2 border rounded"></select>
+              </div>
+              <div id="messageTargetRoleContainer" class="mb-4" style="display: none;">
+                  <label for="messageTargetRole" class="block text-sm font-medium text-gray-700">Send To</label>
+                  <select id="messageTargetRole" class="w-full mt-1 px-3 py-2 border rounded">
+                      <option value="All">All Members in Department</option>
+                      <option value="Manager">Managers Only</option>
+                      <option value="Supervisor">Supervisors Only</option>
+                      <option value="Engineer">Engineers Only</option>
+                      <option value="Technician">Technicians Only</option>
+                      <option value="Clerk">Clerks Only</option>
+                  </select>
+              </div>
+              <textarea id="messageBody" rows="5" class="w-full mt-1 px-3 py-2 border rounded" placeholder="Type your message here..." required></textarea>
+              <div class="mt-6 flex justify-end space-x-4">
+                  <button type="button" class="bg-gray-300 hover:bg-gray-400 text-black py-2 px-4 rounded" data-close-modal>Cancel</button>
+                  <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded">Send Message</button>
+              </div>
+          </form>
+        </div>
       </div>
-    </div>
     <div id="notificationModal" class="modal">
       <div class="modal-content max-h-[90vh]">
         <h2 class="text-xl font-bold mb-4 text-gray-800">Notifications</h2>
