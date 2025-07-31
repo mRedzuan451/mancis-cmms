@@ -1459,7 +1459,6 @@ function attachPageSpecificEventListeners(page) {
         });
     }
 }
-}
 
 function attachGlobalEventListeners() {
     // Authentication
