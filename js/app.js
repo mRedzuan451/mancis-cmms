@@ -1821,6 +1821,9 @@ async function loadAndRenderStockTakeDetails(stockTakeId) {
 }
 
 async function fetchAndDisplayNotifications() {
+    if (!state.currentUser) {
+        return;
+    }
     try {
         const notifications = await api.getNotifications();
         const badge = document.getElementById('notificationBadge');
