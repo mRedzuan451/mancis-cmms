@@ -52,6 +52,7 @@ import {
     renderKpiReportPage,
     renderInventoryChart,
     renderCostChart,
+    showNotificationModal,
 } from './ui.js';
 
 
@@ -1619,13 +1620,7 @@ function attachGlobalEventListeners() {
             }
         }
     });
-    document.addEventListener('click', (e) => {
-        const panel = document.getElementById('notificationPanel');
-        const bell = document.getElementById('notificationBellBtn');
-        if (!panel.classList.contains('hidden') && !panel.contains(e.target) && !bell.contains(e.target)) {
-            panel.classList.add('hidden');
-        }
-    });
+
 
     // Form Submissions
     document.getElementById("assetForm").addEventListener("submit", handleAssetFormSubmit);
