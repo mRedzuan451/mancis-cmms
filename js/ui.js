@@ -224,6 +224,41 @@ export function renderWorkOrderCalendar() {
     const firstDayOfMonth = new Date(year, month, 1).getDay();
     const daysInMonth = new Date(year, month + 1, 0).getDate();
     const workOrders = state.cache.workOrders.filter(can.view);
+
+    // --- START: MODIFICATION ---
+    // 1. Calculate summary stats for the current month
+    const monthlyWOs = workOrders.filter(wo => {
+        const woDate = new Date(wo.start_date + 'T00:00:00');
+        return woDate.getFullYear() === year && woDate.getMonth() === month;
+    });
+
+    const totalCount = monthlyWOs.length;
+    const completedCount = monthlyWOs.filter(wo => wo.status === 'Completed').length;
+    const pmCount = monthlyWOs.filter(wo => wo.wo_type === 'PM').length;
+    const cmCount = monthlyWOs.filter(wo => wo.wo_type === 'CM').length;
+
+    // 2. Create the HTML for the summary section
+    const summaryHtml = `
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <div class="bg-gray-50 p-4 rounded-lg shadow text-center">
+                <h4 class="text-sm text-gray-500">Total WOs This Month</h4>
+                <p class="text-2xl font-bold">${totalCount}</p>
+            </div>
+            <div class="bg-gray-50 p-4 rounded-lg shadow text-center">
+                <h4 class="text-sm text-gray-500">Completed</h4>
+                <p class="text-2xl font-bold text-green-600">${completedCount}</p>
+            </div>
+            <div class="bg-gray-50 p-4 rounded-lg shadow text-center">
+                <h4 class="text-sm text-gray-500">Preventive (PM)</h4>
+                <p class="text-2xl font-bold text-blue-600">${pmCount}</p>
+            </div>
+            <div class="bg-gray-50 p-4 rounded-lg shadow text-center">
+                <h4 class="text-sm text-gray-500">Corrective (CM)</h4>
+                <p class="text-2xl font-bold text-orange-600">${cmCount}</p>
+            </div>
+        </div>
+    `;
+    // --- END: MODIFICATION ---
     
     let calendarHtml = `
       <div class="flex justify-between items-center mb-6">
@@ -234,6 +269,7 @@ export function renderWorkOrderCalendar() {
               <button id="nextMonthBtn" class="px-3 py-1 bg-gray-200 rounded">&gt;</button>
           </div>
       </div>
+      ${summaryHtml} 
       <div class="bg-white p-4 rounded-lg shadow">
           <div class="calendar-grid">
               <div class="text-center font-bold p-2 calendar-day-header">Sun</div>
