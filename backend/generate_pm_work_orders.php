@@ -1,3 +1,4 @@
+// mredzuan451/mancis-cmms/mancis-cmms-606114d896d65fc461b02c1292207267f67f7db6/backend/generate_pm_work_orders.php
 <?php
 require_once 'auth_check.php';
 require_once 'calendar_integration.php';
@@ -15,6 +16,11 @@ date_default_timezone_set('Asia/Kuala_Lumpur');
 $generated_count = 0;
 $today = new DateTime();
 $today->setTime(0, 0, 0); 
+
+// --- START: MODIFICATION ---
+// Define a 7-day window to generate upcoming PMs in advance.
+$generation_window = (clone $today)->modify('+7 days');
+// --- END: MODIFICATION ---
 
 $schedules_result = $conn->query("SELECT * FROM pm_schedules WHERE is_active = 1");
 if (!$schedules_result) {
@@ -48,8 +54,11 @@ foreach ($schedules as $schedule) {
     $existing_wo_result = $stmt_check->get_result();
     $stmt_check->close();
 
-    // Only proceed if today is on or after the next PM date AND no open WO exists.
-    if ($today >= $next_pm_date && $existing_wo_result->num_rows === 0) {
+    // --- START: MODIFICATION ---
+    // This condition now generates WOs if they are due within our 7-day window (or are overdue)
+    // AND no open WO for that schedule already exists.
+    if ($next_pm_date <= $generation_window && $existing_wo_result->num_rows === 0) {
+    // --- END: MODIFICATION ---
     // --- END: ISSUE FIX ---
         $conn->begin_transaction();
         try {
