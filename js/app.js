@@ -1056,52 +1056,63 @@ function attachPageSpecificEventListeners(page) {
                 return;
             }
 
+            // --- START: MODIFICATION ---
+            // Group requests by department
+            const groupedByDept = requestsToPrint.reduce((acc, req) => {
+                const requester = state.cache.users.find(u => u.id === req.requesterId);
+                const departmentName = requester ? getUserDepartment(requester) : 'Unassigned';
+                
+                if (!acc[departmentName]) {
+                    acc[departmentName] = [];
+                }
+                acc[departmentName].push(req);
+                return acc;
+            }, {});
+
             const title = "Part Purchase List";
             let content = `<h1>${title}</h1><p>Generated on: ${new Date().toLocaleString()}</p>`;
-            
-            // --- START: MODIFICATION ---
-            // Added a new "Department" header to the table
-            content += `
-                <table border="1" style="width:100%; border-collapse: collapse;">
-                    <thead>
-                        <tr>
-                            <th style="padding: 5px; text-align: left;">Part Name</th>
-                            <th style="padding: 5px; text-align: left;">Part Number / SKU</th>
-                            <th style="padding: 5px; text-align: right;">Quantity</th>
-                            <th style="padding: 5px; text-align: left;">Maker</th>
-                            <th style="padding: 5px; text-align: left;">Requester</th>
-                            <th style="padding: 5px; text-align: left;">Department</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-            `;
 
-            requestsToPrint.forEach(req => {
-                const part = req.partId ? state.cache.parts.find(p => p.id === req.partId) : null;
-                const requester = state.cache.users.find(u => u.id === req.requesterId);
-
-                const partName = part ? part.name : (req.newPartName || 'N/A');
-                const partNumber = part ? part.sku : (req.newPartNumber || 'N/A');
-                const maker = part ? part.maker : (req.newPartMaker || '');
-                const requesterName = requester ? requester.fullName : 'N/A';
-                // Get the department name using the utility function
-                const departmentName = requester ? getUserDepartment(requester) : 'N/A';
-                
-                // Add the new department cell to the table row
+            // Loop through each department and create a separate table
+            for (const department in groupedByDept) {
+                content += `<h2 style="margin-top: 20px; background-color: #f2f2f2; padding: 10px; border-bottom: 1px solid #ddd;">Department: ${department}</h2>`;
                 content += `
-                    <tr>
-                        <td style="padding: 5px;">${partName}</td>
-                        <td style="padding: 5px;">${partNumber}</td>
-                        <td style="padding: 5px; text-align: right;">${req.quantity}</td>
-                        <td style="padding: 5px;">${maker}</td>
-                        <td style="padding: 5px;">${requesterName}</td>
-                        <td style="padding: 5px;">${departmentName}</td>
-                    </tr>
+                    <table border="1" style="width:100%; border-collapse: collapse;">
+                        <thead>
+                            <tr>
+                                <th style="padding: 5px; text-align: left;">Part Name</th>
+                                <th style="padding: 5px; text-align: left;">Part Number / SKU</th>
+                                <th style="padding: 5px; text-align: right;">Quantity</th>
+                                <th style="padding: 5px; text-align: left;">Maker</th>
+                                <th style="padding: 5px; text-align: left;">Requester</th>
+                            </tr>
+                        </thead>
+                        <tbody>
                 `;
-            });
+
+                groupedByDept[department].forEach(req => {
+                    const part = req.partId ? state.cache.parts.find(p => p.id === req.partId) : null;
+                    const requester = state.cache.users.find(u => u.id === req.requesterId);
+
+                    const partName = part ? part.name : (req.newPartName || 'N/A');
+                    const partNumber = part ? part.sku : (req.newPartNumber || 'N/A');
+                    const maker = part ? part.maker : (req.newPartMaker || '');
+                    const requesterName = requester ? requester.fullName : 'N/A';
+                    
+                    content += `
+                        <tr>
+                            <td style="padding: 5px;">${partName}</td>
+                            <td style="padding: 5px;">${partNumber}</td>
+                            <td style="padding: 5px; text-align: right;">${req.quantity}</td>
+                            <td style="padding: 5px;">${maker}</td>
+                            <td style="padding: 5px;">${requesterName}</td>
+                        </tr>
+                    `;
+                });
+
+                content += `</tbody></table>`;
+            }
             // --- END: MODIFICATION ---
 
-            content += `</tbody></table>`;
             printReport(title, content);
         });
     } else if (page === 'pmSchedules') {
