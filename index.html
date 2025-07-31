@@ -188,26 +188,19 @@
             </div>
           </div>
           <div id="userInfo" class="p-4 border-b border-gray-700">
-            <div class="flex justify-between items-center">
-                <div>
-                    <p id="userFullName" class="font-semibold"></p>
-                    <p id="userRole" class="text-sm text-gray-400"></p>
-                </div>
-                <div class="relative">
-                    <button id="notificationBellBtn" class="relative text-gray-400 hover:text-white">
-                        <i class="fas fa-bell fa-lg"></i>
-                        <span id="notificationBadge" class="absolute -top-2 -right-2 h-5 w-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center border-2 border-gray-800 hidden"></span>
-                    </button>
-                    <div id="notificationPanel" class="absolute right-0 mt-2 w-80 bg-white rounded-md shadow-lg z-20 hidden">
-                        <div class="p-3 border-b border-gray-200">
-                            <h3 class="font-semibold text-gray-700">Notifications</h3>
-                        </div>
-                        <div id="notificationList" class="max-h-96 overflow-y-auto">
-                            </div>
-                    </div>
-                </div>
-            </div>
-            <p id="userDepartment" class="text-sm text-gray-400 mt-1"></p>
+              <div class="flex justify-between items-center">
+                  <div>
+                      <p id="userFullName" class="font-semibold"></p>
+                      <p id="userRole" class="text-sm text-gray-400"></p>
+                  </div>
+                  <div class="relative">
+                      <button id="notificationBellBtn" class="relative text-gray-400 hover:text-white">
+                          <i class="fas fa-bell fa-lg"></i>
+                          <span id="notificationBadge" class="absolute -top-2 -right-2 h-5 w-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center border-2 border-gray-800 hidden"></span>
+                      </button>
+                      </div>
+              </div>
+              <p id="userDepartment" class="text-sm text-gray-400 mt-1"></p>
           </div>
         </div>
 
@@ -1409,6 +1402,18 @@
                 <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded">Submit Feedback</button>
             </div>
         </form>
+      </div>
+    </div>
+    <div id="notificationModal" class="modal">
+      <div class="modal-content max-h-[90vh]">
+        <h2 class="text-xl font-bold mb-4 text-gray-800">Notifications</h2>
+        <div id="notificationList" class="max-h-96 overflow-y-auto">
+            </div>
+        <div class="mt-6 flex justify-end">
+          <button type="button" class="bg-gray-300 hover:bg-gray-400 text-black py-2 px-4 rounded" data-close-modal>
+            Close
+          </button>
+        </div>
       </div>
     </div>
     </body>

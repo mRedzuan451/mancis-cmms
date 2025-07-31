@@ -2021,3 +2021,32 @@ export function renderCostChart(reportData) {
         }
     });
 }
+
+export async function showNotificationModal() {
+    const modal = document.getElementById('notificationModal');
+    const list = document.getElementById('notificationList');
+    list.innerHTML = '<p class="p-4 text-sm text-gray-500">Loading notifications...</p>';
+    modal.style.display = 'flex';
+
+    try {
+        const notifications = await api.getNotifications();
+        if (notifications && notifications.length > 0) {
+            list.innerHTML = notifications.map(req => {
+                const partName = req.newPartName || `request #${req.id}`;
+                const isRejected = req.status === 'Rejected';
+                const message = `Your request for <strong>${partName}</strong> has been <strong>${req.status}</strong>.`;
+                
+                return `
+                    <div class="p-3 text-sm text-gray-600 border-b border-gray-100 hover:bg-gray-50">
+                        <p class="${isRejected ? 'text-red-600' : ''}">${message}</p>
+                        <p class="text-xs text-gray-400 mt-1">${new Date(req.approvalDate || req.requestDate).toLocaleString()}</p>
+                    </div>
+                `;
+            }).join('');
+        } else {
+            list.innerHTML = '<p class="p-4 text-sm text-gray-500">No new notifications.</p>';
+        }
+    } catch (error) {
+        list.innerHTML = '<p class="p-4 text-sm text-red-500">Could not load notifications.</p>';
+    }
+}
