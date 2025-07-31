@@ -1524,6 +1524,14 @@ function attachGlobalEventListeners() {
              return;
         }
         if (!button) return;
+        if (button.id === 'sendFeedbackBtn') {
+            if (state.settings.is_messaging_enabled !== '1' && state.currentUser.role !== 'Admin') {
+                showTemporaryMessage('The messaging feature is currently disabled by the administrator.', true);
+                return;
+            }
+            showMessageModal();
+            return; // Stop further execution
+        }
         if (button.classList.contains('view-stock-take-btn')) {
             const stockTakeId = parseInt(button.dataset.id);
             // Explicitly call the function to load the details page
