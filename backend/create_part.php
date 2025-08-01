@@ -1,5 +1,6 @@
 <?php
 require_once 'auth_check.php';
+require_once 'location_helper.php'; // Include the helper
 
 $servername = "localhost"; $username = "root"; $password = ""; $dbname = "mancis_db";
 $conn = new mysqli($servername, $username, $password, $dbname);
@@ -17,29 +18,34 @@ if (empty($data->name) || empty($data->sku) || empty($data->locationId)) {
     exit();
 }
 
-$relatedAssetsJson = isset($data->relatedAssets) ? json_encode($data->relatedAssets) : null;
+// --- START: MODIFICATION ---
+$relatedAssetsJson = isset($data->relatedAssets) ? json_encode($data->relatedAssets) : '[]';
+$departmentId = getDepartmentIdFromLocation($data->locationId, $conn); // Get the department ID
 
-$stmt = $conn->prepare("INSERT INTO parts (name, sku, category, quantity, minQuantity, locationId, maker, supplier, price, currency, relatedAssets) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-$stmt->bind_param("sssiisssdss", 
+$stmt = $conn->prepare("INSERT INTO parts (name, sku, category, quantity, minQuantity, locationId, departmentId, maker, supplier, price, currency, relatedAssets, attachmentRef) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+$stmt->bind_param("sssiisisssdss", 
     $data->name, 
     $data->sku, 
     $data->category, 
     $data->quantity, 
     $data->minQuantity, 
     $data->locationId, 
+    $departmentId, // Add it to the insert statement
     $data->maker, 
     $data->supplier, 
     $data->price, 
     $data->currency,
-    $relatedAssetsJson
+    $relatedAssetsJson,
+    $data->attachmentRef
 );
+// --- END: MODIFICATION ---
 
 if ($stmt->execute()) {
     http_response_code(201);
     echo json_encode(["message" => "Part created successfully."]);
 } else {
     http_response_code(500);
-    echo json_encode(["message" => "Failed to create part."]);
+    echo json_encode(["message" => "Failed to create part.", "error" => $stmt->error]);
 }
 
 $stmt->close();

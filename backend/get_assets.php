@@ -17,26 +17,19 @@ authorize('asset_view', $conn);
 $user_role = $_SESSION['user_role'];
 $user_department_id = $_SESSION['user_department_id'];
 
+// --- START: MODIFICATION ---
 $sql = "";
 if ($user_role === 'Admin') {
+    // Admin query is simple
     $sql = "SELECT * FROM assets ORDER BY name ASC";
     $stmt = $conn->prepare($sql);
 } else {
-    // This query finds all assets located in the user's department,
-    // checking both production line locations and storage locations.
-    $sql = "SELECT a.* FROM assets a
-            LEFT JOIN productionlines pl ON a.locationId = CONCAT('pl-', pl.id)
-            LEFT JOIN sublines sl ON pl.subLineId = sl.id
-            LEFT JOIN departments d1 ON sl.departmentId = d1.id
-            LEFT JOIN boxes b ON a.locationId = CONCAT('box-', b.id)
-            LEFT JOIN shelves sh ON b.shelfId = sh.id
-            LEFT JOIN cabinets cab ON sh.cabinetId = cab.id
-            LEFT JOIN departments d2 ON cab.departmentId = d2.id
-            WHERE d1.id = ? OR d2.id = ?
-            ORDER BY a.name ASC";
+    // Non-admin query is now ALSO simple and fast!
+    $sql = "SELECT * FROM assets WHERE departmentId = ? ORDER BY name ASC";
     $stmt = $conn->prepare($sql);
-    $stmt->bind_param("ii", $user_department_id, $user_department_id);
+    $stmt->bind_param("i", $user_department_id);
 }
+// --- END: MODIFICATION ---
 
 $stmt->execute();
 $result = $stmt->get_result();
