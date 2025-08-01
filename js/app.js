@@ -511,7 +511,25 @@ async function handleCompleteWorkOrderFormSubmit(e) {
         showTemporaryMessage("Work Order marked as complete!");
 
     } catch (error) {
-        showTemporaryMessage(`Failed to complete Work Order. ${error.message}`, true);
+        console.error("Completion Error:", error); // Log the full error for debugging
+
+        if (error.message.includes("INSUFFICIENT_STOCK")) {
+            // Case 1: Specific "Not Enough Stock" error from our backend
+            const friendlyMessage = error.message.replace('INSUFFICIENT_STOCK:', '').trim();
+            showTemporaryMessage(friendlyMessage, true);
+
+        } else if (error.message.includes("Failed to fetch")) {
+            // Case 2: Network error (e.g., server is down, no internet)
+            showTemporaryMessage("Network Error: Could not connect to the server. Please check your connection.", true);
+
+        } else if (error.message.includes("HTTP error")) {
+            // Case 3: Other server-side error (e.g., 500 Internal Server Error, 404 Not Found)
+            showTemporaryMessage("Server Error: The server responded with an error. Please try again later.", true);
+
+        } else {
+            // Case 4: A generic fallback for any other unexpected errors
+            showTemporaryMessage(`An unexpected error occurred: ${error.message}`, true);
+        }
     }
 }
 
