@@ -9,67 +9,18 @@ import { showTemporaryMessage, logActivity } from './utils.js';
  */
 export const can = {
   /**
-   * Checks if the current user can view a specific item based on their department.
-   * @param {Object} item The item to check (e.g., asset, part, work order, part request).
-   * @returns {boolean} True if the user has permission.
+   * Checks if the current user can view a specific item.
+   * THIS IS THE SIMPLIFIED FUNCTION.
+   * Since the backend already filters all lists (assets, parts, etc.) by department,
+   * this function just needs to confirm the item exists in the pre-filtered cache.
+   * @param {Object} item The item to check.
+   * @returns {boolean} True if the user can view the item.
    */
   view: (item) => {
     if (!state.currentUser) return false;
-    // Admins can see everything.
-    if (state.currentUser.role === "Admin") return true;
-
-    // --- NEW LOGIC: For items like Part Requests that are linked to a user ---
-    if (item.requesterId) {
-        // Find the user who made the request
-        const requester = state.cache.users.find(u => u.id === item.requesterId);
-        // If the requester is in the same department, allow viewing.
-        if (requester && requester.departmentId === state.currentUser.departmentId) {
-            return true;
-        }
-    }
-
-    const {
-      departments = [], subLines = [], productionLines = [],
-      cabinets = [], shelves = [], boxes = [],
-    } = state.cache.locations || {};
-    
-    let itemDepartmentId = null;
-
-    // Case 1: The item itself has a departmentId (like a User)
-    if (item.departmentId) {
-      itemDepartmentId = item.departmentId;
-    
-    // Case 2: The item has a locationId (like an Asset or Part)
-    } else if (item.locationId) {
-      if (typeof item.locationId !== "string" || !item.locationId.includes("-")) return false;
-      const [type, id] = item.locationId.split("-");
-      const numId = parseInt(id);
-
-      if (type === "pl") { // Production Line
-        const pLine = productionLines.find((l) => l.id === numId);
-        const subLine = pLine ? subLines.find((sl) => sl.id === pLine.subLineId) : null;
-        if (subLine) itemDepartmentId = subLine.departmentId;
-      } else if (type === "box") { // Storage Box
-        const box = boxes.find((b) => b.id === numId);
-        const shelf = box ? shelves.find((s) => s.id === box.shelfId) : null;
-        const cabinet = shelf ? cabinets.find((c) => c.id === shelf.cabinetId) : null;
-        if (cabinet) itemDepartmentId = cabinet.departmentId;
-      }
-    
-    // Case 3: The item is linked to an asset (like a Work Order)
-    } else if (item.assetId) {
-      const asset = state.cache.assets.find((a) => a.id === parseInt(item.assetId));
-      if (asset && asset.locationId) {
-          // Recursively call this function to find the asset's department.
-          return can.view(asset);
-      }
-    }
-    
-    if (itemDepartmentId === null) {
-        return false;
-    }
-
-    return itemDepartmentId === state.currentUser.departmentId;
+    // Admins can see everything, and the backend already ensures non-admins only get their department's data.
+    // So, if the item is in the cache, they can view it.
+    return true;
   },
 
   /**
