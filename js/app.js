@@ -1944,36 +1944,6 @@ async function fetchAndDisplayNotifications() {
     }
 }
 
-async function handlePageChange(module, page) {
-    try {
-        let response;
-        if (module === 'assets') {
-            response = await api.getAssets(page);
-            state.cache.assets = response.data;
-        } else if (module === 'parts') {
-            response = await api.getParts(page);
-            state.cache.parts = response.data;
-        } else if (module === 'workOrders') {
-            response = await api.getWorkOrders(page);
-            state.cache.workOrders = response.data;
-        } else if (module === 'partRequests') {
-            response = await api.getPartRequests(page);
-            state.cache.partRequests = response.data;
-        }
-
-        if (response) {
-            state.pagination[module].currentPage = response.page;
-            state.pagination[module].totalPages = Math.ceil(response.total / response.limit);
-            state.pagination[module].totalRecords = response.total;
-            state.pagination[module].limit = response.limit;
-        }
-
-        renderMainContent();
-    } catch (error) {
-        showTemporaryMessage(`Failed to load page ${page} for ${module}.`, true);
-    }
-}
-
 // js/app.js
 
 // --- APPLICATION INITIALIZATION ---
