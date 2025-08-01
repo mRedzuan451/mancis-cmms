@@ -101,81 +101,59 @@ function render() {
 async function loadInitialData() {
     try {
         const { permissions } = state.currentUser;
-        const dataMap = {}; 
+        
+        // Helper to process paginated responses
+        const processPaginatedResponse = (module, response) => {
+            state.cache[module] = response.data;
+            state.pagination[module].currentPage = response.page;
+            state.pagination[module].totalPages = Math.ceil(response.total / response.limit);
+            state.pagination[module].totalRecords = response.total;
+        };
 
-        const publicLocationsPromise = api.getPublicLocations();
+        // Create a list of promises to run in parallel
+        const dataPromises = [];
 
-        dataMap.users = api.getUsers();
-        dataMap.settings = api.getSystemSettings();
-
-        if (permissions.feedback_view) {
-            dataMap.feedback = api.getFeedback();
-        }
+        // Paginated Data
         if (permissions.asset_view) {
-            const assetResponse = await api.getAssets(1);
-            state.cache.assets = assetResponse.data;
-            state.pagination.assets.currentPage = assetResponse.page;
-            state.pagination.assets.totalPages = Math.ceil(assetResponse.total / assetResponse.limit);
-            state.pagination.assets.totalRecords = assetResponse.total;
+            dataPromises.push(api.getAssets(1).then(res => processPaginatedResponse('assets', res)));
         }
         if (permissions.part_view) {
-            const partResponse = await api.getParts(1);
-            state.cache.parts = partResponse.data;
-            state.pagination.parts.currentPage = partResponse.page;
-            state.pagination.parts.totalPages = Math.ceil(partResponse.total / partResponse.limit);
-            state.pagination.parts.totalRecords = partResponse.total;
-        }
-        if (permissions.user_view) {
-            dataMap.users = api.getUsers();
+            dataPromises.push(api.getParts(1).then(res => processPaginatedResponse('parts', res)));
         }
         if (permissions.wo_view) {
-            const woResponse = await api.getWorkOrders(1);
-            state.cache.workOrders = woResponse.data;
-            state.pagination.workOrders.currentPage = woResponse.page;
-            state.pagination.workOrders.totalPages = Math.ceil(woResponse.total / woResponse.limit);
-            state.pagination.workOrders.totalRecords = woResponse.total;
+            dataPromises.push(api.getWorkOrders(1).then(res => processPaginatedResponse('workOrders', res)));
         }
         if (permissions.part_request_view) {
-            const requestResponse = await api.getPartRequests(1);
-            state.cache.partRequests = requestResponse.data;
-            state.pagination.partRequests.currentPage = requestResponse.page;
-            state.pagination.partRequests.totalPages = Math.ceil(requestResponse.total / requestResponse.limit);
-            state.pagination.partRequests.totalRecords = requestResponse.total;
+            dataPromises.push(api.getPartRequests(1).then(res => processPaginatedResponse('partRequests', res)));
         }
-        // This will fetch the FULL location data for authorized users, overwriting the public data later.
+        
+        // Non-Paginated Data
+        if (permissions.user_view) {
+            dataPromises.push(api.getUsers().then(res => state.cache.users = res));
+        }
         if (permissions.location_management) {
-            dataMap.locations = api.getLocations();
+            dataPromises.push(api.getLocations().then(res => state.cache.locations = res));
+        } else {
+             dataPromises.push(api.getPublicLocations().then(res => state.cache.locations = res));
         }
         if (permissions.log_view) {
-            dataMap.logs = api.getLogs();
+            dataPromises.push(api.getLogs().then(res => state.cache.logs = res));
         }
         if (permissions.pm_schedule_view) {
-            dataMap.pmSchedules = api.getPmSchedules();
+            dataPromises.push(api.getPmSchedules().then(res => state.cache.pmSchedules = res));
         }
         if (permissions.stock_take_create) {
-            dataMap.stockTakes = api.getStockTakes();
+            dataPromises.push(api.getStockTakes().then(res => state.cache.stockTakes = res));
         }
         if (permissions.feedback_view) {
-            dataMap.feedback = api.getFeedback();
+            dataPromises.push(api.getFeedback().then(res => state.cache.feedback = res));
         }
         
-        dataMap.receivedParts = api.getReceivedParts();
+        dataPromises.push(api.getReceivedParts().then(res => state.cache.receivedParts = res));
+        dataPromises.push(api.getSystemSettings().then(res => state.settings = res));
         
-        const promises = Object.values(dataMap);
-        const keys = Object.keys(dataMap);
-        const results = await Promise.all(promises);
-
-        // --- START: FIX ---
-        // 2. First, put the public locations into the cache.
-        state.cache.locations = await publicLocationsPromise;
-        // --- END: FIX ---
-
-        // 3. Then, populate the rest of the cache. If full locations were fetched, they will overwrite the public ones.
-        results.forEach((result, index) => {
-            state.cache[keys[index]] = result;
-        });
-        state.settings = state.cache.settings;
-        delete state.cache.settings;
+        // Wait for all data to be fetched and processed
+        await Promise.all(dataPromises);
 
     } catch (error) {
         showTemporaryMessage("Failed to load application data. Please try again.", true);

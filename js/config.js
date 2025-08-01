@@ -12,6 +12,7 @@ export const state = {
     assets: { currentPage: 1, totalPages: 1, totalRecords: 0 },
     parts: { currentPage: 1, totalPages: 1, totalRecords: 0 },
     workOrders: { currentPage: 1, totalPages: 1, totalRecords: 0 },
+    partRequests: { currentPage: 1, totalPages: 1, totalRecords: 0 }, // Add this line
     users: { currentPage: 1, totalPages: 1, totalRecords: 0 },
     // Add other modules here as you implement pagination for them
   },
