@@ -41,8 +41,8 @@ try {
     $new_wo_id = $stmt->insert_id;
     $stmt->close();
     
-    addEventToCalendar($data->title, $data->start_date);
-
+    logCalendarEvent($data->title, $data->start_date); // Use the new function name
+    
     $conn->commit();
     http_response_code(201);
     echo json_encode(["message" => "Work Order created successfully.", "id" => $new_wo_id]);

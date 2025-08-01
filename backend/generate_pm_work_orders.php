@@ -72,8 +72,8 @@ foreach ($schedules as $schedule) {
             
             $frequency_text = "{$schedule['frequency_interval']} {$schedule['frequency_unit']}(s)";
 
-            addEventToCalendar($schedule['title'], $new_start_date_str);
-
+            logCalendarEvent($schedule['title'], $new_start_date_str); // Use the new function name
+            
             $stmt_insert = $conn->prepare(
                 "INSERT INTO workorders (title, description, assetId, assignedTo, task, start_date, dueDate, priority, frequency, status, checklist, requiredParts, wo_type, pm_schedule_id) 
                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"

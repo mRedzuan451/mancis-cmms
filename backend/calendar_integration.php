@@ -3,7 +3,7 @@
  * A helper function to add an event to a calendar.
  * This is the final, correct version using the unambiguous ISO 8601 format.
  */
-function addEventToCalendar($title, $dateString) {
+function logCalendarEvent($title, $dateString) {
     if (empty($title) || empty($dateString) || $dateString === '0000-00-00') {
         return;
     }
