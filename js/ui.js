@@ -2157,6 +2157,3 @@ function renderPagination(module) {
   
   return html;
 }
-// --- END: NEW PAGINATION RENDERER ---
-
-    
