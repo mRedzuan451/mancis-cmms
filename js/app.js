@@ -142,25 +142,55 @@ async function loadInitialData() {
 }
 
 
+
 async function loadAndRender() {
     await loadInitialData();
+    
     try {
         await api.updateOverdueWorkOrders();
-        // Re-fetch the first page of work orders to get the updated statuses
         const woResponse = await api.getWorkOrders(1); 
         
-        // Correctly handle the response object
         state.cache.workOrders = woResponse.data;
         state.pagination.workOrders.currentPage = woResponse.page;
         state.pagination.workOrders.totalPages = Math.ceil(woResponse.total / woResponse.limit);
         state.pagination.workOrders.totalRecords = woResponse.total;
+        state.pagination.workOrders.limit = woResponse.limit;
 
     } catch (error) {
         console.error("Failed to update or refetch overdue work orders:", error);
     }
+    
     render();
     await checkForLowStockAndCreateRequests();
     await fetchAndDisplayNotifications();
+}
+
+// REPLACE your existing handlePageChange function with this
+async function handlePageChange(module, page) {
+    try {
+        let response;
+        if (module === 'assets') {
+            response = await api.getAssets(page);
+        } else if (module === 'parts') {
+            response = await api.getParts(page);
+        } else if (module === 'workOrders') {
+            response = await api.getWorkOrders(page);
+        } else if (module === 'partRequests') {
+            response = await api.getPartRequests(page);
+        }
+
+        if (response) {
+            state.cache[module] = response.data; // Essential: update the cache
+            state.pagination[module].currentPage = response.page;
+            state.pagination[module].totalPages = Math.ceil(response.total / response.limit);
+            state.pagination[module].totalRecords = response.total;
+            state.pagination[module].limit = response.limit;
+        }
+
+        renderMainContent();
+    } catch (error) {
+        showTemporaryMessage(`Failed to load page ${page} for ${module}.`, true);
+    }
 }
 
 async function refreshAllDataAndRender() {
