@@ -30,7 +30,7 @@ export const state = {
   },
   charts: {},
   sidebarSections: {
-    management: true, // Let's have the main section open by default
+    management: true,
     admin: false,
   },
   showArchivedFeedback: false,

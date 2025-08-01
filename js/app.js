@@ -102,58 +102,37 @@ async function loadInitialData() {
     try {
         const { permissions } = state.currentUser;
         
-        // Helper to process paginated responses
         const processPaginatedResponse = (module, response) => {
             state.cache[module] = response.data;
             state.pagination[module].currentPage = response.page;
             state.pagination[module].totalPages = Math.ceil(response.total / response.limit);
             state.pagination[module].totalRecords = response.total;
-            state.pagination[module].limit = response.limit; 
+            state.pagination[module].limit = response.limit;
         };
 
-        // Create a list of promises to run in parallel
         const dataPromises = [];
 
         // Paginated Data
-        if (permissions.asset_view) {
-            dataPromises.push(api.getAssets(1).then(res => processPaginatedResponse('assets', res)));
-        }
-        if (permissions.part_view) {
-            dataPromises.push(api.getParts(1).then(res => processPaginatedResponse('parts', res)));
-        }
-        if (permissions.wo_view) {
-            dataPromises.push(api.getWorkOrders(1).then(res => processPaginatedResponse('workOrders', res)));
-        }
-        if (permissions.part_request_view) {
-            dataPromises.push(api.getPartRequests(1).then(res => processPaginatedResponse('partRequests', res)));
-        }
+        if (permissions.asset_view) dataPromises.push(api.getAssets(1).then(res => processPaginatedResponse('assets', res)));
+        if (permissions.part_view) dataPromises.push(api.getParts(1).then(res => processPaginatedResponse('parts', res)));
+        if (permissions.wo_view) dataPromises.push(api.getWorkOrders(1).then(res => processPaginatedResponse('workOrders', res)));
+        if (permissions.part_request_view) dataPromises.push(api.getPartRequests(1).then(res => processPaginatedResponse('partRequests', res)));
         
         // Non-Paginated Data
-        if (permissions.user_view) {
-            dataPromises.push(api.getUsers().then(res => state.cache.users = res));
-        }
+        if (permissions.user_view) dataPromises.push(api.getUsers().then(res => state.cache.users = res));
         if (permissions.location_management) {
             dataPromises.push(api.getLocations().then(res => state.cache.locations = res));
         } else {
              dataPromises.push(api.getPublicLocations().then(res => state.cache.locations = res));
         }
-        if (permissions.log_view) {
-            dataPromises.push(api.getLogs().then(res => state.cache.logs = res));
-        }
-        if (permissions.pm_schedule_view) {
-            dataPromises.push(api.getPmSchedules().then(res => state.cache.pmSchedules = res));
-        }
-        if (permissions.stock_take_create) {
-            dataPromises.push(api.getStockTakes().then(res => state.cache.stockTakes = res));
-        }
-        if (permissions.feedback_view) {
-            dataPromises.push(api.getFeedback().then(res => state.cache.feedback = res));
-        }
+        if (permissions.log_view) dataPromises.push(api.getLogs().then(res => state.cache.logs = res));
+        if (permissions.pm_schedule_view) dataPromises.push(api.getPmSchedules().then(res => state.cache.pmSchedules = res));
+        if (permissions.stock_take_create) dataPromises.push(api.getStockTakes().then(res => state.cache.stockTakes = res));
+        if (permissions.feedback_view) dataPromises.push(api.getFeedback().then(res => state.cache.feedback = res));
         
         dataPromises.push(api.getReceivedParts().then(res => state.cache.receivedParts = res));
         dataPromises.push(api.getSystemSettings().then(res => state.settings = res));
         
-        // Wait for all data to be fetched and processed
         await Promise.all(dataPromises);
 
     } catch (error) {
@@ -1940,7 +1919,7 @@ async function handlePageChange(module, page) {
         let response;
         if (module === 'assets') {
             response = await api.getAssets(page);
-            state.cache.assets = response.data; // The API now returns an object
+            state.cache.assets = response.data;
         } else if (module === 'parts') {
             response = await api.getParts(page);
             state.cache.parts = response.data;
@@ -1951,13 +1930,15 @@ async function handlePageChange(module, page) {
             response = await api.getPartRequests(page);
             state.cache.partRequests = response.data;
         }
-        
-        state.pagination[module].currentPage = response.page;
-        state.pagination[module].totalPages = Math.ceil(response.total / response.limit);
-        state.pagination[module].totalRecords = response.total;
-        state.pagination[module].limit = response.limit; // Add this line
 
-        renderMainContent(); // Re-render the page with new data and pagination
+        if (response) {
+            state.pagination[module].currentPage = response.page;
+            state.pagination[module].totalPages = Math.ceil(response.total / response.limit);
+            state.pagination[module].totalRecords = response.total;
+            state.pagination[module].limit = response.limit;
+        }
+
+        renderMainContent();
     } catch (error) {
         showTemporaryMessage(`Failed to load page ${page} for ${module}.`, true);
     }
