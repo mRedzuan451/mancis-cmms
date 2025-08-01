@@ -121,6 +121,10 @@
           color: #3b82f6; /* blue-500 */
           font-weight: 600; /* font-semibold */
       }
+      .required-label::after {
+        content: " *";
+        color: red;
+      }
     </style>
   </head>
   <body class="bg-gray-100 font-sans">
@@ -590,7 +594,7 @@
             <div class="col-span-2">
               <label
                 for="woTitle"
-                class="block text-sm font-medium text-gray-700"
+                class="block text-sm font-medium text-gray-700 required-label"
                 >Title</label
               >
               <input
@@ -603,7 +607,7 @@
             <div class="col-span-2">
               <label
                 for="woDescription"
-                class="block text-sm font-medium text-gray-700"
+                class="block text-sm font-medium text-gray-700 required-label"
                 >Description</label
               >
               <textarea
@@ -616,7 +620,7 @@
             <div>
               <label
                 for="woAsset"
-                class="block text-sm font-medium text-gray-700"
+                class="block text-sm font-medium text-gray-700 required-label"
                 >Associated Asset</label
               >
               <select
@@ -628,7 +632,7 @@
             <div>
               <label
                 for="woAssignedTo"
-                class="block text-sm font-medium text-gray-700"
+                class="block text-sm font-medium text-gray-700 required-label"
                 >Assigned To</label
               >
               <select
@@ -640,7 +644,7 @@
             <div>
               <label
                 for="woTask"
-                class="block text-sm font-medium text-gray-700"
+                class="block text-sm font-medium text-gray-700 required-label"
                 >Task</label
               >
               <select
@@ -659,13 +663,13 @@
               </select>
             </div>
             <div>
-              <label for="woStartDate" class="block text-sm font-medium text-gray-700">Start Date</label>
+              <label for="woStartDate" class="block text-sm font-medium text-gray-700" required-label>Start Date</label>
               <input type="date" id="woStartDate" class="w-full mt-1 px-3 py-2 border rounded" required />
             </div>
             <div>
               <label
                 for="woDueDate"
-                class="block text-sm font-medium text-gray-700"
+                class="block text-sm font-medium text-gray-700 required-label"
                 >Due Date</label
               >
               <input
@@ -690,7 +694,7 @@
             <div>
               <label
                 for="woPriority"
-                class="block text-sm font-medium text-gray-700"
+                class="block text-sm font-medium text-gray-700 required-label"
                 >Priority</label
               >
               <select
@@ -716,7 +720,7 @@
             <div class="col-span-2">
               <label
                 for="woStatus"
-                class="block text-sm font-medium text-gray-700"
+                class="block text-sm font-medium text-gray-700 required-label"
                 >Status</label
               >
               <select
@@ -860,7 +864,7 @@
           <div class="mb-4">
             <label
               for="requestQuantity"
-              class="block text-sm font-medium text-gray-700"
+              class="block text-sm font-medium text-gray-700 required-label"
               >Quantity</label
             >
             <input
@@ -885,7 +889,7 @@
           <div class="mb-4">
               <label
                 for="requestPurpose"
-                class="block text-sm font-medium text-gray-700"
+                class="block text-sm font-medium text-gray-700 required-label"
                 >Purpose / Notes</label
               >
               <textarea
@@ -923,7 +927,7 @@
           <div class="mb-4">
             <label
               for="storageRequestPartId"
-              class="block text-sm font-medium text-gray-700"
+              class="block text-sm font-medium text-gray-700 required-label"
               >Part</label
             >
             <select
@@ -935,7 +939,7 @@
           <div class="mb-4">
             <label
               for="storageRequestQuantity"
-              class="block text-sm font-medium text-gray-700"
+              class="block text-sm font-medium text-gray-700 required-label"
               >Quantity</label
             >
             <input
@@ -958,7 +962,7 @@
           <div class="mb-4">
               <label
                 for="storageRequestPurpose"
-                class="block text-sm font-medium text-gray-700"
+                class="block text-sm font-medium text-gray-700 required-label"
                 >Purpose / Notes</label
               >
               <textarea
