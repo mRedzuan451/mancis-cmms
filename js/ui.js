@@ -470,22 +470,15 @@ export function renderPartsRequestPage() {
           <input type="text" id="partRequestSearch" class="w-full mb-4 px-3 py-2 border rounded" placeholder="Search by Part Name, SKU, or Requester...">
           <div class="overflow-x-auto">
               <table class="w-full">
-                  <thead><tr class="border-b">
-                      <th class="p-2 text-left">Part Name</th>
-                      <th class="p-2 text-left">Part Number</th>
-                      <th class="p-2 text-left">Quantity</th>
-                      <th class="p-2 text-left">Status</th>
-                      <th class="p-2 text-left">Purpose / Reason</th>
-                      <th class="p-2 text-left">Actions</th>
-                  </tr></thead>
-                  
                   <tbody id="partRequestTableBody">
                       ${generateTableRows("partRequests", partRequests)}
                   </tbody>
-
               </table>
           </div>
-      </div>`;
+          <div id="partRequestPagination">
+              ${renderPagination('partRequests')}
+          </div>
+          </div>`;
 }
 
 export function generateTableRows(type, data) {

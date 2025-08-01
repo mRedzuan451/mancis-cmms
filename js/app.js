@@ -136,7 +136,11 @@ async function loadInitialData() {
             state.pagination.workOrders.totalRecords = woResponse.total;
         }
         if (permissions.part_request_view) {
-            dataMap.partRequests = api.getPartRequests();
+            const requestResponse = await api.getPartRequests(1);
+            state.cache.partRequests = requestResponse.data;
+            state.pagination.partRequests.currentPage = requestResponse.page;
+            state.pagination.partRequests.totalPages = Math.ceil(requestResponse.total / requestResponse.limit);
+            state.pagination.partRequests.totalRecords = requestResponse.total;
         }
         // This will fetch the FULL location data for authorized users, overwriting the public data later.
         if (permissions.location_management) {
@@ -1943,6 +1947,9 @@ async function handlePageChange(module, page) {
         } else if (module === 'workOrders') {
             response = await api.getWorkOrders(page);
             state.cache.workOrders = response.data;
+        } else if (module === 'partRequests') {
+            response = await api.getPartRequests(page);
+            state.cache.partRequests = response.data;
         }
         
         state.pagination[module].currentPage = response.page;

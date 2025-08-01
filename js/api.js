@@ -39,7 +39,7 @@ export const api = {
     getParts: (page = 1, limit = 20) => request(`get_parts.php?page=${page}&limit=${limit}`),
     getUsers: () => request('get_users.php'),
     getWorkOrders: (page = 1, limit = 20) => request(`get_work_orders.php?page=${page}&limit=${limit}`),
-    getPartRequests: () => request('get_part_requests.php'),
+    getPartRequests: (page = 1, limit = 20) => request(`get_part_requests.php?page=${page}&limit=${limit}`),
     getLocations: () => request('get_locations.php'),
     getLogs: () => request('get_logs.php'),
     getReceivedParts: () => request('get_received_parts.php'),
