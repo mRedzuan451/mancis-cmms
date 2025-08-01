@@ -2116,23 +2116,25 @@ export async function showNotificationModal() {
  */
 function renderPagination(module) {
   const paginationState = state.pagination[module];
-  console.log(`[DEBUG] Pagination state for module "${module}":`, paginationState);
 
+  // The debug log confirmed this object is correct.
   if (!paginationState || paginationState.totalPages <= 1) {
     return '';
   }
-  if (paginationState.limit === undefined) {
-      console.warn(`[WARNING] state.pagination.${module}.limit is undefined. Using default of 20. This indicates a data loading issue in app.js.`);
-      paginationState.limit = 20; 
-  }
 
-  const { currentPage, totalPages } = paginationState;
+  // --- START: MODIFICATION ---
+  // We will now access properties directly from paginationState to avoid any potential errors.
+  const currentPage = paginationState.currentPage;
+  const totalPages = paginationState.totalPages;
+  const totalRecords = paginationState.totalRecords;
+  const limit = paginationState.limit || 20; // Use a default just in case
+
   const startItem = (currentPage - 1) * limit + 1;
   const endItem = Math.min(currentPage * limit, totalRecords);
   const showingLabel = `Showing <span class="font-medium">${startItem}</span> to <span class="font-medium">${endItem}</span> of <span class="font-medium">${totalRecords}</span> results`;
-    
+  // --- END: MODIFICATION ---
+
   let pageLinks = '';
-  // Generate the page number links
   for (let i = Math.max(1, currentPage - 2); i <= Math.min(totalPages, currentPage + 2); i++) {
     const isCurrent = i === currentPage;
     pageLinks += `<button data-page="${i}" data-module="${module}" class="pagination-link ${isCurrent ? 'z-10 bg-blue-50 border-blue-500 text-blue-600' : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'} relative inline-flex items-center px-4 py-2 border text-sm font-medium"> ${i} </button>`;
@@ -2158,7 +2160,6 @@ function renderPagination(module) {
       </div>
     </nav>
   `;
-  // --- END: FINAL CORRECTION ---
   
   return html;
 }
