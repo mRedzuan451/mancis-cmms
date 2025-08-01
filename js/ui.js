@@ -125,18 +125,13 @@ export function renderAssetsPage() {
           <input type="text" id="assetSearch" class="w-full mb-4 px-3 py-2 border rounded" placeholder="Search by name, tag, or category...">
           <div class="overflow-x-auto">
               <table class="w-full" id="assetTable">
-                  <thead><tr class="border-b">
-                      <th class="p-2 w-4"><input type="checkbox" id="selectAllCheckbox"></th>
-                      <th class="p-2 text-left cursor-pointer" data-sort="name">Name <i class="fas fa-sort"></i></th>
-                      <th class="p-2 text-left cursor-pointer" data-sort="tag">Tag <i class="fas fa-sort"></i></th>
-                      <th class="p-2 text-left cursor-pointer" data-sort="locationId">Location <i class="fas fa-sort"></i></th>
-                      <th class="p-2 text-left cursor-pointer" data-sort="status">Status <i class="fas fa-sort"></i></th>
-                      <th class="p-2 text-left">Actions</th>
-                  </tr></thead>
                   <tbody id="assetTableBody">${generateTableRows("assets", assets)}</tbody>
               </table>
           </div>
-      </div>`;
+          <div id="assetPagination">
+              ${renderPagination('assets')}
+          </div>
+          </div>`;
 }
 
 export function renderPartsPage() {
@@ -2164,23 +2159,4 @@ function renderPagination(module) {
 }
 // --- END: NEW PAGINATION RENDERER ---
 
-export function renderAssetsPage() {
-    const assets = state.cache.assets;
-    const header = renderPageHeader("Asset Management", [
-        // ... buttons
-    ]);
-    return `
-      ${header}
-      <div class="bg-white p-4 rounded-lg shadow">
-          <input type="file" id="assetUploadInput" class="hidden" accept=".csv">
-          <input type="text" id="assetSearch" class="w-full mb-4 px-3 py-2 border rounded" placeholder="Search by name, tag, or category...">
-          <div class="overflow-x-auto">
-              <table class="w-full" id="assetTable">
-                  <tbody id="assetTableBody">${generateTableRows("assets", assets)}</tbody>
-              </table>
-          </div>
-          <div id="assetPagination">
-              ${renderPagination('assets')}
-          </div>
-          </div>`;
-}
+    
