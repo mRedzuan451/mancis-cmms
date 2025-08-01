@@ -372,7 +372,13 @@ async function handleWorkOrderFormSubmit(e) {
     e.preventDefault();
     const woIdValue = document.getElementById("workOrderId").value;
     const isEditing = !!woIdValue;
+    const startDate = document.getElementById("woStartDate").value;
+    const dueDate = document.getElementById("woDueDate").value;
 
+    if (new Date(startDate) > new Date(dueDate)) {
+        showTemporaryMessage("Error: Start Date cannot be after the Due Date.", true);
+        return; // Stop the function here
+    }
     const checklistItems = Array.from(document.querySelectorAll("#woChecklistContainer .checklist-item span")).map(span => ({ text: span.textContent, completed: false }));
     const requiredParts = Array.from(document.querySelectorAll("#woPartsContainer .wo-part-row")).map(row => ({
         partId: parseInt(row.querySelector('.wo-part-select').value),
@@ -385,8 +391,8 @@ async function handleWorkOrderFormSubmit(e) {
         assetId: parseInt(document.getElementById("woAsset").value),
         assignedTo: parseInt(document.getElementById("woAssignedTo").value),
         task: document.getElementById("woTask").value,
-        start_date: document.getElementById("woStartDate").value,
-        dueDate: document.getElementById("woDueDate").value,
+        start_date: startDate, // Use the variable from validation
+        dueDate: dueDate,
         breakdownTimestamp: document.getElementById("woBreakdownTime").value || null,
         priority: document.getElementById("woPriority").value,
         frequency: document.getElementById("woFrequency").value,
