@@ -108,6 +108,7 @@ async function loadInitialData() {
             state.pagination[module].currentPage = response.page;
             state.pagination[module].totalPages = Math.ceil(response.total / response.limit);
             state.pagination[module].totalRecords = response.total;
+            state.pagination[module].limit = response.limit; // Add this line
         };
 
         // Create a list of promises to run in parallel
@@ -1953,6 +1954,7 @@ async function handlePageChange(module, page) {
         state.pagination[module].currentPage = response.page;
         state.pagination[module].totalPages = Math.ceil(response.total / response.limit);
         state.pagination[module].totalRecords = response.total;
+        state.pagination[module].limit = response.limit; // Add this line
 
         renderMainContent(); // Re-render the page with new data and pagination
     } catch (error) {

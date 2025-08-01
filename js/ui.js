@@ -2121,11 +2121,10 @@ function renderPagination(module) {
   }
 
   const { currentPage, totalPages } = paginationState;
-
-  // --- START: FINAL CORRECTION ---
-  // The entire HTML block is now a single template literal enclosed in backticks.
-  // This is the correct way to build multi-line strings with embedded variables.
-  
+  const startItem = (currentPage - 1) * limit + 1;
+  const endItem = Math.min(currentPage * limit, totalRecords);
+  const showingLabel = `Showing <span class="font-medium">${startItem}</span> to <span class="font-medium">${endItem}</span> of <span class="font-medium">${totalRecords}</span> results`;
+    
   let pageLinks = '';
   // Generate the page number links
   for (let i = Math.max(1, currentPage - 2); i <= Math.min(totalPages, currentPage + 2); i++) {
@@ -2141,7 +2140,7 @@ function renderPagination(module) {
       </div>
       <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
         <p class="text-sm text-gray-700">
-          Showing page <span class="font-medium">${currentPage}</span> of <span class="font-medium">${totalPages}</span>
+          ${showingLabel}
         </p>
         <div>
           <span class="relative z-0 inline-flex shadow-sm rounded-md">

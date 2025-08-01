@@ -9,12 +9,11 @@ export const state = {
   sortOrder: "asc",
   calendarDate: new Date(),
   pagination: {
-    assets: { currentPage: 1, totalPages: 1, totalRecords: 0 },
-    parts: { currentPage: 1, totalPages: 1, totalRecords: 0 },
-    workOrders: { currentPage: 1, totalPages: 1, totalRecords: 0 },
-    partRequests: { currentPage: 1, totalPages: 1, totalRecords: 0 }, // Add this line
-    users: { currentPage: 1, totalPages: 1, totalRecords: 0 },
-    // Add other modules here as you implement pagination for them
+    assets: { currentPage: 1, totalPages: 1, totalRecords: 0, limit: 20 },
+    parts: { currentPage: 1, totalPages: 1, totalRecords: 0, limit: 20 },
+    workOrders: { currentPage: 1, totalPages: 1, totalRecords: 0, limit: 20 },
+    partRequests: { currentPage: 1, totalPages: 1, totalRecords: 0, limit: 20 },
+    users: { currentPage: 1, totalPages: 1, totalRecords: 0, limit: 20 },
   },
   cache: {
     assets: [],
