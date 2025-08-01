@@ -1796,53 +1796,66 @@ async function handleFileUpload(file, type) {
     resultDiv.style.display = 'block';
     resultDiv.innerHTML = `<p>Processing file... please wait.</p>`;
 
-    const reader = new FileReader();
-    reader.onload = async (e) => {
-        const text = e.target.result;
-        const lines = text.split(/\r?\n/).filter(line => line.trim() !== '');
-        if (lines.length < 2) {
-            resultDiv.innerHTML = `<p class="text-red-500">Error: CSV file must have a header row and at least one data row.</p>`;
-            return;
-        }
+    let processedRowCount = 0;
+    
+    Papa.parse(file, {
+        header: true, // Automatically uses the first row as keys
+        skipEmptyLines: true,
+        worker: true, // Use a separate thread for performance
+        
+        // 'chunk' is called for each batch of rows
+        chunk: async (results, parser) => {
+            // Pause the parser to wait for the API call to complete
+            parser.pause(); 
+            
+            const chunkData = results.data;
+            processedRowCount += chunkData.length;
+            resultDiv.innerHTML = `<p>Processing... Processed ${processedRowCount} rows.</p>`;
 
-        const header = lines[0].split(',').map(h => h.trim());
-        const rows = lines.slice(1).map(line => {
-            const values = line.split(',');
-            const rowObject = {};
-            header.forEach((key, index) => {
-                rowObject[key] = values[index] ? values[index].trim() : '';
-            });
-            return rowObject;
-        });
+            try {
+                let response;
+                if (type === 'assets') {
+                    response = await api.bulkUpdateAssets(chunkData);
+                } else if (type === 'parts') {
+                    response = await api.bulkUpdateParts(chunkData);
+                }
 
-        try {
-            let response;
-            if (type === 'assets') {
-                response = await api.bulkUpdateAssets(rows);
-            } else if (type === 'parts') {
-                response = await api.bulkUpdateParts(rows);
+                if (response.failed > 0) {
+                    // If any part of a chunk fails, stop the entire upload
+                    parser.abort();
+                    let errorHTML = `<p class="font-bold text-red-600">Upload failed at row ~${processedRowCount}. No changes were saved.</p>`;
+                    if(response.errors && response.errors.length > 0) {
+                         errorHTML += `<p class="font-bold mt-2">Error Details:</p><ul class="text-sm list-disc list-inside">`;
+                         response.errors.forEach(err => { errorHTML += `<li>${err}</li>`; });
+                         errorHTML += `</ul>`;
+                    }
+                    resultDiv.innerHTML = errorHTML;
+                    return; // Stop processing
+                }
+
+            } catch (error) {
+                // Handle network or server errors
+                parser.abort();
+                resultDiv.innerHTML = `<p class="text-red-500">A critical error occurred: ${error.message}</p>`;
+                return; // Stop processing
             }
 
-            let resultHTML = `<p class="font-bold text-green-600">${response.message}</p><ul>`;
-            resultHTML += `<li><strong>Created:</strong> ${response.created}</li>`;
-            resultHTML += `<li><strong>Updated:</strong> ${response.updated}</li>`;
-            if (response.failed > 0) {
-                resultHTML += `<li class="text-red-500"><strong>Failed:</strong> ${response.failed}</li>`;
-                resultHTML += `</ul><p class="font-bold mt-2">Error Details:</p><ul class="text-sm list-disc list-inside">`;
-                response.errors.forEach(err => {
-                    resultHTML += `<li>${err}</li>`;
-                });
-                resultHTML += `</ul>`;
-            } else {
-                resultHTML += `</ul>`;
-            }
-            resultDiv.innerHTML = resultHTML;
-            refreshAllDataAndRender();
-        } catch (error) {
-            resultDiv.innerHTML = `<p class="text-red-500">An error occurred: ${error.message}</p>`;
+            // Resume parsing the next chunk
+            parser.resume();
+        },
+
+        // 'complete' is called when the entire file is done
+        complete: async () => {
+            resultDiv.innerHTML = `<p class="font-bold text-green-600">Upload complete! Successfully processed ${processedRowCount} rows.</p>`;
+            // Perform a full refresh to show the new/updated data
+            await refreshAllDataAndRender();
+        },
+        
+        // 'error' is called if Papa Parse encounters an issue
+        error: (error) => {
+            resultDiv.innerHTML = `<p class="text-red-500">Failed to parse CSV file: ${error.message}</p>`;
         }
-    };
-    reader.readAsText(file);
+    });
 }
 
 // js/app.js
