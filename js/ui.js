@@ -2116,8 +2116,14 @@ export async function showNotificationModal() {
  */
 function renderPagination(module) {
   const paginationState = state.pagination[module];
+  console.log(`[DEBUG] Pagination state for module "${module}":`, paginationState);
+
   if (!paginationState || paginationState.totalPages <= 1) {
     return '';
+  }
+  if (paginationState.limit === undefined) {
+      console.warn(`[WARNING] state.pagination.${module}.limit is undefined. Using default of 20. This indicates a data loading issue in app.js.`);
+      paginationState.limit = 20; 
   }
 
   const { currentPage, totalPages } = paginationState;
