@@ -119,7 +119,11 @@ async function loadInitialData() {
             state.pagination.assets.totalRecords = assetResponse.total;
         }
         if (permissions.part_view) {
-            dataMap.parts = api.getParts();
+            const partResponse = await api.getParts(1);
+            state.cache.parts = partResponse.data;
+            state.pagination.parts.currentPage = partResponse.page;
+            state.pagination.parts.totalPages = Math.ceil(partResponse.total / partResponse.limit);
+            state.pagination.parts.totalRecords = partResponse.total;
         }
         if (permissions.user_view) {
             dataMap.users = api.getUsers();
@@ -1929,6 +1933,9 @@ async function handlePageChange(module, page) {
         if (module === 'assets') {
             response = await api.getAssets(page);
             state.cache.assets = response.data; // The API now returns an object
+        } else if (module === 'parts') {
+            response = await api.getParts(page);
+            state.cache.parts = response.data;
         }
         // Add other modules here (e.g., `else if (module === 'parts') { ... }`)
 

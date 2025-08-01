@@ -157,18 +157,13 @@ export function renderPartsPage() {
           <input type="text" id="partSearch" class="w-full mb-4 px-3 py-2 border rounded" placeholder="Search...">
           <div class="overflow-x-auto">
               <table class="w-full" id="partTable">
-                  <thead><tr class="border-b">
-                      <th class="p-2 w-4"><input type="checkbox" id="selectAllCheckbox"></th>
-                      <th class="p-2 text-left cursor-pointer" data-sort="name">Part Name <i class="fas fa-sort"></i></th>
-                      <th class="p-2 text-left cursor-pointer" data-sort="sku">SKU <i class="fas fa-sort"></i></th>
-                      <th class="p-2 text-left cursor-pointer" data-sort="quantity">Quantity <i class="fas fa-sort"></i></th>
-                      ${departmentHeader}
-                      <th class="p-2 text-left">Actions</th>
-                  </tr></thead>
                   <tbody id="partTableBody">${generateTableRows("parts", parts)}</tbody>
               </table>
           </div>
-      </div>`;
+          <div id="partPagination">
+              ${renderPagination('parts')}
+          </div>
+          </div>`;
 }
 
 export function renderWorkOrdersPage() {
