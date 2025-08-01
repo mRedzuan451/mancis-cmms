@@ -17,24 +17,46 @@ authorize('asset_view', $conn);
 $user_role = $_SESSION['user_role'];
 $user_department_id = $_SESSION['user_department_id'];
 
-// --- START: MODIFICATION ---
-$sql = "";
+// --- START: PAGINATION LOGIC ---
+$page = isset($_GET['page']) ? intval($_GET['page']) : 1;
+$limit = isset($_GET['limit']) ? intval($_GET['limit']) : 20; // Default to 20 items per page
+$offset = ($page - 1) * $limit;
+
+$total_records = 0;
+$assets_array = [];
+
+// 1. Get the total count of records
+$count_sql = "";
 if ($user_role === 'Admin') {
-    // Admin query is simple
-    $sql = "SELECT * FROM assets ORDER BY name ASC";
-    $stmt = $conn->prepare($sql);
+    $count_sql = "SELECT COUNT(*) as total FROM assets";
+    $stmt_count = $conn->prepare($count_sql);
 } else {
-    // Non-admin query is now ALSO simple and fast!
-    $sql = "SELECT * FROM assets WHERE departmentId = ? ORDER BY name ASC";
-    $stmt = $conn->prepare($sql);
-    $stmt->bind_param("i", $user_department_id);
+    $count_sql = "SELECT COUNT(*) as total FROM assets WHERE departmentId = ?";
+    $stmt_count = $conn->prepare($count_sql);
+    $stmt_count->bind_param("i", $user_department_id);
 }
-// --- END: MODIFICATION ---
+$stmt_count->execute();
+$count_result = $stmt_count->get_result();
+$total_records = $count_result->fetch_assoc()['total'];
+$stmt_count->close();
 
-$stmt->execute();
-$result = $stmt->get_result();
 
-$assets_array = array();
+// 2. Get the paginated data
+$data_sql = "";
+if ($user_role === 'Admin') {
+    $data_sql = "SELECT * FROM assets ORDER BY name ASC LIMIT ? OFFSET ?";
+    $stmt_data = $conn->prepare($data_sql);
+    $stmt_data->bind_param("ii", $limit, $offset);
+} else {
+    $data_sql = "SELECT * FROM assets WHERE departmentId = ? ORDER BY name ASC LIMIT ? OFFSET ?";
+    $stmt_data = $conn->prepare($data_sql);
+    $stmt_data->bind_param("iii", $user_department_id, $limit, $offset);
+}
+// --- END: PAGINATION LOGIC ---
+
+$stmt_data->execute();
+$result = $stmt_data->get_result();
+
 if ($result && $result->num_rows > 0) {
     while($row = $result->fetch_assoc()) {
         $row['id'] = intval($row['id']);
@@ -45,7 +67,16 @@ if ($result && $result->num_rows > 0) {
     }
 }
 
-$stmt->close();
+$stmt_data->close();
 $conn->close();
-echo json_encode($assets_array);
+
+// --- START: NEW RESPONSE FORMAT ---
+// Return the data along with pagination info
+echo json_encode([
+    'total' => $total_records,
+    'page' => $page,
+    'limit' => $limit,
+    'data' => $assets_array
+]);
+// --- END: NEW RESPONSE FORMAT ---
 ?>

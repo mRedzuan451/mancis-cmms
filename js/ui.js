@@ -2132,3 +2132,73 @@ export async function showNotificationModal() {
         list.innerHTML = '<p class="p-4 text-sm text-red-500">Could not load notifications.</p>';
     }
 }
+/**
+ * Renders the HTML for pagination controls.
+ * @param {string} module The name of the module (e.g., 'assets').
+ * @returns {string} The HTML string for the pagination controls.
+ */
+function renderPagination(module) {
+  const paginationState = state.pagination[module];
+  if (!paginationState || paginationState.totalPages <= 1) {
+    return '';
+  }
+
+  const { currentPage, totalPages } = paginationState;
+
+  // --- START: FINAL CORRECTION ---
+  // The entire HTML block is now a single template literal enclosed in backticks.
+  // This is the correct way to build multi-line strings with embedded variables.
+  
+  let pageLinks = '';
+  // Generate the page number links
+  for (let i = Math.max(1, currentPage - 2); i <= Math.min(totalPages, currentPage + 2); i++) {
+    const isCurrent = i === currentPage;
+    pageLinks += `<button data-page="${i}" data-module="${module}" class="pagination-link ${isCurrent ? 'z-10 bg-blue-50 border-blue-500 text-blue-600' : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'} relative inline-flex items-center px-4 py-2 border text-sm font-medium"> ${i} </button>`;
+  }
+
+  const html = `
+    <nav class="flex items-center justify-between mt-4">
+      <div class="flex-1 flex justify-between sm:hidden">
+        ${currentPage > 1 ? `<button data-page="${currentPage - 1}" data-module="${module}" class="pagination-link relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"> Previous </button>` : '<div></div>'}
+        ${currentPage < totalPages ? `<button data-page="${currentPage + 1}" data-module="${module}" class="pagination-link relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"> Next </button>` : ''}
+      </div>
+      <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+        <p class="text-sm text-gray-700">
+          Showing page <span class="font-medium">${currentPage}</span> of <span class="font-medium">${totalPages}</span>
+        </p>
+        <div>
+          <span class="relative z-0 inline-flex shadow-sm rounded-md">
+            ${currentPage > 1 ? `<button data-page="${currentPage - 1}" data-module="${module}" class="pagination-link relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"> &laquo; </button>` : ''}
+            ${pageLinks}
+            ${currentPage < totalPages ? `<button data-page="${currentPage + 1}" data-module="${module}" class="pagination-link relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"> &raquo; </button>` : ''}
+          </span>
+        </div>
+      </div>
+    </nav>
+  `;
+  // --- END: FINAL CORRECTION ---
+  
+  return html;
+}
+// --- END: NEW PAGINATION RENDERER ---
+
+export function renderAssetsPage() {
+    const assets = state.cache.assets;
+    const header = renderPageHeader("Asset Management", [
+        // ... buttons
+    ]);
+    return `
+      ${header}
+      <div class="bg-white p-4 rounded-lg shadow">
+          <input type="file" id="assetUploadInput" class="hidden" accept=".csv">
+          <input type="text" id="assetSearch" class="w-full mb-4 px-3 py-2 border rounded" placeholder="Search by name, tag, or category...">
+          <div class="overflow-x-auto">
+              <table class="w-full" id="assetTable">
+                  <tbody id="assetTableBody">${generateTableRows("assets", assets)}</tbody>
+              </table>
+          </div>
+          <div id="assetPagination">
+              ${renderPagination('assets')}
+          </div>
+          </div>`;
+}

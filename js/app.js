@@ -112,7 +112,11 @@ async function loadInitialData() {
             dataMap.feedback = api.getFeedback();
         }
         if (permissions.asset_view) {
-            dataMap.assets = api.getAssets();
+            const assetResponse = await api.getAssets(1);
+            state.cache.assets = assetResponse.data;
+            state.pagination.assets.currentPage = assetResponse.page;
+            state.pagination.assets.totalPages = Math.ceil(assetResponse.total / assetResponse.limit);
+            state.pagination.assets.totalRecords = assetResponse.total;
         }
         if (permissions.part_view) {
             dataMap.parts = api.getParts();
@@ -1500,6 +1504,14 @@ function attachGlobalEventListeners() {
     document.body.addEventListener("click", (e) => {
         const target = e.target;
 
+        const paginationLink = target.closest('.pagination-link');
+        if (paginationLink) {
+            const page = parseInt(paginationLink.dataset.page);
+            const module = paginationLink.dataset.module;
+            handlePageChange(module, page);
+            return; // Stop further execution
+        }
+
         const kpiBox = target.closest('.dashboard-kpi-box');
         if (kpiBox) {
             const page = kpiBox.dataset.page;
@@ -1908,6 +1920,26 @@ async function fetchAndDisplayNotifications() {
     } catch (error) {
         console.error("Failed to fetch notifications:", error);
         return []; // Return empty array on error
+    }
+}
+
+async function handlePageChange(module, page) {
+    try {
+        let response;
+        if (module === 'assets') {
+            response = await api.getAssets(page);
+            state.cache.assets = response.data; // The API now returns an object
+        }
+        // Add other modules here (e.g., `else if (module === 'parts') { ... }`)
+
+        // Update pagination state
+        state.pagination[module].currentPage = response.page;
+        state.pagination[module].totalPages = Math.ceil(response.total / response.limit);
+        state.pagination[module].totalRecords = response.total;
+
+        renderMainContent(); // Re-render the page with new data and pagination
+    } catch (error) {
+        showTemporaryMessage(`Failed to load page ${page} for ${module}.`, true);
     }
 }
 
