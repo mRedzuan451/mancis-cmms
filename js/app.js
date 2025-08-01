@@ -165,10 +165,17 @@ async function loadAndRender() {
     await loadInitialData();
     try {
         await api.updateOverdueWorkOrders();
-        // Then, re-fetch the work orders to get the updated statuses.
-        state.cache.workOrders = await api.getWorkOrders();
+        // Re-fetch the first page of work orders to get the updated statuses
+        const woResponse = await api.getWorkOrders(1); 
+        
+        // Correctly handle the response object
+        state.cache.workOrders = woResponse.data;
+        state.pagination.workOrders.currentPage = woResponse.page;
+        state.pagination.workOrders.totalPages = Math.ceil(woResponse.total / woResponse.limit);
+        state.pagination.workOrders.totalRecords = woResponse.total;
+
     } catch (error) {
-        console.error("Failed to update overdue work orders:", error);
+        console.error("Failed to update or refetch overdue work orders:", error);
     }
     render();
     await checkForLowStockAndCreateRequests();
