@@ -129,7 +129,11 @@ async function loadInitialData() {
             dataMap.users = api.getUsers();
         }
         if (permissions.wo_view) {
-            dataMap.workOrders = api.getWorkOrders();
+            const woResponse = await api.getWorkOrders(1);
+            state.cache.workOrders = woResponse.data;
+            state.pagination.workOrders.currentPage = woResponse.page;
+            state.pagination.workOrders.totalPages = Math.ceil(woResponse.total / woResponse.limit);
+            state.pagination.workOrders.totalRecords = woResponse.total;
         }
         if (permissions.part_request_view) {
             dataMap.partRequests = api.getPartRequests();
@@ -1936,10 +1940,11 @@ async function handlePageChange(module, page) {
         } else if (module === 'parts') {
             response = await api.getParts(page);
             state.cache.parts = response.data;
+        } else if (module === 'workOrders') {
+            response = await api.getWorkOrders(page);
+            state.cache.workOrders = response.data;
         }
-        // Add other modules here (e.g., `else if (module === 'parts') { ... }`)
-
-        // Update pagination state
+        
         state.pagination[module].currentPage = response.page;
         state.pagination[module].totalPages = Math.ceil(response.total / response.limit);
         state.pagination[module].totalRecords = response.total;

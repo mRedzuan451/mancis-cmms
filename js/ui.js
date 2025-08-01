@@ -182,19 +182,13 @@ export function renderWorkOrdersPage() {
           <input type="text" id="workOrderSearch" class="w-full mb-4 px-3 py-2 border rounded" placeholder="Search...">
           <div class="overflow-x-auto">
               <table class="w-full" id="workOrderTable">
-                  <thead><tr class="border-b">
-                      <th class="p-2 w-4"><input type="checkbox" id="selectAllCheckbox"></th>
-                      <th class="p-2 text-left cursor-pointer" data-sort="title">Title <i class="fas fa-sort"></i></th>
-                      <th class="p-2 text-left cursor-pointer" data-sort="assetId">Asset <i class="fas fa-sort"></i></th>
-                      <th class="p-2 text-left cursor-pointer" data-sort="start_date">Start Date <i class="fas fa-sort"></i></th>
-                      <th class="p-2 text-left cursor-pointer" data-sort="dueDate">Due Date <i class="fas fa-sort"></i></th>
-                      <th class="p-2 text-left cursor-pointer" data-sort="status">Status <i class="fas fa-sort"></i></th>
-                      <th class="p-2 text-left">Actions</th>
-                  </tr></thead>
                   <tbody id="workOrderTableBody">${generateTableRows("workOrders", workOrders)}</tbody>
               </table>
           </div>
-      </div>`;
+          <div id="workOrderPagination">
+              ${renderPagination('workOrders')}
+          </div>
+    </div>`;
 }
 
 export function renderUserManagementPage() {
