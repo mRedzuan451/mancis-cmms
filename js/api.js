@@ -232,10 +232,10 @@ export const api = {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id })
     }),
-    submitFeedback: (message) => request('submit_feedback.php', {
+    submitFeedback: (data) => request('submit_feedback.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message })
+        body: JSON.stringify(data) // FIX: Pass the entire data object directly
     }),
     getFeedback: () => request('get_feedback.php'),
     updateFeedbackStatus: (id, status) => request('update_feedback_status.php', {
