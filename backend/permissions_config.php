@@ -58,7 +58,7 @@ $role_permissions = [
         'pm_schedule_view', 'pm_schedule_create', 'pm_schedule_delete',
         'user_view','user_edit',
         'location_management',
-        'report_view',
+        'report_view', 'feedback_view',
         'stock_take_create', 'stock_take_approve',
         'report_cost_view','report_kpi_view',
     ],
@@ -70,7 +70,7 @@ $role_permissions = [
         'part_request_view', 'part_request_create', 'part_request_approve',
         'pm_schedule_view', 'pm_schedule_create',
         'user_view','part_restock',
-        'location_management',
+        'location_management', 'feedback_view',
         'stock_take_create', 'stock_take_approve',
         'report_cost_view','report_view','report_kpi_view',
     ],
@@ -83,6 +83,7 @@ $role_permissions = [
         'part_request_view', 'part_request_create',
         'pm_schedule_view','asset_create',
         'pm_schedule_create','stock_take_create',
+        'feedback_view',
     ],
 
     'Technician' => [
@@ -92,13 +93,13 @@ $role_permissions = [
         'part_request_view', 'part_request_create','part_create',
         'location_management','part_restock',
         'stock_take_create', 'pm_schedule_view','report_view',
-        'pm_schedule_create',
+        'pm_schedule_create', 'feedback_view',
     ],
 
     'Clerk' => [
         'part_request_view', 'part_request_create',
         'location_management','part_restock',
-        'stock_take_create', 'part_view',
+        'stock_take_create', 'part_view', 'feedback_view',
     ],
 ];
 ?>

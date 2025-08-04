@@ -21,7 +21,7 @@ import {
     renderInventoryReportPage,
     renderStockTakePage,
     renderStockTakeCountPage,
-    renderTeamMessagesPage as renderFeedbackPage,
+    renderTeamMessagesPage,
     generateTableRows,
     showAssetModal,
     showPartModal,
@@ -79,7 +79,7 @@ function renderMainContent() {
         case "partRequests":        content = renderPartsRequestPage(); break;
         case "pmSchedules":         content = renderPmSchedulesPage(); break;
         case "stockTake":           content = renderStockTakePage(); break;
-        case "feedback":            content = renderFeedbackPage(); break;
+        case "feedback":            content = renderTeamMessagesPage(); break;
         default:                    content = renderDashboard();
     }
     mainContent.innerHTML = content;

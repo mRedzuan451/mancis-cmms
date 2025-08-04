@@ -674,7 +674,7 @@ export function renderSidebar() {
             links: [
                 { page: "userManagement", icon: "fa-users-cog", text: "User Management" },
                 { page: "activityLog", icon: "fa-history", text: "Activity Log" },
-                { page: "feedback", icon: "fa-envelope-open-text", text: "Feedback Inbox" },
+                { page: "feedback", icon: "fa-envelope-open-text", text: "Team Messages" },
             ]
         }
     ];
