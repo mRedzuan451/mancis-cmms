@@ -1568,13 +1568,9 @@ function attachGlobalEventListeners() {
              return;
         }
         if (!button) return;
-        if (button.id === 'sendFeedbackBtn') {
-            if (state.settings.is_messaging_enabled !== '1' && state.currentUser.role !== 'Admin') {
-                showTemporaryMessage('The messaging feature is currently disabled by the administrator.', true);
-                return;
-            }
-            showMessageModal();
-            return; // Stop further execution
+        if (button && button.id === 'sendFeedbackBtn') {
+            showFeedbackToAdminModal(); // This now calls the correct, new modal
+            return;
         }
         if (button.classList.contains('view-stock-take-btn')) {
             const stockTakeId = parseInt(button.dataset.id);
@@ -1767,8 +1763,8 @@ function attachGlobalEventListeners() {
         e.preventDefault();
         const message = document.getElementById("feedbackToAdminBody").value;
         try {
-            // Use the new API function
-            await api.sendFeedbackToAdmin({ message, action: 'send_to_admin' });
+            // We use the existing submitFeedback API, but send our special 'action'
+            await api.submitFeedback({ message, action: 'send_to_admin' });
             showTemporaryMessage("Your feedback has been sent to the administrator. Thank you!");
             document.getElementById("feedbackToAdminModal").style.display = "none";
         } catch(error) {
