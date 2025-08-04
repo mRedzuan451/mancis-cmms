@@ -415,7 +415,8 @@ async function handleWorkOrderFormSubmit(e) {
             await api.createWorkOrder(woData);
             await logActivity("Work Order Created", `Created WO: ${woData.title}`);
         }
-        state.cache.workOrders = await api.getWorkOrders();
+        const woResponse = await api.getWorkOrders();
+        state.cache.workOrders = woResponse.data;
         document.getElementById("workOrderModal").style.display = "none";
         renderMainContent();
         showTemporaryMessage('Work Order saved successfully!');
@@ -579,10 +580,12 @@ async function handlePartRequestFormSubmit(e) {
                 newPartNumber: isNewPart ? document.getElementById('newPartNumber').value : null,
                 newPartMaker: isNewPart ? document.getElementById('newPartMaker').value : null,
             };
-            await api.createPartRequest(requestData);
-            await logActivity("Part Request Submitted", `User requested ${requestData.quantity} x ${isNewPart ? requestData.newPartName : 'existing part'}`);
+            const prResponse = await api.getPartRequests();
+        state.cache.partRequests = prResponse.data;
+        await logActivity("Part Request Submitted", `User requested ${requestData.quantity} x ${isNewPart ? requestData.newPartName : 'existing part'}`);
         }
-        state.cache.partRequests = await api.getPartRequests();
+        const prResponse = await api.getPartRequests();
+        state.cache.partRequests = prResponse.data;
         document.getElementById('partRequestModal').style.display = 'none';
         renderMainContent();
         showTemporaryMessage(`Part request ${isEditing ? 'updated' : 'submitted'} successfully!`);
@@ -616,7 +619,8 @@ async function handleStorageRequestFormSubmit(e) {
      try {
         await api.createPartRequest(requestData);
         await logActivity("Storage Request Submitted", `User requested ${requestData.quantity} x part ID ${requestData.partId} from storage`);
-        state.cache.partRequests = await api.getPartRequests();
+        const prResponse = await api.getPartRequests();
+        state.cache.partRequests = prResponse.data;
         document.getElementById('storageRequestModal').style.display = 'none';
         renderMainContent();
         showTemporaryMessage("Request from storage submitted successfully!");
