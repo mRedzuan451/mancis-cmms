@@ -3,22 +3,15 @@ require_once 'auth_check.php';
 
 header("Content-Type: application/json; charset=UTF-8");
 
-// --- START: MODIFICATION ---
-// 1. Establish the database connection FIRST.
 $servername = "localhost"; $username = "root"; $password = ""; $dbname = "mancis_db";
 $conn = new mysqli($servername, $username, $password, $dbname);
 if ($conn->connect_error) { die("Connection failed: " . $conn->connect_error); }
 
-// 2. NOW, call authorize() with the established connection.
 authorize('part_view', $conn);
-// --- END: MODIFICATION ---
 
 $user_role = $_SESSION['user_role'];
 $user_department_id = $_SESSION['user_department_id'];
 
-// ... (The rest of the file remains exactly the same) ...
-
-// --- START: PAGINATION LOGIC ---
 $page = isset($_GET['page']) ? intval($_GET['page']) : 1;
 $limit = isset($_GET['limit']) ? intval($_GET['limit']) : 20;
 $offset = ($page - 1) * $limit;
@@ -26,7 +19,7 @@ $offset = ($page - 1) * $limit;
 $total_records = 0;
 $output_array = [];
 
-// 1. Get the total count of records
+// Get the total count of records (this part is fine)
 $count_sql = "";
 if ($user_role === 'Admin') {
     $count_sql = "SELECT COUNT(*) as total FROM parts";
@@ -40,23 +33,29 @@ $stmt_count->execute();
 $total_records = $stmt_count->get_result()->fetch_assoc()['total'];
 $stmt_count->close();
 
-// 2. Get the paginated data
-$data_sql = "";
+// --- START: MODIFICATION ---
+// This updated logic correctly handles fetching all parts when limit=0
 if ($user_role === 'Admin') {
-    $data_sql = "SELECT p.*, d.name as departmentName 
-                 FROM parts p
-                 LEFT JOIN departments d ON p.departmentId = d.id
-                 ORDER BY p.name ASC LIMIT ? OFFSET ?";
-    $stmt_data = $conn->prepare($data_sql);
-    $stmt_data->bind_param("ii", $limit, $offset);
+    $data_sql = "SELECT p.*, d.name as departmentName FROM parts p LEFT JOIN departments d ON p.departmentId = d.id ORDER BY p.name ASC";
+    if ($limit > 0) {
+        $data_sql .= " LIMIT ? OFFSET ?";
+        $stmt_data = $conn->prepare($data_sql);
+        $stmt_data->bind_param("ii", $limit, $offset);
+    } else {
+        $stmt_data = $conn->prepare($data_sql);
+    }
 } else {
-    // This is the query that was causing the error due to the missing departmentId column.
-    // By fixing the authorization check, this query will now execute correctly.
-    $data_sql = "SELECT * FROM parts WHERE departmentId = ? ORDER BY name ASC LIMIT ? OFFSET ?";
-    $stmt_data = $conn->prepare($data_sql);
-    $stmt_data->bind_param("iii", $user_department_id, $limit, $offset);
+    $data_sql = "SELECT * FROM parts WHERE departmentId = ? ORDER BY name ASC";
+    if ($limit > 0) {
+        $data_sql .= " LIMIT ? OFFSET ?";
+        $stmt_data = $conn->prepare($data_sql);
+        $stmt_data->bind_param("iii", $user_department_id, $limit, $offset);
+    } else {
+        $stmt_data = $conn->prepare($data_sql);
+        $stmt_data->bind_param("i", $user_department_id);
+    }
 }
-// --- END: PAGINATION LOGIC ---
+// --- END: MODIFICATION ---
 
 $stmt_data->execute();
 $result = $stmt_data->get_result();
@@ -77,12 +76,10 @@ if ($result->num_rows > 0) {
 $stmt_data->close();
 $conn->close();
 
-// --- START: NEW RESPONSE FORMAT ---
 echo json_encode([
     'total' => $total_records,
     'page' => $page,
     'limit' => $limit,
     'data' => $output_array
 ]);
-// --- END: NEW RESPONSE FORMAT ---
 ?>
