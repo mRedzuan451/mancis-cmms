@@ -1214,7 +1214,8 @@ export function showPartRequestModal() {
 export async function showStorageRequestModal() {
     try {
         showTemporaryMessage("Loading latest part quantities...");
-        state.cache.parts = await api.getParts();
+        const allPartsResponse = await api.getAllParts(); // Use the new function
+        state.cache.parts = allPartsResponse.data;
     } catch (error) {
         showTemporaryMessage("Could not load latest parts list.", true);
         return;
@@ -1246,9 +1247,9 @@ export async function showReceivePartsModal() {
 export async function showRestockPartsModal() {
     try {
         showTemporaryMessage("Loading received parts...");
-        const [receivedParts, allParts] = await Promise.all([
+        const [receivedParts, allPartsResponse] = await Promise.all([
             api.getReceivedParts(),
-            api.getParts()
+            api.getAllParts() // Use the new function here as well
         ]);
         state.cache.receivedParts = receivedParts;
         state.cache.parts = allPartsResponse.data;

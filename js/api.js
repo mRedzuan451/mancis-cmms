@@ -37,6 +37,7 @@ export const api = {
     // GET operations
     getAssets: (page = 1, limit = 20) => request(`get_assets.php?page=${page}&limit=${limit}`),
     getParts: (page = 1, limit = 20) => request(`get_parts.php?page=${page}&limit=${limit}`),
+    getAllParts: () => request('get_parts.php?limit=0'),
     getUsers: () => request('get_users.php'),
     getWorkOrders: (page = 1, limit = 20) => request(`get_work_orders.php?page=${page}&limit=${limit}`),
     getPartRequests: (page = 1, limit = 20) => request(`get_part_requests.php?page=${page}&limit=${limit}`),

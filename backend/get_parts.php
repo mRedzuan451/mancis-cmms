@@ -23,12 +23,24 @@ $output_array = [];
 // 1. Get the total count of records
 $count_sql = "";
 if ($user_role === 'Admin') {
-    $count_sql = "SELECT COUNT(*) as total FROM parts";
-    $stmt_count = $conn->prepare($count_sql);
+    $data_sql = "SELECT p.*, d.name as departmentName FROM parts p LEFT JOIN departments d ON p.departmentId = d.id ORDER BY p.name ASC";
+    if ($limit > 0) {
+        $data_sql .= " LIMIT ? OFFSET ?";
+        $stmt_data = $conn->prepare($data_sql);
+        $stmt_data->bind_param("ii", $limit, $offset);
+    } else {
+        $stmt_data = $conn->prepare($data_sql);
+    }
 } else {
-    $count_sql = "SELECT COUNT(*) as total FROM parts WHERE departmentId = ?";
-    $stmt_count = $conn->prepare($count_sql);
-    $stmt_count->bind_param("i", $user_department_id);
+    $data_sql = "SELECT * FROM parts WHERE departmentId = ? ORDER BY name ASC";
+    if ($limit > 0) {
+        $data_sql .= " LIMIT ? OFFSET ?";
+        $stmt_data = $conn->prepare($data_sql);
+        $stmt_data->bind_param("iii", $user_department_id, $limit, $offset);
+    } else {
+        $stmt_data = $conn->prepare($data_sql);
+        $stmt_data->bind_param("i", $user_department_id);
+    }
 }
 $stmt_count->execute();
 $total_records = $stmt_count->get_result()->fetch_assoc()['total'];
