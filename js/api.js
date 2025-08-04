@@ -254,4 +254,9 @@ export const api = {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ key, value })
     }),
+    sendFeedbackToAdmin: (data) => request('submit_feedback.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+    }),
 };

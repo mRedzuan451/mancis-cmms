@@ -1591,6 +1591,10 @@ function attachGlobalEventListeners() {
             }
             return;
         }
+        if (button.id === 'sendFeedbackBtn') {
+            showFeedbackToAdminModal(); // Changed from showMessageModal()
+            return;
+        }
         const id = button.dataset.id ? parseInt(button.dataset.id) : null;
         const actions = {
             "view-asset-btn": () => showAssetDetailModal(state.cache.assets.find(a => a.id === id)),
@@ -1757,6 +1761,18 @@ function attachGlobalEventListeners() {
             renderMainContent();
         } catch(error) {
             showTemporaryMessage(`Failed to send message: ${error.message}`, true);
+        }
+    });
+    document.getElementById("feedbackToAdminForm").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const message = document.getElementById("feedbackToAdminBody").value;
+        try {
+            // Use the new API function
+            await api.sendFeedbackToAdmin({ message, action: 'send_to_admin' });
+            showTemporaryMessage("Your feedback has been sent to the administrator. Thank you!");
+            document.getElementById("feedbackToAdminModal").style.display = "none";
+        } catch(error) {
+            showTemporaryMessage(`Failed to send feedback: ${error.message}`, true);
         }
     });
 }

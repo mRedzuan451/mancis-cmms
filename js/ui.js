@@ -2163,3 +2163,9 @@ function renderPagination(module) {
   
   return html;
 }
+
+export function showFeedbackToAdminModal() {
+    const form = document.getElementById('feedbackToAdminForm');
+    form.reset();
+    document.getElementById('feedbackToAdminModal').style.display = 'flex';
+}

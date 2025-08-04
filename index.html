@@ -1433,6 +1433,18 @@
         </div>
       </div>
     </div>
+    <div id="feedbackToAdminModal" class="modal">
+      <div class="modal-content">
+        <h2 class="text-xl font-bold mb-4">Send Feedback to Admin</h2>
+        <form id="feedbackToAdminForm">
+            <textarea id="feedbackToAdminBody" rows="5" class="w-full mt-1 px-3 py-2 border rounded" placeholder="Please provide your feedback, suggestions, or bug report..." required></textarea>
+            <div class="mt-6 flex justify-end space-x-4">
+                <button type="button" class="bg-gray-300 hover:bg-gray-400 text-black py-2 px-4 rounded" data-close-modal>Cancel</button>
+                <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded">Send Feedback</button>
+            </div>
+        </form>
+      </div>
+    </div>
     </body>
   <script type="module" src="js/app.js"></script>
 </html>

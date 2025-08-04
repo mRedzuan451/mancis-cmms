@@ -11,7 +11,11 @@ $user_id = $_SESSION['user_id'];
 $user_role = $_SESSION['user_role'];
 $user_department_id = $_SESSION['user_department_id'];
 $message = $data->message ?? '';
-$target_role = $data->target_role ?? 'All';
+if (isset($data->action) && $data->action === 'send_to_admin') {
+    $target_role = 'Admin';
+} else {
+    $target_role = $data->target_role ?? 'All';
+}
 
 if (empty(trim($message))) {
     http_response_code(400);
