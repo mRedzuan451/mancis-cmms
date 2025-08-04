@@ -1249,7 +1249,7 @@ export async function showRestockPartsModal() {
         showTemporaryMessage("Loading received parts...");
         const [receivedParts, allPartsResponse] = await Promise.all([
             api.getReceivedParts(),
-            api.getAllParts() // Use the new function here as well
+            api.getAllParts()
         ]);
         state.cache.receivedParts = receivedParts;
         state.cache.parts = allPartsResponse.data;

@@ -19,22 +19,17 @@ $offset = ($page - 1) * $limit;
 $total_records = 0;
 $output_array = [];
 
-// Get the total count of records (this part is fine)
-$count_sql = "";
-if ($user_role === 'Admin') {
-    $count_sql = "SELECT COUNT(*) as total FROM parts";
-    $stmt_count = $conn->prepare($count_sql);
-} else {
-    $count_sql = "SELECT COUNT(*) as total FROM parts WHERE departmentId = ?";
-    $stmt_count = $conn->prepare($count_sql);
+// Get Total Records
+$count_sql = ($user_role === 'Admin') ? "SELECT COUNT(*) as total FROM parts" : "SELECT COUNT(*) as total FROM parts WHERE departmentId = ?";
+$stmt_count = $conn->prepare($count_sql);
+if ($user_role !== 'Admin') {
     $stmt_count->bind_param("i", $user_department_id);
 }
 $stmt_count->execute();
 $total_records = $stmt_count->get_result()->fetch_assoc()['total'];
 $stmt_count->close();
 
-// --- START: MODIFICATION ---
-// This updated logic correctly handles fetching all parts when limit=0
+// Get Paginated Data
 if ($user_role === 'Admin') {
     $data_sql = "SELECT p.*, d.name as departmentName FROM parts p LEFT JOIN departments d ON p.departmentId = d.id ORDER BY p.name ASC";
     if ($limit > 0) {
@@ -55,7 +50,6 @@ if ($user_role === 'Admin') {
         $stmt_data->bind_param("i", $user_department_id);
     }
 }
-// --- END: MODIFICATION ---
 
 $stmt_data->execute();
 $result = $stmt_data->get_result();

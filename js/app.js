@@ -361,8 +361,9 @@ async function handlePartFormSubmit(e) {
             await api.createPart(partData);
             await logActivity("Part Created", `Created part: ${partData.name}`);
         }
-        const response = await api.getParts(); // Get the full response object
-        state.cache.parts = response.data; // Assign only the 'data' array to the cache
+        const response = await api.getParts(1);
+        state.cache.parts = response.data;
+        state.pagination.parts.currentPage = response.page;
         document.getElementById("partModal").style.display = "none";
         renderMainContent();
         showTemporaryMessage('Part saved successfully!');
@@ -415,8 +416,9 @@ async function handleWorkOrderFormSubmit(e) {
             await api.createWorkOrder(woData);
             await logActivity("Work Order Created", `Created WO: ${woData.title}`);
         }
-        const woResponse = await api.getWorkOrders();
+        const woResponse = await api.getWorkOrders(1);
         state.cache.workOrders = woResponse.data;
+        state.pagination.workOrders.currentPage = woResponse.page;
         document.getElementById("workOrderModal").style.display = "none";
         renderMainContent();
         showTemporaryMessage('Work Order saved successfully!');
@@ -580,8 +582,9 @@ async function handlePartRequestFormSubmit(e) {
                 newPartNumber: isNewPart ? document.getElementById('newPartNumber').value : null,
                 newPartMaker: isNewPart ? document.getElementById('newPartMaker').value : null,
             };
-            const prResponse = await api.getPartRequests();
+        const prResponse = await api.getPartRequests(1);
         state.cache.partRequests = prResponse.data;
+        state.pagination.partRequests.currentPage = prResponse.page;
         await logActivity("Part Request Submitted", `User requested ${requestData.quantity} x ${isNewPart ? requestData.newPartName : 'existing part'}`);
         }
         const prResponse = await api.getPartRequests();
