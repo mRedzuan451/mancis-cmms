@@ -53,6 +53,38 @@ if ($stmt === false) {
 $stmt->bind_param("iiss", $user_id, $department_id_to_log, $message, $target_role);
 
 if ($stmt->execute()) {
+    $feedback_id = $stmt->insert_id; // Get the ID of the new message
+
+    // --- START: Notification Generation ---
+    $get_users_sql = "SELECT id FROM users WHERE departmentId = ?";
+    if ($target_role !== 'All') {
+        $get_users_sql .= " AND role = ?";
+        $stmt_users = $conn->prepare($get_users_sql);
+        $stmt_users->bind_param("is", $department_id_to_log, $target_role);
+    } else {
+        $stmt_users = $conn->prepare($get_users_sql);
+        $stmt_users->bind_param("i", $department_id_to_log);
+    }
+    
+    $stmt_users->execute();
+    $recipients = $stmt_users->get_result();
+
+    $sender_name = $_SESSION['user_fullname'];
+    $notification_message = "New message from " . $sender_name;
+
+    $stmt_notify = $conn->prepare("INSERT INTO notifications (user_id, type, message, related_id) VALUES (?, 'team_message', ?, ?)");
+    
+    while ($user = $recipients->fetch_assoc()) {
+        // Don't send a notification to the person who sent the message
+        if ($user['id'] != $user_id) {
+            $stmt_notify->bind_param("isi", $user['id'], $notification_message, $feedback_id);
+            $stmt_notify->execute();
+        }
+    }
+    $stmt_users->close();
+    $stmt_notify->close();
+    // --- END: Notification Generation ---
+
     http_response_code(201);
     echo json_encode(['message' => 'Message sent successfully.']);
 } else {

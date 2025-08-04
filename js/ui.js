@@ -2088,17 +2088,27 @@ export async function showNotificationModal() {
     modal.style.display = 'flex';
 
     try {
-        const notifications = await api.getNotifications();
+        const notifications = await api.getNotifications(); // This now fetches all types
         if (notifications && notifications.length > 0) {
-            list.innerHTML = notifications.map(req => {
-                const partName = req.newPartName || `request #${req.id}`;
-                const isRejected = req.status === 'Rejected';
-                const message = `Your request for <strong>${partName}</strong> has been <strong>${req.status}</strong>.`;
-                
+            list.innerHTML = notifications.map(notif => {
+                let message = '';
+                // --- START: MODIFICATION ---
+                // Determine how to display the notification based on its type
+                if (notif.type === 'team_message') {
+                    message = `<strong>${notif.message}</strong> in the Team Messages inbox.`;
+                } else if (notif.type === 'part_request_update' && notif.details) {
+                    const req = notif.details;
+                    const partName = req.newPartName || `request #${req.id}`;
+                    message = `Your request for <strong>${partName}</strong> has been <strong>${req.status}</strong>.`;
+                } else {
+                    message = notif.message; // Fallback for any other type
+                }
+                // --- END: MODIFICATION ---
+
                 return `
-                    <div class="p-3 text-sm text-gray-600 border-b border-gray-100 hover:bg-gray-50">
-                        <p class="${isRejected ? 'text-red-600' : ''}">${message}</p>
-                        <p class="text-xs text-gray-400 mt-1">${new Date(req.approvalDate || req.requestDate).toLocaleString()}</p>
+                    <div class="p-3 text-sm text-gray-600 border-b border-gray-100 hover:bg-gray-50 data-notification-id="${notif.id}">
+                        <p>${message}</p>
+                        <p class="text-xs text-gray-400 mt-1">${new Date(notif.timestamp).toLocaleString()}</p>
                     </div>
                 `;
             }).join('');
