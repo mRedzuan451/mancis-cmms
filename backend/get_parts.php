@@ -3,14 +3,20 @@ require_once 'auth_check.php';
 
 header("Content-Type: application/json; charset=UTF-8");
 
+// --- START: MODIFICATION ---
+// 1. Establish the database connection FIRST.
 $servername = "localhost"; $username = "root"; $password = ""; $dbname = "mancis_db";
 $conn = new mysqli($servername, $username, $password, $dbname);
 if ($conn->connect_error) { die("Connection failed: " . $conn->connect_error); }
 
+// 2. NOW, call authorize() with the established connection.
 authorize('part_view', $conn);
+// --- END: MODIFICATION ---
 
 $user_role = $_SESSION['user_role'];
 $user_department_id = $_SESSION['user_department_id'];
+
+// ... (The rest of the file remains exactly the same) ...
 
 // --- START: PAGINATION LOGIC ---
 $page = isset($_GET['page']) ? intval($_GET['page']) : 1;
@@ -23,24 +29,12 @@ $output_array = [];
 // 1. Get the total count of records
 $count_sql = "";
 if ($user_role === 'Admin') {
-    $data_sql = "SELECT p.*, d.name as departmentName FROM parts p LEFT JOIN departments d ON p.departmentId = d.id ORDER BY p.name ASC";
-    if ($limit > 0) {
-        $data_sql .= " LIMIT ? OFFSET ?";
-        $stmt_data = $conn->prepare($data_sql);
-        $stmt_data->bind_param("ii", $limit, $offset);
-    } else {
-        $stmt_data = $conn->prepare($data_sql);
-    }
+    $count_sql = "SELECT COUNT(*) as total FROM parts";
+    $stmt_count = $conn->prepare($count_sql);
 } else {
-    $data_sql = "SELECT * FROM parts WHERE departmentId = ? ORDER BY name ASC";
-    if ($limit > 0) {
-        $data_sql .= " LIMIT ? OFFSET ?";
-        $stmt_data = $conn->prepare($data_sql);
-        $stmt_data->bind_param("iii", $user_department_id, $limit, $offset);
-    } else {
-        $stmt_data = $conn->prepare($data_sql);
-        $stmt_data->bind_param("i", $user_department_id);
-    }
+    $count_sql = "SELECT COUNT(*) as total FROM parts WHERE departmentId = ?";
+    $stmt_count = $conn->prepare($count_sql);
+    $stmt_count->bind_param("i", $user_department_id);
 }
 $stmt_count->execute();
 $total_records = $stmt_count->get_result()->fetch_assoc()['total'];
@@ -56,6 +50,8 @@ if ($user_role === 'Admin') {
     $stmt_data = $conn->prepare($data_sql);
     $stmt_data->bind_param("ii", $limit, $offset);
 } else {
+    // This is the query that was causing the error due to the missing departmentId column.
+    // By fixing the authorization check, this query will now execute correctly.
     $data_sql = "SELECT * FROM parts WHERE departmentId = ? ORDER BY name ASC LIMIT ? OFFSET ?";
     $stmt_data = $conn->prepare($data_sql);
     $stmt_data->bind_param("iii", $user_department_id, $limit, $offset);
