@@ -1260,7 +1260,9 @@ export async function showRestockPartsModal() {
 
     const requestSelect = document.getElementById('restockPartId');
     requestSelect.innerHTML = '<option value="">Select received parts...</option>' + state.cache.receivedParts.map(rp => {
-        const partName = rp.newPartName || state.cache.parts.find(p => p.id === rp.partId)?.name;
+        const part = rp.partId ? state.cache.parts.find(p => p.id === rp.partId) : null;
+        // If the part is found, use its name. Otherwise, use the newPartName, or a fallback message.
+        const partName = part ? part.name : (rp.newPartName || `[Deleted Part ID: ${rp.partId}]`);
         return `<option value="${rp.id}">Received #${rp.id} - ${rp.quantity} x ${partName}</option>`
     }).join('');
 
