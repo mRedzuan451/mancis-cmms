@@ -1251,7 +1251,7 @@ export async function showRestockPartsModal() {
             api.getParts()
         ]);
         state.cache.receivedParts = receivedParts;
-        state.cache.parts = allParts;
+        state.cache.parts = allPartsResponse.data;
     } catch (error) {
         showTemporaryMessage("Failed to load parts data.", true);
         return;
