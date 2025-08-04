@@ -582,13 +582,15 @@ async function handlePartRequestFormSubmit(e) {
                 newPartNumber: isNewPart ? document.getElementById('newPartNumber').value : null,
                 newPartMaker: isNewPart ? document.getElementById('newPartMaker').value : null,
             };
+            await api.createPartRequest(requestData);
+            await logActivity("Part Request Submitted", `User requested ${requestData.quantity} x ${isNewPart ? requestData.newPartName : 'existing part'}`);
+        }
+        
+        // Correctly handle the paginated response
         const prResponse = await api.getPartRequests(1);
         state.cache.partRequests = prResponse.data;
         state.pagination.partRequests.currentPage = prResponse.page;
-        await logActivity("Part Request Submitted", `User requested ${requestData.quantity} x ${isNewPart ? requestData.newPartName : 'existing part'}`);
-        }
-        const prResponse = await api.getPartRequests();
-        state.cache.partRequests = prResponse.data;
+        
         document.getElementById('partRequestModal').style.display = 'none';
         renderMainContent();
         showTemporaryMessage(`Part request ${isEditing ? 'updated' : 'submitted'} successfully!`);
@@ -622,8 +624,13 @@ async function handleStorageRequestFormSubmit(e) {
      try {
         await api.createPartRequest(requestData);
         await logActivity("Storage Request Submitted", `User requested ${requestData.quantity} x part ID ${requestData.partId} from storage`);
-        const prResponse = await api.getPartRequests();
+        
+        // --- START: MODIFICATION ---
+        const prResponse = await api.getPartRequests(1);
         state.cache.partRequests = prResponse.data;
+        state.pagination.partRequests.currentPage = prResponse.page;
+        // --- END: MODIFICATION ---
+
         document.getElementById('storageRequestModal').style.display = 'none';
         renderMainContent();
         showTemporaryMessage("Request from storage submitted successfully!");
@@ -643,8 +650,17 @@ async function handlePartRequestAction(id, newStatus) {
     try {
         await api.updatePartRequestStatus({ id, status: newStatus, approverId: state.currentUser.id, rejectionReason });
         await logActivity(`Part Request ${newStatus}`, `Request ID ${id} was marked as ${newStatus}`);
-        state.cache.partRequests = await api.getPartRequests();
-        if (newStatus === 'Approved') state.cache.parts = await api.getParts();
+        
+        // --- START: MODIFICATION ---
+        const prResponse = await api.getPartRequests(1);
+        state.cache.partRequests = prResponse.data;
+        state.pagination.partRequests.currentPage = prResponse.page;
+        // --- END: MODIFICATION ---
+
+        if (newStatus === 'Approved') {
+            const partsResponse = await api.getParts(1);
+            state.cache.parts = partsResponse.data;
+        }
         renderMainContent();
         showTemporaryMessage(`Request ${newStatus.toLowerCase()} successfully.`);
     } catch (error) {
@@ -658,7 +674,13 @@ async function handleReceivePartsFormSubmit(e) {
     try {
         await api.receiveParts({ requestId, receiverId: state.currentUser.id });
         await logActivity("Parts Received", `Marked approved request ID ${requestId} as received.`);
-        state.cache.partRequests = await api.getPartRequests();
+
+        // --- START: MODIFICATION ---
+        const prResponse = await api.getPartRequests(1);
+        state.cache.partRequests = prResponse.data;
+        state.pagination.partRequests.currentPage = prResponse.page;
+        // --- END: MODIFICATION ---
+
         state.cache.receivedParts = await api.getReceivedParts();
         document.getElementById('receivePartsModal').style.display = 'none';
         renderMainContent();
@@ -703,16 +725,16 @@ async function handleRestockPartsFormSubmit(e) {
             logMessage = `Restocked parts from received request ID: ${receivedId}`;
         }
         
-        // This log is created by the backend, but we can add a frontend one too if needed.
-        // await logActivity("Parts Restocked", logMessage);
-        
-        // Refresh caches for data that has changed.
         state.cache.receivedParts = await api.getReceivedParts();
-        state.cache.partRequests = await api.getPartRequests();
-        state.cache.parts = await api.getParts();
         
-        // --- START: FIX ---
-        // Only refresh the logs if the user has permission to view them.
+        // --- START: MODIFICATION ---
+        const prResponse = await api.getPartRequests(1);
+        state.cache.partRequests = prResponse.data;
+        state.pagination.partRequests.currentPage = prResponse.page;
+        
+        const partsResponse = await api.getParts(1);
+        state.cache.parts = partsResponse.data;
+        state.pagination.parts.currentPage = partsResponse.page;
         if (state.currentUser.permissions.log_view) {
             state.cache.logs = await api.getLogs();
         }
