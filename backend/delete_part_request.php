@@ -1,27 +1,19 @@
 <?php
 require_once 'auth_check.php';
 
-// --- START: FIX ---
-
-// 1. Establish the database connection FIRST.
 $servername = "localhost"; $username = "root"; $password = ""; $dbname = "mancis_db";
 $conn = new mysqli($servername, $username, $password, $dbname);
-if ($conn->connect_error) { 
-    http_response_code(503);
-    echo json_encode(["message" => "Database connection failed."]);
-    exit();
-}
+if ($conn->connect_error) { die("Connection failed: " . $conn->connect_error); }
 
-// 2. NOW call authorize() with the correct permission key and the $conn variable.
 authorize('part_request_delete', $conn);
-
-// --- END: FIX ---
 
 header("Content-Type: application/json; charset=UTF-8");
 header("Access-Control-Allow-Methods: POST");
 
-$data = json_decode(file_get_contents("php://input"));
-$id = isset($data->id) ? intval($data->id) : 0;
+// --- START: MODIFICATION ---
+// Read the ID from the URL parameter for consistency with other delete scripts.
+$id = isset($_GET['id']) ? intval($_GET['id']) : 0;
+// --- END: MODIFICATION ---
 
 if ($id <= 0) {
     http_response_code(400);

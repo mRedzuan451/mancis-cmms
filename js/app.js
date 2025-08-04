@@ -654,7 +654,6 @@ async function handlePartRequestAction(id, newStatus) {
         // --- START: MODIFICATION ---
         const prResponse = await api.getPartRequests(1);
         state.cache.partRequests = prResponse.data;
-        state.pagination.partRequests.currentPage = prResponse.page;
         // --- END: MODIFICATION ---
 
         if (newStatus === 'Approved') {
@@ -678,7 +677,6 @@ async function handleReceivePartsFormSubmit(e) {
         // --- START: MODIFICATION ---
         const prResponse = await api.getPartRequests(1);
         state.cache.partRequests = prResponse.data;
-        state.pagination.partRequests.currentPage = prResponse.page;
         // --- END: MODIFICATION ---
 
         state.cache.receivedParts = await api.getReceivedParts();
@@ -1839,7 +1837,13 @@ async function deletePartRequest(id) {
         try {
             await api.deletePartRequest(id);
             await logActivity("Part Request Deleted", `Deleted request ID: ${id}`);
-            state.cache.partRequests = await api.getPartRequests();
+            
+            // --- START: MODIFICATION ---
+            // Ensure the cache is updated correctly after deletion
+            const prResponse = await api.getPartRequests(1);
+            state.cache.partRequests = prResponse.data;
+            // --- END: MODIFICATION ---
+
             renderMainContent();
             showTemporaryMessage("Request deleted successfully.");
         } catch (error) {

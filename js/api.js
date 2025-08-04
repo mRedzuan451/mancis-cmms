@@ -170,11 +170,7 @@ export const api = {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id, ...data })
     }),
-    deletePartRequest: (id) => request(`delete_part_request.php`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id })
-    }),
+    deletePartRequest: (id) => request(`delete_part_request.php?id=${id}`, { method: 'POST' }),
     getPmSchedules: () => request('get_pm_schedules.php'),
     getPublicLocations: () => request('get_public_locations.php'),
     createPmSchedule: (data) => request('create_pm_schedule.php', {
