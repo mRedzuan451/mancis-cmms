@@ -269,7 +269,8 @@ async function handleAssetFormSubmit(e) {
         await api.createAsset(assetData);
         await logActivity("Asset Created", `Created asset: ${assetData.name}`);
       }
-      state.cache.assets = await api.getAssets();
+      const response = await api.getAssets(); // Get the full response object
+      state.cache.assets = response.data; // Assign only the 'data' array to the cache
       document.getElementById("assetModal").style.display = "none";
       renderMainContent();
       showTemporaryMessage('Asset saved successfully!');
@@ -360,7 +361,8 @@ async function handlePartFormSubmit(e) {
             await api.createPart(partData);
             await logActivity("Part Created", `Created part: ${partData.name}`);
         }
-        state.cache.parts = await api.getParts();
+        const response = await api.getParts(); // Get the full response object
+        state.cache.parts = response.data; // Assign only the 'data' array to the cache
         document.getElementById("partModal").style.display = "none";
         renderMainContent();
         showTemporaryMessage('Part saved successfully!');
