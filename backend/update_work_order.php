@@ -1,15 +1,16 @@
 <?php
 require_once 'auth_check.php';
 
+$servername = "localhost"; $username = "root"; $password = ""; $dbname = "mancis_db";
+$conn = new mysqli($servername, $username, $password, $dbname);
+if ($conn->connect_error) { die("Connection failed: " . $conn->connect_error); }
+
+
 // The permission key 'wo_edit' is appropriate for updating/completing work orders.
 authorize('wo_edit', $conn); 
 
 header("Content-Type: application/json; charset=UTF-8");
 date_default_timezone_set('Asia/Kuala_Lumpur');
-
-$servername = "localhost"; $username = "root"; $password = ""; $dbname = "mancis_db";
-$conn = new mysqli($servername, $username, $password, $dbname);
-if ($conn->connect_error) { die("Connection failed: " . $conn->connect_error); }
 
 $data = json_decode(file_get_contents("php://input"));
 $id = isset($data->id) ? intval($data->id) : (isset($_GET['id']) ? intval($_GET['id']) : 0);
