@@ -8,35 +8,23 @@ if ($conn->connect_error) { die("Connection failed: " . $conn->connect_error); }
 
 authorize('feedback_view', $conn);
 
-$user_role = $_SESSION['user_role'];
-$user_department_id = $_SESSION['user_department_id'];
+$user_id = $_SESSION['user_id']; // The ID of the logged-in user
 
-$sql = "";
-$params = [];
-$param_types = "";
-
-if ($user_role === 'Admin') {
-    // Admin sees all messages from all departments
-    $sql = "SELECT f.*, u.fullName as sender_name, d.name as department_name 
-            FROM feedback f 
-            LEFT JOIN users u ON f.user_id = u.id 
-            LEFT JOIN departments d ON f.department_id = d.id
-            ORDER BY f.timestamp DESC";
-} else {
-    // Other users see messages targeted to their role or 'All', within their department
-    $sql = "SELECT f.*, u.fullName as sender_name 
-            FROM feedback f 
-            LEFT JOIN users u ON f.user_id = u.id 
-            WHERE f.department_id = ? AND (f.target_role = 'All' OR f.target_role = ?)
-            ORDER BY f.timestamp DESC";
-    $param_types = "is";
-    $params = [$user_department_id, $user_role];
-}
+// This query now joins the new status table to get the status for the current user
+$sql = "SELECT 
+            f.*, 
+            u.fullName as sender_name, 
+            d.name as department_name,
+            frs.status
+        FROM feedback f
+        JOIN feedback_read_status frs ON f.id = frs.feedback_id
+        LEFT JOIN users u ON f.user_id = u.id 
+        LEFT JOIN departments d ON f.department_id = d.id
+        WHERE frs.user_id = ?
+        ORDER BY f.timestamp DESC";
 
 $stmt = $conn->prepare($sql);
-if (!empty($params)) {
-    $stmt->bind_param($param_types, ...$params);
-}
+$stmt->bind_param("i", $user_id);
 $stmt->execute();
 $result = $stmt->get_result();
 

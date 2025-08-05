@@ -16,26 +16,35 @@ if ($id <= 0) {
     exit();
 }
 
-$stmt = $conn->prepare("DELETE FROM feedback WHERE id = ?");
-$stmt->bind_param("i", $id);
+$conn->begin_transaction();
+try {
+    // 1. Delete all statuses related to this feedback message
+    $stmt1 = $conn->prepare("DELETE FROM feedback_read_status WHERE feedback_id = ?");
+    $stmt1->bind_param("i", $id);
+    $stmt1->execute();
+    $stmt1->close();
 
-// First, check if the SQL command executed without errors
-if ($stmt->execute()) {
-    // If successful, then check if a row was actually deleted
-    if ($stmt->affected_rows > 0) {
-        http_response_code(200); // OK
+    // 2. Delete the main feedback message
+    $stmt2 = $conn->prepare("DELETE FROM feedback WHERE id = ?");
+    $stmt2->bind_param("i", $id);
+    $stmt2->execute();
+
+    if ($stmt2->affected_rows > 0) {
+        $conn->commit();
+        http_response_code(200);
         echo json_encode(["message" => "Feedback deleted successfully."]);
     } else {
-        // The command ran fine, but no message with that ID was found
-        http_response_code(404); // Not Found
+        $conn->rollback();
+        http_response_code(404);
         echo json_encode(["message" => "Feedback message not found."]);
     }
-} else {
-    // The command itself failed to run, indicating a server-side problem
-    http_response_code(500); // Internal Server Error
-    echo json_encode(["message" => "Failed to delete feedback due to a server error.", "error" => $stmt->error]);
+    $stmt2->close();
+
+} catch (Exception $e) {
+    $conn->rollback();
+    http_response_code(500);
+    echo json_encode(["message" => "Failed to delete feedback.", "error" => $e->getMessage()]);
 }
 
-$stmt->close();
 $conn->close();
 ?>
