@@ -1904,10 +1904,9 @@ export function renderTeamMessagesPage() {
     return `
         ${header}
         ${adminSettings}
-<<<<<<< HEAD
         <div class="space-y-6">
             ${finalHtml || '<p>No messages in this logbook.</p>'}
-=======
+
         <div class="space-y-4">
         ${messages.map(item => {
             const senderInfo = isAdmin ? `<p class="text-xs text-gray-500">${item.department_name || 'N/A'}</p>` : '';
@@ -1929,7 +1928,6 @@ export function renderTeamMessagesPage() {
                 </div>
             </div>
         `}).join('') || '<p>No messages in this logbook.</p>'}
->>>>>>> parent of 43fd38a (update message)
         </div>
     `;
 }
