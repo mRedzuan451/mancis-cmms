@@ -12,8 +12,12 @@ authorize('wo_edit', $conn);
 header("Content-Type: application/json; charset=UTF-8");
 date_default_timezone_set('Asia/Kuala_Lumpur');
 
-$data = json_decode(file_get_contents("php://input"));
-$id = isset($data->id) ? intval($data->id) : (isset($_GET['id']) ? intval($_GET['id']) : 0);
+// --- START: FIX ---
+// The 'true' argument converts the JSON into an associative array, which the script expects.
+$data = json_decode(file_get_contents("php://input"), true);
+// --- END: FIX ---
+
+$id = isset($data['id']) ? intval($data['id']) : (isset($_GET['id']) ? intval($_GET['id']) : 0);
 
 if ($id <= 0) {
     http_response_code(400);
@@ -25,26 +29,25 @@ $conn->begin_transaction();
 
 try {
     // This part remains the same, updating the main WO details
-    $checklistJson = json_encode($data->checklist ?? []);
-    $requiredPartsJson = json_encode($data->requiredParts ?? []);
-    $wo_type = $data->wo_type ?? 'CM';
-    $completedDate = ($data->status === 'Completed' && empty($data->completedDate)) ? date('Y-m-d') : ($data->completedDate ?? null);
+    $checklistJson = json_encode($data['checklist'] ?? []);
+    $requiredPartsJson = json_encode($data['requiredParts'] ?? []);
+    $wo_type = $data['wo_type'] ?? 'CM';
+    $completedDate = ($data['status'] === 'Completed' && empty($data['completedDate'])) ? date('Y-m-d') : ($data['completedDate'] ?? null);
 
     $stmt_update_wo = $conn->prepare("UPDATE workorders SET title=?, description=?, assetId=?, assignedTo=?, task=?, start_date=?, dueDate=?, priority=?, status=?, breakdownTimestamp=?, checklist=?, requiredParts=?, completionNotes=?, completedDate=?, wo_type=? WHERE id=?");
     $stmt_update_wo->bind_param("ssiisssssssssssi", 
-        $data->title, $data->description, $data->assetId, $data->assignedTo, 
-        $data->task, $data->start_date, $data->dueDate, $data->priority, 
-        $data->status, $data->breakdownTimestamp, 
-        $checklistJson, $requiredPartsJson, $data->completionNotes, 
+        $data['title'], $data['description'], $data['assetId'], $data['assignedTo'], 
+        $data['task'], $data['start_date'], $data['dueDate'], $data['priority'], 
+        $data['status'], $data['breakdownTimestamp'], 
+        $checklistJson, $requiredPartsJson, $data['completionNotes'], 
         $completedDate, $wo_type, $id
     );
     $stmt_update_wo->execute();
     $stmt_update_wo->close();
     
-    // --- START: MODIFICATION ---
     // If the status is 'Completed', run the improved part consumption logic.
-    if (isset($data->status) && $data->status === 'Completed') {
-        $requiredParts = $data->requiredParts ?? [];
+    if (isset($data['status']) && $data['status'] === 'Completed') {
+        $requiredParts = $data['requiredParts'] ?? [];
         if (!empty($requiredParts) && is_array($requiredParts)) {
             foreach ($requiredParts as $part) {
                 $partId = intval($part['partId']);
@@ -75,7 +78,6 @@ try {
             }
         }
     }
-    // --- END: MODIFICATION ---
 
     $conn->commit();
     http_response_code(200);
