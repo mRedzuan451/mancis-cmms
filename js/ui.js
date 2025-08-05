@@ -1811,7 +1811,6 @@ export function renderTeamMessagesPage() {
     const messages = state.cache.feedback || [];
     const isAdmin = state.currentUser.role === 'Admin';
 
-<<<<<<< HEAD
     // Group messages by date first
     const groupedByDate = messages.reduce((acc, message) => {
         const date = new Date(message.timestamp).toLocaleDateString(undefined, {
@@ -1824,9 +1823,6 @@ export function renderTeamMessagesPage() {
         return acc;
     }, {});
 
-=======
-    // Admin settings section
->>>>>>> parent of 43fd38a (update message)
     const adminSettings = isAdmin ? `
         <div class="bg-white p-4 rounded-lg shadow mb-6">
             <h3 class="text-lg font-bold mb-2">Admin Controls</h3>
