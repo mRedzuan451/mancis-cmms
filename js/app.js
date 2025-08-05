@@ -1536,7 +1536,6 @@ function attachPageSpecificEventListeners(page) {
                     const messageId = parseInt(messageItem.dataset.id);
                     const currentStatus = messageItem.dataset.status;
 
-                    // Automatically mark as read when opened for the first time
                     if (currentStatus === 'New' && !body.classList.contains('hidden')) {
                         try {
                             await api.updateFeedbackStatus(messageId, 'Read');
@@ -1565,20 +1564,40 @@ function attachPageSpecificEventListeners(page) {
                     }
                 }
 
-                // Logic for the 'Delete' button
+                // --- START: MODIFIED DELETE LOGIC ---
+                // Logic for the 'Delete' button with double-click prevention
                 if (deleteButton) {
+                    // Disable button immediately and show spinner
+                    deleteButton.disabled = true;
+                    deleteButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+
                     const id = parseInt(deleteButton.dataset.id);
-                    if (confirm('Are you sure you want to permanently delete this message?')) {
-                        try {
-                            await api.deleteFeedback(id);
-                            showTemporaryMessage("Message deleted.");
-                            state.cache.feedback = await api.getFeedback();
-                            renderMainContent();
-                        } catch (error) {
-                            showTemporaryMessage('Could not delete message.', true);
+
+                    // Use a small timeout to let the UI update before the confirm dialog appears
+                    setTimeout(async () => {
+                        if (confirm('Are you sure you want to permanently delete this message?')) {
+                            try {
+                                await api.deleteFeedback(id);
+                                showTemporaryMessage("Message deleted.");
+                                state.cache.feedback = await api.getFeedback();
+                                renderMainContent(); // Re-renders the page, so no need to re-enable the button
+                            } catch (error) {
+                                showTemporaryMessage(`Could not delete message: ${error.message}`, true);
+                                // If the delete fails, find the button again and re-enable it
+                                const buttonStillExists = document.querySelector(`.feedback-delete-btn[data-id="${id}"]`);
+                                if (buttonStillExists) {
+                                    buttonStillExists.disabled = false;
+                                    buttonStillExists.innerHTML = 'Delete';
+                                }
+                            }
+                        } else {
+                            // If user cancels, re-enable the button
+                            deleteButton.disabled = false;
+                            deleteButton.innerHTML = 'Delete';
                         }
-                    }
+                    }, 10);
                 }
+                // --- END: MODIFIED DELETE LOGIC ---
             });
         }
         const toggle = document.getElementById('messagingToggle');
