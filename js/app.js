@@ -1434,7 +1434,7 @@ function attachPageSpecificEventListeners(page) {
         });
     } else if (page === 'stockTakeDetails') {
         const detailsId = parseInt(document.querySelector('.page-header-title').dataset.id);
-
+        const details = state.cache.stockTakes.find(s => s.id === detailsId);
         const saveAndSubmitLogic = async (isSubmitting) => {
             const items = Array.from(document.querySelectorAll('.stock-take-qty-input')).map(input => ({
                 id: parseInt(input.dataset.id),
@@ -1476,6 +1476,16 @@ function attachPageSpecificEventListeners(page) {
             } catch(error) {
                 showTemporaryMessage('Could not generate printable sheet.', true);
             }
+        });
+
+        document.getElementById('stockTakeSearch')?.addEventListener('input', async (e) => {
+            const searchTerm = e.target.value.toLowerCase();
+            const items = await api.getStockTakeDetails(detailsId);
+            const filteredItems = items.filter(item =>
+                item.name.toLowerCase().includes(searchTerm) ||
+                item.sku.toLowerCase().includes(searchTerm)
+            );
+            document.getElementById('stockTakeItemsContainer').innerHTML = generateTableRows("stockTakeItems", filteredItems, { details });
         });
     } else if (page === 'userManagement') {
         document.getElementById("userSearch")?.addEventListener("input", (e) => {
@@ -1654,6 +1664,18 @@ function attachGlobalEventListeners() {
     });
     // Global click handler for delegated events
     document.body.addEventListener("click", (e) => {
+        const header = e.target.closest('[data-sort]');
+        if (header) {
+            const newSortKey = header.dataset.sort;
+            if (state.sortKey === newSortKey) {
+                state.sortOrder = state.sortOrder === 'asc' ? 'desc' : 'asc';
+            } else {
+                state.sortKey = newSortKey;
+                state.sortOrder = 'asc';
+            }
+            // Re-render only the main content area, which will trigger the table to be re-drawn and sorted
+            renderMainContent();
+        }
         const target = e.target;
 
         const paginationLink = target.closest('.pagination-link');

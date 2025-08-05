@@ -232,10 +232,10 @@ export function renderUserManagementPage() {
               <table class="w-full" id="userTable">
                   <thead><tr class="border-b">
                       <th class="p-2 w-4"><input type="checkbox" id="selectAllCheckbox"></th>
-                      <th class="p-2 text-left">Full Name</th>
-                      <th class="p-2 text-left">Username</th>
-                      <th class="p-2 text-left">Role</th>
-                      <th class="p-2 text-left">Department</th>
+                      <th class="p-2 text-left cursor-pointer" data-sort="fullName">Full Name <i class="fas fa-sort"></i></th>
+                      <th class="p-2 text-left cursor-pointer" data-sort="username">Username <i class="fas fa-sort"></i></th>
+                      <th class="p-2 text-left cursor-pointer" data-sort="role">Role <i class="fas fa-sort"></i></th>
+                      <th class="p-2 text-left cursor-pointer" data-sort="departmentId">Department <i class="fas fa-sort"></i></th>
                       <th class="p-2 text-left">Actions</th>
                   </tr></thead>
                   <tbody id="userTableBody">${generateTableRows("users", users)}</tbody>
@@ -1520,13 +1520,13 @@ export function renderPmSchedulesPage() {
         <input type="text" id="pmScheduleSearch" class="w-full mb-4 px-3 py-2 border rounded" placeholder="Search by Schedule Title or Asset Name...">
         <table class="w-full">
           <thead><tr class="border-b">
-            <th class="p-2 text-left">Schedule Title</th>
-            <th class="p-2 text-left">Asset</th>
-            <th class="p-2 text-left">Frequency</th>
+            <th class="p-2 text-left cursor-pointer" data-sort="title">Schedule Title <i class="fas fa-sort"></i></th>
+            <th class="p-2 text-left cursor-pointer" data-sort="assetId">Asset <i class="fas fa-sort"></i></th>
+            <th class="p-2 text-left cursor-pointer" data-sort="frequency_interval">Frequency <i class="fas fa-sort"></i></th>
             <th class="p-2 text-left">Next Start Date</th>
             <th class="p-2 text-left">Next Due Date</th>
             <th class="p-2 text-left">Following PM Date</th>
-            <th class="p-2 text-left">Status</th>
+            <th class="p-2 text-left cursor-pointer" data-sort="is_active">Status <i class="fas fa-sort"></i></th>
             <th class="p-2 text-left">Actions</th>
           </tr></thead>
           <tbody id="pmSchedulesTableBody">
@@ -1760,8 +1760,9 @@ export function renderStockTakeCountPage(items, details) {
     const isPending = details.status === 'Pending Approval';
     const isInProgress = details.status === 'In Progress';
 
-    let buttons = [];
-    buttons.push('<button id="printStockTakeBtn" class="bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-2 px-4 rounded"><i class="fas fa-print mr-2"></i>Print Count Sheet</button>');
+    let buttons = [
+        '<button id="printStockTakeBtn" class="bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-2 px-4 rounded"><i class="fas fa-print mr-2"></i>Print Count Sheet</button>'
+    ];
     
     if (isInProgress) {
         buttons.push('<button id="saveStockTakeProgressBtn" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded"><i class="fas fa-save mr-2"></i>Save Progress</button>');
@@ -1783,13 +1784,14 @@ export function renderStockTakeCountPage(items, details) {
     return `
         ${header}
         <div class="bg-white p-4 rounded-lg shadow">
+            <input type="text" id="stockTakeSearch" class="w-full mb-4 px-3 py-2 border rounded" placeholder="Search by Part Name or SKU...">
             <table class="w-full">
                 <thead><tr class="border-b">
-                    <th class="p-2 text-left">Part Name</th>
-                    <th class="p-2 text-left">SKU</th>
-                    <th class="p-2 text-right">System Qty</th>
+                    <th class="p-2 text-left cursor-pointer" data-sort="name">Part Name <i class="fas fa-sort"></i></th>
+                    <th class="p-2 text-left cursor-pointer" data-sort="sku">SKU <i class="fas fa-sort"></i></th>
+                    <th class="p-2 text-right cursor-pointer" data-sort="system_qty">System Qty <i class="fas fa-sort"></i></th>
                     <th class="p-2 text-center">Physical Qty</th>
-                    <th class="p-2 text-right">Variance</th>
+                    <th class="p-2 text-right cursor-pointer" data-sort="variance">Variance <i class="fas fa-sort"></i></th>
                 </tr></thead>
                 <tbody id="stockTakeItemsContainer">
                     ${items.map(item => {
