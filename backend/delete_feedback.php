@@ -19,12 +19,21 @@ if ($id <= 0) {
 $stmt = $conn->prepare("DELETE FROM feedback WHERE id = ?");
 $stmt->bind_param("i", $id);
 
-if ($stmt->execute() && $stmt->affected_rows > 0) {
-    http_response_code(200);
-    echo json_encode(["message" => "Feedback deleted successfully."]);
+// First, check if the SQL command executed without errors
+if ($stmt->execute()) {
+    // If successful, then check if a row was actually deleted
+    if ($stmt->affected_rows > 0) {
+        http_response_code(200); // OK
+        echo json_encode(["message" => "Feedback deleted successfully."]);
+    } else {
+        // The command ran fine, but no message with that ID was found
+        http_response_code(404); // Not Found
+        echo json_encode(["message" => "Feedback message not found."]);
+    }
 } else {
-    http_response_code(500);
-    echo json_encode(["message" => "Failed to delete feedback or not found."]);
+    // The command itself failed to run, indicating a server-side problem
+    http_response_code(500); // Internal Server Error
+    echo json_encode(["message" => "Failed to delete feedback due to a server error.", "error" => $stmt->error]);
 }
 
 $stmt->close();
