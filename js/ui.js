@@ -1723,15 +1723,16 @@ export function renderStockTakePage() {
     return `
       ${header}
       <div class="bg-white p-4 rounded-lg shadow">
+        <input type="text" id="stockTakeSearch" class="w-full mb-4 px-3 py-2 border rounded" placeholder="Search by Session ID or Creator Name...">
         <table class="w-full">
           <thead><tr class="border-b">
-            <th class="p-2 text-left">Session ID</th>
-            <th class="p-2 text-left">Status</th>
-            <th class="p-2 text-left">Created By</th>
-            <th class="p-2 text-left">Date</th>
+            <th class="p-2 text-left cursor-pointer" data-sort="id">Session ID <i class="fas fa-sort"></i></th>
+            <th class="p-2 text-left cursor-pointer" data-sort="status">Status <i class="fas fa-sort"></i></th>
+            <th class="p-2 text-left cursor-pointer" data-sort="creator_name">Created By <i class="fas fa-sort"></i></th>
+            <th class="p-2 text-left cursor-pointer" data-sort="creation_date">Date <i class="fas fa-sort"></i></th>
             <th class="p-2 text-left">Actions</th>
           </tr></thead>
-          <tbody>
+          <tbody id="stockTakeTableBody">
             ${sessions.map(s => `
                 <tr class="border-b hover:bg-gray-50">
                     <td class="p-2">#${s.id}</td>

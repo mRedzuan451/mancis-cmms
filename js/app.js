@@ -1432,6 +1432,15 @@ function attachPageSpecificEventListeners(page) {
                 showTemporaryMessage('Failed to start new session.', true);
             }
         });
+
+        document.getElementById('stockTakeSearch')?.addEventListener('input', (e) => {
+            const searchTerm = e.target.value.toLowerCase();
+            const filtered = (state.cache.stockTakes || []).filter(s =>
+                s.id.toString().includes(searchTerm) ||
+                s.creator_name.toLowerCase().includes(searchTerm)
+            );
+            document.getElementById('stockTakeTableBody').innerHTML = generateTableRows("stockTakes", filtered);
+        });
     } else if (page === 'stockTakeDetails') {
         const detailsId = parseInt(document.querySelector('.page-header-title').dataset.id);
         const details = state.cache.stockTakes.find(s => s.id === detailsId);
