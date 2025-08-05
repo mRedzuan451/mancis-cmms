@@ -419,6 +419,8 @@ async function handleWorkOrderFormSubmit(e) {
         const woResponse = await api.getWorkOrders(1);
         state.cache.workOrders = woResponse.data;
         state.pagination.workOrders.currentPage = woResponse.page;
+        state.pagination.workOrders.totalPages = Math.ceil(woResponse.total / woResponse.limit);
+        state.pagination.workOrders.totalRecords = woResponse.total;
         document.getElementById("workOrderModal").style.display = "none";
         renderMainContent();
         showTemporaryMessage('Work Order saved successfully!');
@@ -511,7 +513,11 @@ async function handleCompleteWorkOrderFormSubmit(e) {
     try {
         await api.updateWorkOrder(woId, updatedData);
         await logActivity("Work Order Completed", `Completed WO: ${wo.title} (ID: ${woId})`);
-        state.cache.workOrders = await api.getWorkOrders();
+        const woResponse = await api.getWorkOrders(1);
+        state.cache.workOrders = woResponse.data;
+        state.pagination.workOrders.currentPage = woResponse.page;
+        state.pagination.workOrders.totalPages = Math.ceil(woResponse.total / woResponse.limit);
+        state.pagination.workOrders.totalRecords = woResponse.total;
         document.getElementById('completeWorkOrderModal').style.display = 'none';
         renderMainContent();
         showTemporaryMessage("Work Order marked as complete!");
