@@ -1500,9 +1500,9 @@ function attachPageSpecificEventListeners(page) {
             });
         });
     }
-    if (page === 'feedback') { // The page name is still 'feedback' internally
+    if (page === 'feedback') {
+        // Listener for the "Send New Message" button
         document.getElementById('newMessageBtn')?.addEventListener('click', () => {
-            // Check if messaging is enabled before showing the modal
             if (state.settings.is_messaging_enabled !== '1' && state.currentUser.role !== 'Admin') {
                 showTemporaryMessage('The messaging feature is currently disabled by the administrator.', true);
                 return;
@@ -1510,6 +1510,77 @@ function attachPageSpecificEventListeners(page) {
             showMessageModal();
         });
 
+        // Listener for the "Show Archived" button
+        document.getElementById('toggleArchivedFeedbackBtn')?.addEventListener('click', () => {
+            state.showArchivedFeedback = !state.showArchivedFeedback;
+            renderMainContent();
+        });
+
+        // Listener for the main message container to handle all clicks inside it
+        const messageListContainer = document.getElementById('message-list-container');
+        if (messageListContainer) {
+            messageListContainer.addEventListener('click', async (e) => {
+                const header = e.target.closest('.message-header');
+                const statusButton = e.target.closest('.feedback-status-btn');
+                const deleteButton = e.target.closest('.feedback-delete-btn');
+
+                // Logic to expand/collapse a message
+                if (header) {
+                    const messageItem = header.closest('.message-item');
+                    const body = messageItem.querySelector('.message-body');
+                    const icon = header.querySelector('.fa-chevron-down');
+
+                    body.classList.toggle('hidden');
+                    icon.classList.toggle('rotate-180');
+
+                    const messageId = parseInt(messageItem.dataset.id);
+                    const currentStatus = messageItem.dataset.status;
+
+                    // Automatically mark as read when opened for the first time
+                    if (currentStatus === 'New' && !body.classList.contains('hidden')) {
+                        try {
+                            await api.updateFeedbackStatus(messageId, 'Read');
+                            messageItem.dataset.status = 'Read';
+                            header.classList.remove('font-bold');
+                            header.querySelector('.w-2.h-2.bg-blue-500')?.classList.remove('bg-blue-500');
+                            const cachedItem = state.cache.feedback.find(f => f.id === messageId);
+                            if (cachedItem) cachedItem.status = 'Read';
+                        } catch (error) {
+                            console.error("Failed to mark message as read:", error);
+                        }
+                    }
+                }
+
+                // Logic for the 'Archive' or 'Mark as Read' buttons
+                if (statusButton) {
+                    const id = parseInt(statusButton.dataset.id);
+                    const status = statusButton.dataset.status;
+                    try {
+                        await api.updateFeedbackStatus(id, status);
+                        showTemporaryMessage(`Message marked as ${status}.`);
+                        state.cache.feedback = await api.getFeedback();
+                        renderMainContent();
+                    } catch(error) {
+                        showTemporaryMessage('Could not update status.', true);
+                    }
+                }
+
+                // Logic for the 'Delete' button
+                if (deleteButton) {
+                    const id = parseInt(deleteButton.dataset.id);
+                    if (confirm('Are you sure you want to permanently delete this message?')) {
+                        try {
+                            await api.deleteFeedback(id);
+                            showTemporaryMessage("Message deleted.");
+                            state.cache.feedback = await api.getFeedback();
+                            renderMainContent();
+                        } catch (error) {
+                            showTemporaryMessage('Could not delete message.', true);
+                        }
+                    }
+                }
+            });
+        }
         const toggle = document.getElementById('messagingToggle');
         toggle?.addEventListener('change', async (e) => {
             const isEnabled = e.target.checked;
@@ -1517,10 +1588,10 @@ function attachPageSpecificEventListeners(page) {
                 await api.updateSystemSettings('is_messaging_enabled', isEnabled ? '1' : '0');
                 state.settings.is_messaging_enabled = isEnabled ? '1' : '0';
                 showTemporaryMessage('Messaging settings updated.');
-                renderMainContent(); // Re-render to show text change
+                renderMainContent();
             } catch (error) {
                 showTemporaryMessage('Failed to update settings.', true);
-                e.target.checked = !isEnabled; // Revert checkbox on failure
+                e.target.checked = !isEnabled;
             }
         });
     }

@@ -1805,24 +1805,21 @@ export function showMessageModal() {
 export function renderTeamMessagesPage() {
     const header = renderPageHeader("Team Messages", [
         '<button id="refreshDataBtn" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded"><i class="fas fa-sync-alt mr-2"></i>Refresh</button>',
-        '<button id="newMessageBtn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded"><i class="fas fa-paper-plane mr-2"></i>Send New Message</button>'
+        '<button id="newMessageBtn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded"><i class="fas fa-paper-plane mr-2"></i>Send New Message</button>',
+        // This button will toggle between the inbox and the archive
+        `<button id="toggleArchivedFeedbackBtn" class="bg-gray-200 text-gray-700 font-bold py-2 px-4 rounded">
+            ${state.showArchivedFeedback ? '<i class="fas fa-inbox mr-2"></i>Show Inbox' : '<i class="fas fa-archive mr-2"></i>Show Archived'}
+        </button>`
     ]);
-    
-    const messages = state.cache.feedback || [];
+
+    // Filter messages based on whether we are viewing the archive or the inbox
+    const messages = (state.cache.feedback || []).filter(item => {
+        return state.showArchivedFeedback ? item.status === 'Archived' : item.status !== 'Archived';
+    });
+
     const isAdmin = state.currentUser.role === 'Admin';
 
-    // Group messages by date first
-    const groupedByDate = messages.reduce((acc, message) => {
-        const date = new Date(message.timestamp).toLocaleDateString(undefined, {
-            year: 'numeric', month: 'long', day: 'numeric'
-        });
-        if (!acc[date]) {
-            acc[date] = [];
-        }
-        acc[date].push(message);
-        return acc;
-    }, {});
-
+    // Admin settings section for enabling/disabling the feature
     const adminSettings = isAdmin ? `
         <div class="bg-white p-4 rounded-lg shadow mb-6">
             <h3 class="text-lg font-bold mb-2">Admin Controls</h3>
@@ -1834,100 +1831,38 @@ export function renderTeamMessagesPage() {
         </div>
     ` : '';
 
-    let finalHtml = '';
-    // Loop through each date group
-    for (const date in groupedByDate) {
-        finalHtml += `
-            <div>
-                <h2 class="text-lg font-semibold text-gray-600 my-4 text-center">${date}</h2>
-                <div class="space-y-4">
-        `;
-
-        let messageStack = [];
-        // Loop through messages for that date to create stacks
-        groupedByDate[date].forEach((item, index) => {
-            const lastMessage = messageStack[messageStack.length - 1];
-            // If the sender is the same as the last one, stack it
-            if (lastMessage && lastMessage.sender_name === item.sender_name) {
-                lastMessage.messages.push({
-                    text: item.message,
-                    time: new Date(item.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-                });
-            } else {
-                // Otherwise, start a new message stack
-                messageStack.push({
-                    sender_name: item.sender_name,
-                    department_name: item.department_name,
-                    target_role: item.target_role,
-                    id: item.id,
-                    messages: [{
-                        text: item.message,
-                        time: new Date(item.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-                    }]
-                });
-            }
-        });
-
-        // Render the stacked messages
-        messageStack.forEach(stack => {
-            const senderInfo = isAdmin ? `<p class="text-xs text-gray-500">${stack.department_name || 'N/A'}</p>` : '';
-            finalHtml += `
-                <div class="bg-white p-4 rounded-lg shadow border-l-4 border-blue-500">
-                    <div class="flex justify-between items-start mb-2">
-                        <div>
-                            <p class="font-bold">${stack.sender_name || 'Unknown User'}</p>
-                            ${senderInfo}
-                        </div>
-                        <div class="text-right">
-                            <p class="text-xs font-semibold text-gray-600 mt-1">To: ${stack.target_role}</p>
-                        </div>
-                    </div>
-                    <div class="space-y-2">
-                        ${stack.messages.map(msg => `
-                            <div class="flex justify-between items-end">
-                                <p class="text-gray-700 whitespace-pre-wrap">${msg.text}</p>
-                                <p class="text-xs text-gray-400 ml-4 flex-shrink-0">${msg.time}</p>
-                            </div>
-                        `).join('')}
-                    </div>
-                    <div class="flex justify-end items-center mt-2">
-                        ${state.currentUser.permissions.feedback_delete ? `<button class="feedback-delete-btn bg-red-100 hover:bg-red-200 text-red-700 text-xs py-1 px-2 rounded" data-id="${stack.id}">Delete</button>` : ''}
-                    </div>
-                </div>
-            `;
-        });
-
-        finalHtml += `</div></div>`;
-    }
-
-
     return `
         ${header}
         ${adminSettings}
-        <div class="space-y-6">
-            ${finalHtml || '<p>No messages in this logbook.</p>'}
-
-        <div class="space-y-4">
+        <div class="space-y-2" id="message-list-container">
         ${messages.map(item => {
+            const isUnread = item.status === 'New';
             const senderInfo = isAdmin ? `<p class="text-xs text-gray-500">${item.department_name || 'N/A'}</p>` : '';
             return `
-            <div class="bg-white p-4 rounded-lg shadow border-l-4 border-blue-500">
-                <div class="flex justify-between items-start mb-2">
-                    <div>
-                        <p class="font-bold">${item.sender_name || 'Unknown User'}</p>
-                        ${senderInfo}
+            <div class="message-item bg-white rounded-lg shadow overflow-hidden" data-id="${item.id}" data-status="${item.status}">
+                <div class="message-header p-3 flex justify-between items-center cursor-pointer hover:bg-gray-50 ${isUnread ? 'font-bold' : ''}">
+                    <div class="flex items-center">
+                        <span class="w-2 h-2 ${isUnread ? 'bg-blue-500' : ''} rounded-full mr-3 flex-shrink-0"></span>
+                        <div class="flex-grow">
+                            <p>${item.sender_name || 'Unknown User'}</p>
+                            ${senderInfo}
+                        </div>
                     </div>
-                    <div class="text-right">
-                        <p class="text-sm text-gray-500">${new Date(item.timestamp).toLocaleString()}</p>
-                        <p class="text-xs font-semibold text-gray-600 mt-1">To: ${item.target_role}</p>
+                    <div class="text-right text-sm text-gray-500 flex items-center flex-shrink-0 ml-4">
+                        <span>${new Date(item.timestamp).toLocaleString()}</span>
+                        <i class="fas fa-chevron-down ml-4 transition-transform"></i>
                     </div>
                 </div>
-                <p class="text-gray-700 mb-4 whitespace-pre-wrap">${item.message}</p>
-                <div class="flex justify-end items-center space-x-2">
-                    ${state.currentUser.permissions.feedback_delete ? `<button class="feedback-delete-btn bg-red-100 hover:bg-red-200 text-red-700 text-xs py-1 px-2 rounded" data-id="${item.id}">Delete</button>` : ''}
+                <div class="message-body hidden p-4 border-t border-gray-200">
+                    <p class="text-gray-800 whitespace-pre-wrap mb-4">${item.message}</p>
+                    <div class="flex justify-end items-center space-x-2">
+                        ${item.status !== 'Archived' ? `<button class="feedback-status-btn bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs py-1 px-2 rounded" data-id="${item.id}" data-status="Archived">Archive</button>` : ''}
+                        ${item.status === 'New' ? `<button class="feedback-status-btn bg-blue-100 hover:bg-blue-200 text-blue-700 text-xs py-1 px-2 rounded" data-id="${item.id}" data-status="Read">Mark as Read</button>` : ''}
+                        ${state.currentUser.permissions.feedback_delete ? `<button class="feedback-delete-btn bg-red-100 hover:bg-red-200 text-red-700 text-xs py-1 px-2 rounded" data-id="${item.id}">Delete</button>` : ''}
+                    </div>
                 </div>
             </div>
-        `}).join('') || '<p>No messages in this logbook.</p>'}
+        `}).join('') || `<p class="text-center text-gray-500 py-8">${state.showArchivedFeedback ? 'No archived messages.' : 'Your inbox is empty.'}</p>`}
         </div>
     `;
 }
