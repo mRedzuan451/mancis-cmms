@@ -1807,16 +1807,15 @@ export function renderTeamMessagesPage() {
         '<button id="refreshDataBtn" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded"><i class="fas fa-sync-alt mr-2"></i>Refresh</button>',
         '<button id="newMessageBtn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded"><i class="fas fa-paper-plane mr-2"></i>Send New Message</button>'
     ]);
-
+    
     const messages = state.cache.feedback || [];
     const isAdmin = state.currentUser.role === 'Admin';
 
-    // Group messages by date
-    const groupedMessages = messages.reduce((acc, message) => {
+<<<<<<< HEAD
+    // Group messages by date first
+    const groupedByDate = messages.reduce((acc, message) => {
         const date = new Date(message.timestamp).toLocaleDateString(undefined, {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric'
+            year: 'numeric', month: 'long', day: 'numeric'
         });
         if (!acc[date]) {
             acc[date] = [];
@@ -1825,6 +1824,9 @@ export function renderTeamMessagesPage() {
         return acc;
     }, {});
 
+=======
+    // Admin settings section
+>>>>>>> parent of 43fd38a (update message)
     const adminSettings = isAdmin ? `
         <div class="bg-white p-4 rounded-lg shadow mb-6">
             <h3 class="text-lg font-bold mb-2">Admin Controls</h3>
@@ -1836,37 +1838,102 @@ export function renderTeamMessagesPage() {
         </div>
     ` : '';
 
+    let finalHtml = '';
+    // Loop through each date group
+    for (const date in groupedByDate) {
+        finalHtml += `
+            <div>
+                <h2 class="text-lg font-semibold text-gray-600 my-4 text-center">${date}</h2>
+                <div class="space-y-4">
+        `;
+
+        let messageStack = [];
+        // Loop through messages for that date to create stacks
+        groupedByDate[date].forEach((item, index) => {
+            const lastMessage = messageStack[messageStack.length - 1];
+            // If the sender is the same as the last one, stack it
+            if (lastMessage && lastMessage.sender_name === item.sender_name) {
+                lastMessage.messages.push({
+                    text: item.message,
+                    time: new Date(item.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                });
+            } else {
+                // Otherwise, start a new message stack
+                messageStack.push({
+                    sender_name: item.sender_name,
+                    department_name: item.department_name,
+                    target_role: item.target_role,
+                    id: item.id,
+                    messages: [{
+                        text: item.message,
+                        time: new Date(item.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                    }]
+                });
+            }
+        });
+
+        // Render the stacked messages
+        messageStack.forEach(stack => {
+            const senderInfo = isAdmin ? `<p class="text-xs text-gray-500">${stack.department_name || 'N/A'}</p>` : '';
+            finalHtml += `
+                <div class="bg-white p-4 rounded-lg shadow border-l-4 border-blue-500">
+                    <div class="flex justify-between items-start mb-2">
+                        <div>
+                            <p class="font-bold">${stack.sender_name || 'Unknown User'}</p>
+                            ${senderInfo}
+                        </div>
+                        <div class="text-right">
+                            <p class="text-xs font-semibold text-gray-600 mt-1">To: ${stack.target_role}</p>
+                        </div>
+                    </div>
+                    <div class="space-y-2">
+                        ${stack.messages.map(msg => `
+                            <div class="flex justify-between items-end">
+                                <p class="text-gray-700 whitespace-pre-wrap">${msg.text}</p>
+                                <p class="text-xs text-gray-400 ml-4 flex-shrink-0">${msg.time}</p>
+                            </div>
+                        `).join('')}
+                    </div>
+                    <div class="flex justify-end items-center mt-2">
+                        ${state.currentUser.permissions.feedback_delete ? `<button class="feedback-delete-btn bg-red-100 hover:bg-red-200 text-red-700 text-xs py-1 px-2 rounded" data-id="${stack.id}">Delete</button>` : ''}
+                    </div>
+                </div>
+            `;
+        });
+
+        finalHtml += `</div></div>`;
+    }
+
+
     return `
         ${header}
         ${adminSettings}
+<<<<<<< HEAD
         <div class="space-y-6">
-        ${Object.keys(groupedMessages).map(date => `
-            <div>
-                <h2 class="text-lg font-semibold text-gray-600 mb-2">${date}</h2>
-                <div class="space-y-4">
-                    ${groupedMessages[date].map(item => {
-                        const senderInfo = isAdmin ? `<p class="text-xs text-gray-500">${item.department_name || 'N/A'}</p>` : '';
-                        return `
-                        <div class="bg-white p-4 rounded-lg shadow border-l-4 border-blue-500">
-                            <div class="flex justify-between items-start mb-2">
-                                <div>
-                                    <p class="font-bold">${item.sender_name || 'Unknown User'}</p>
-                                    ${senderInfo}
-                                </div>
-                                <div class="text-right">
-                                    <p class="text-sm text-gray-500">${new Date(item.timestamp).toLocaleTimeString()}</p>
-                                    <p class="text-xs font-semibold text-gray-600 mt-1">To: ${item.target_role}</p>
-                                </div>
-                            </div>
-                            <p class="text-gray-700 mb-4 whitespace-pre-wrap">${item.message}</p>
-                            <div class="flex justify-end items-center space-x-2">
-                                ${state.currentUser.permissions.feedback_delete ? `<button class="feedback-delete-btn bg-red-100 hover:bg-red-200 text-red-700 text-xs py-1 px-2 rounded" data-id="${item.id}">Delete</button>` : ''}
-                            </div>
-                        </div>
-                    `}).join('')}
+            ${finalHtml || '<p>No messages in this logbook.</p>'}
+=======
+        <div class="space-y-4">
+        ${messages.map(item => {
+            const senderInfo = isAdmin ? `<p class="text-xs text-gray-500">${item.department_name || 'N/A'}</p>` : '';
+            return `
+            <div class="bg-white p-4 rounded-lg shadow border-l-4 border-blue-500">
+                <div class="flex justify-between items-start mb-2">
+                    <div>
+                        <p class="font-bold">${item.sender_name || 'Unknown User'}</p>
+                        ${senderInfo}
+                    </div>
+                    <div class="text-right">
+                        <p class="text-sm text-gray-500">${new Date(item.timestamp).toLocaleString()}</p>
+                        <p class="text-xs font-semibold text-gray-600 mt-1">To: ${item.target_role}</p>
+                    </div>
+                </div>
+                <p class="text-gray-700 mb-4 whitespace-pre-wrap">${item.message}</p>
+                <div class="flex justify-end items-center space-x-2">
+                    ${state.currentUser.permissions.feedback_delete ? `<button class="feedback-delete-btn bg-red-100 hover:bg-red-200 text-red-700 text-xs py-1 px-2 rounded" data-id="${item.id}">Delete</button>` : ''}
                 </div>
             </div>
-        `).join('') || '<p>No messages in this logbook.</p>'}
+        `}).join('') || '<p>No messages in this logbook.</p>'}
+>>>>>>> parent of 43fd38a (update message)
         </div>
     `;
 }
