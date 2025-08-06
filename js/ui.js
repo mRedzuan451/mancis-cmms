@@ -6,6 +6,8 @@ import { api } from './api.js';
 import { getFullLocationName, getUserDepartment, showTemporaryMessage, calculateNextPmDate } from './utils.js';
 
 function renderPageHeader(title, buttons = []) {
+    const renderedButtons = buttons.filter(Boolean).join('\n');
+  
   return `
     <div class="flex justify-between items-center mb-6">
         <h1 class="text-3xl font-bold">${title}</h1>
@@ -26,8 +28,6 @@ export function renderDashboard() {
   const pendingRequests = partRequests.filter((pr) => pr.status === "Requested" || pr.status === "Requested from Storage").length;
   const lowStockItems = parts.filter((p) => parseInt(p.quantity) <= parseInt(p.minQuantity)).length;
   
-  // --- START: FIX ---
-  // This new date logic is more robust and avoids timezone inconsistencies.
   const today = new Date();
   today.setHours(0, 0, 0, 0); // Set to the beginning of the current day.
 
@@ -50,7 +50,6 @@ export function renderDashboard() {
       const woDueDate = new Date(wo.dueDate + 'T00:00:00');
       return woDueDate < today;
   }).sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
-  // --- END: FIX ---
 
   return `
     <h1 class="text-3xl font-bold mb-6">Dashboard</h1>
@@ -111,12 +110,13 @@ export function renderDashboard() {
 }
 
 export function renderAssetsPage() {
+    const { permissions } = state.currentUser;
     const assets = state.cache.assets;
     const header = renderPageHeader("Asset Management", [
-        '<button id="deleteSelectedBtn" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded hidden"><i class="fas fa-trash-alt mr-2"></i>Delete Selected</button>',
-        '<button id="uploadAssetsBtn" class="bg-teal-500 hover:bg-teal-600 text-white font-bold py-2 px-4 rounded"><i class="fas fa-upload mr-2"></i>Upload List</button>',
+        permissions.asset_delete ? '<button id="deleteSelectedBtn" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded hidden"><i class="fas fa-trash-alt mr-2"></i>Delete Selected</button>' : '',
+        permissions.asset_edit ? '<button id="uploadAssetsBtn" class="bg-teal-500 hover:bg-teal-600 text-white font-bold py-2 px-4 rounded"><i class="fas fa-upload mr-2"></i>Upload List</button>' : '',
         '<button id="printAssetListBtn" class="bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-2 px-4 rounded"><i class="fas fa-print mr-2"></i>Print List</button>',
-        '<button id="addAssetBtn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded"><i class="fas fa-plus mr-2"></i>Add Asset</button>'
+        permissions.asset_create ? '<button id="addAssetBtn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded"><i class="fas fa-plus mr-2"></i>Add Asset</button>' : ''
     ]);
     return `
       ${header}
@@ -145,12 +145,13 @@ export function renderAssetsPage() {
 }
 
 export function renderPartsPage() {
+    const { permissions } = state.currentUser;
     const parts = state.cache.parts;
     const header = renderPageHeader("Spare Parts Management", [
-        '<button id="deleteSelectedBtn" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded hidden"><i class="fas fa-trash-alt mr-2"></i>Delete Selected</button>',
-        '<button id="uploadPartsBtn" class="bg-teal-500 hover:bg-teal-600 text-white font-bold py-2 px-4 rounded"><i class="fas fa-upload mr-2"></i>Upload List</button>',
+        permissions.part_delete ? '<button id="deleteSelectedBtn" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded hidden"><i class="fas fa-trash-alt mr-2"></i>Delete Selected</button>' : '',
+        permissions.part_edit ? '<button id="uploadPartsBtn" class="bg-teal-500 hover:bg-teal-600 text-white font-bold py-2 px-4 rounded"><i class="fas fa-upload mr-2"></i>Upload List</button>' : '',
         '<button id="printPartListBtn" class="bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-2 px-4 rounded"><i class="fas fa-print mr-2"></i>Print List</button>',
-        '<button id="addPartBtn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded"><i class="fas fa-plus mr-2"></i>Add Parts</button>'
+        permissions.part_create ? '<button id="addPartBtn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded"><i class="fas fa-plus mr-2"></i>Add Parts</button>' : ''
     ]);
     const departmentHeader = state.currentUser.role === 'Admin' 
         ? '<th class="p-2 text-left cursor-pointer" data-sort="departmentName">Department <i class="fas fa-sort"></i></th>' 
@@ -182,10 +183,11 @@ export function renderPartsPage() {
 }
 
 export function renderWorkOrdersPage() {
+    const { permissions } = state.currentUser;
     const workOrders = state.cache.workOrders.filter(can.view);
     const header = renderPageHeader("Work Order Management", [
-        '<button id="deleteSelectedBtn" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded hidden"><i class="fas fa-trash-alt mr-2"></i>Delete Selected</button>',
-        '<button id="addWorkOrderBtn" class="bg-blue-500 text-white font-bold py-2 px-4 rounded"><i class="fas fa-plus mr-2"></i>Create Corrective WO</button>'
+        permissions.wo_delete ? '<button id="deleteSelectedBtn" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded hidden"><i class="fas fa-trash-alt mr-2"></i>Delete Selected</button>' : '',
+        permissions.wo_create ? '<button id="addWorkOrderBtn" class="bg-blue-500 text-white font-bold py-2 px-4 rounded"><i class="fas fa-plus mr-2"></i>Create Corrective WO</button>' : ''
     ]);
     return `
       ${header}
@@ -218,10 +220,11 @@ export function renderWorkOrdersPage() {
 }
 
 export function renderUserManagementPage() {
+    const { permissions } = state.currentUser;
     const users = state.cache.users;
     const header = renderPageHeader("User Management", [
-        '<button id="addUserBtn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded"><i class="fas fa-user-plus mr-2"></i>Add User</button>',
-        '<button id="deleteSelectedBtn" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded hidden"><i class="fas fa-trash-alt mr-2"></i>Delete Selected</button>',
+        permissions.user_edit ? '<button id="addUserBtn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded"><i class="fas fa-user-plus mr-2"></i>Add User</button>' : '',
+        permissions.user_delete ? '<button id="deleteSelectedBtn" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded hidden"><i class="fas fa-trash-alt mr-2"></i>Delete Selected</button>' : '',
         '<button id="refreshDataBtn" class="bg-gray-500 text-white font-bold py-2 px-4 rounded"><i class="fas fa-sync-alt mr-2"></i>Refresh</button>'
     ]);
     return `
