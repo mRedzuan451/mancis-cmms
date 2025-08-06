@@ -83,7 +83,7 @@ $role_permissions = [
         'part_request_view', 'part_request_create',
         'pm_schedule_view','asset_create',
         'pm_schedule_create','stock_take_create',
-        'feedback_view',
+        'feedback_view','report_view',
     ],
 
     'Technician' => [
@@ -97,6 +97,7 @@ $role_permissions = [
     ],
 
     'Clerk' => [
+        'asset_view',
         'part_request_view', 'part_request_create',
         'location_management','part_restock',
         'stock_take_create', 'part_view', 'feedback_view',
