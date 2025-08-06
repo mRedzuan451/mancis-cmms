@@ -76,7 +76,7 @@ $role_permissions = [
     ],
 
     'Engineer' => [
-        'asset_view', 'asset_edit',
+        'asset_view', 'asset_edit', 'asset_create',
         'part_view', 'part_edit',
         'wo_view', 'wo_edit','wo_create',
         'location_management','part_restock',
