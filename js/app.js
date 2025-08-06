@@ -1711,6 +1711,28 @@ function attachGlobalEventListeners() {
             return; // Stop further execution
         }
 
+        const notificationItem = e.target.closest('.notification-item');
+        if (notificationItem) {
+            const type = notificationItem.dataset.notificationType;
+            const relatedId = parseInt(notificationItem.dataset.relatedId);
+
+            // Close the notification modal first
+            document.getElementById('notificationModal').style.display = 'none';
+
+            if (type === 'team_message') {
+                state.currentPage = 'feedback';
+                render(); // Navigate to the team messages page
+            } else if (type === 'part_request_update') {
+                const request = state.cache.partRequests.find(pr => pr.id === relatedId);
+                if (request) {
+                    showPartRequestDetailModal(request); // Show the specific request detail
+                } else {
+                    showTemporaryMessage('Could not find the related part request. It may have been deleted.', true);
+                }
+            }
+            return; // Stop further execution
+        }
+
         const button = target.closest('button');
 
         if (e.target.id === "refreshDataBtn") refreshAllDataAndRender();

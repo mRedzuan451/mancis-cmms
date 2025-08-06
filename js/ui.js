@@ -2161,8 +2161,6 @@ export async function showNotificationModal() {
         if (notifications && notifications.length > 0) {
             list.innerHTML = notifications.map(notif => {
                 let message = '';
-                // --- START: MODIFICATION ---
-                // Determine how to display the notification based on its type
                 if (notif.type === 'team_message') {
                     message = `<strong>${notif.message}</strong> in the Team Messages inbox.`;
                 } else if (notif.type === 'part_request_update' && notif.details) {
@@ -2172,10 +2170,12 @@ export async function showNotificationModal() {
                 } else {
                     message = notif.message; // Fallback for any other type
                 }
-                // --- END: MODIFICATION ---
 
                 return `
-                    <div class="p-3 text-sm text-gray-600 border-b border-gray-100 hover:bg-gray-50 data-notification-id="${notif.id}">
+                    <div class="notification-item p-3 text-sm text-gray-600 border-b border-gray-100 hover:bg-gray-50 cursor-pointer"
+                         data-notification-id="${notif.id}"
+                         data-notification-type="${notif.type}"
+                         data-related-id="${notif.related_id}">
                         <p>${message}</p>
                         <p class="text-xs text-gray-400 mt-1">${new Date(notif.timestamp).toLocaleString()}</p>
                     </div>
