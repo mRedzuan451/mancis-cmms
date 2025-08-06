@@ -501,6 +501,7 @@ export function renderPartsRequestPage() {
               <table class="w-full">
                   <thead>
                       <tr class="border-b">
+                          <th class="p-2 text-left cursor-pointer" data-sort="requestDate">Request Date <i class="fas fa-sort"></i></th>
                           <th class="p-2 text-left cursor-pointer" data-sort="partId">Part Name <i class="fas fa-sort"></i></th>
                           <th class="p-2 text-left cursor-pointer" data-sort="newPartNumber">Part Number <i class="fas fa-sort"></i></th>
                           <th class="p-2 text-left cursor-pointer" data-sort="quantity">Quantity <i class="fas fa-sort"></i></th>
@@ -652,15 +653,17 @@ export function generateTableRows(type, data) {
                 ? `<span class="text-red-600">${req.rejectionReason || 'No reason provided.'}</span>` 
                 : req.purpose;
             
-            const canEdit = req.requesterId === state.currentUser.id && req.status === 'Requested';
-            const canDelete = ['Admin', 'Manager'].includes(state.currentUser.role);
+            const canEdit = req.requesterId === state.currentUser.id && req.status === 'Requested' && state.currentUser.permissions.part_request_create;
+            const canDelete = state.currentUser.permissions.part_request_delete;
             const canApprove = state.currentUser.permissions.part_request_approve && 
                                (req.status === "Requested" || req.status === "Requested from Storage");
             return `
               <tr class="border-b hover:bg-gray-50">
+                  <td class="p-2">${new Date(req.requestDate).toLocaleDateString()}</td>
                   <td class="p-2">${partName}</td>
-                  <td class="p-2">${partNumber}</td> <td class="p-2">${req.quantity}</td>
-                  <td class="p-2"><span class="px-2 py-1 text-xs font-semibold rounded-full ${statusColorClass}">${req.status}</span></td>
+                  <td class="p-2">${partNumber}</td>
+                  <td class="p-2">${req.quantity}</td>
+                  <td class="p-2"><span class="px-2 py-1 text-xs font-semibold rounded-full ${statusColorClass}">${req.status}</span></td>                  
                   <td class="p-2 text-sm">${notesOrReason}</td>
                   <td class="p-2 space-x-2 whitespace-nowrap">
                       <button class="view-pr-btn text-blue-500 hover:text-blue-700" data-id="${req.id}" title="View Details"><i class="fas fa-eye"></i></button>
