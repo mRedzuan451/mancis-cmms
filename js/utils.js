@@ -171,52 +171,136 @@ export function printReport(title, content) {
         return;
     }
 
+    const today = new Date().toLocaleDateString('en-GB', {
+        day: '2-digit', month: 'long', year: 'numeric'
+    });
+
+    // --- START: MODIFICATION ---
+    // New, enhanced CSS for a formal A4 layout with header and footer.
+    const formalStyle = `
+        <style>
+            body { 
+                font-family: Arial, sans-serif; 
+                font-size: 11pt;
+            }
+            @page { 
+                size: A4; 
+                margin: 1in; 
+            }
+            .report-header, .report-footer {
+                position: fixed;
+                left: 0;
+                right: 0;
+                width: 100%;
+            }
+            .report-header {
+                top: -0.6in;
+                height: 0.8in;
+                border-bottom: 2px solid #000;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+            }
+            .report-footer {
+                bottom: -0.6in;
+                height: 0.5in;
+                border-top: 1px solid #ccc;
+                text-align: center;
+                font-size: 9pt;
+                color: #555;
+            }
+            .report-footer .page-number::after {
+                content: counter(page);
+            }
+            .logo-container img {
+                height: 50px; /* Adjust size as needed */
+            }
+            .header-text {
+                text-align: right;
+            }
+            .header-text h1 {
+                margin: 0;
+                font-size: 18pt;
+                font-weight: bold;
+            }
+            .header-text p {
+                margin: 0;
+                font-size: 10pt;
+                color: #333;
+            }
+            main {
+                padding-top: 1in;
+            }
+            table { 
+                width: 100%; 
+                border-collapse: collapse; 
+                margin-top: 20px;
+                font-size: 10pt;
+            }
+            th, td { 
+                border: 1px solid #ccc; 
+                padding: 6px 8px; 
+                text-align: left; 
+            }
+            th {
+                background-color: #f2f2f2;
+                font-weight: bold;
+            }
+            h2 { 
+                background-color: #f2f2f2 !important; 
+                padding: 10px; 
+                margin-top: 20px; 
+                border-bottom: 1px solid #ddd; 
+            }
+            @media print {
+                body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+                .no-print { display: none; }
+            }
+        </style>
+    `;
+
+    // The main document structure
     printWindow.document.write(`
         <html>
             <head>
                 <title>${title}</title>
-                <style>
-                    body { font-family: Arial, sans-serif; }
-                    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-                    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
-                    h1 { text-align: center; border-bottom: 2px solid #000; padding-bottom: 10px; }
-                    p { margin-bottom: 20px; }
-                    @page { size: A4; margin: 20mm; }
-                    @media print {
-                        .no-print { display: none; }
-                        body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-                    }
-                    .print-button-container { text-align: right; padding: 10px; }
-                    .print-button { padding: 8px 16px; border: 1px solid #ccc; background-color: #f0f0f0; cursor: pointer; }
-                </style>
+                ${formalStyle}
             </head>
             <body>
-                <div class="no-print print-button-container">
-                    <button id="printPageBtn" class="print-button">Print this page</button>
+                <div class="report-header">
+                    <div class="logo-container">
+                        <img src="mancis.png" alt="Company Logo">
+                    </div>
+                    <div class="header-text">
+                        <h1>${title}</h1>
+                        <p>Date Generated: ${today}</p>
+                    </div>
                 </div>
-                ${content}
+
+                <div class="report-footer">
+                    <p>Confidential Document &nbsp; | &nbsp; Page <span class="page-number"></span></p>
+                </div>
+
+                <main>
+                    ${content}
+                </main>
             </body>
         </html>
     `);
+    // --- END: MODIFICATION ---
 
     printWindow.document.close();
+    printWindow.focus();
     
-    // Use a timeout to ensure the popup DOM is ready before we access it
+    // Use a timeout to ensure the popup DOM is ready before printing
     setTimeout(() => {
         try {
-            const printButton = printWindow.document.getElementById('printPageBtn');
-            if (printButton) {
-                printButton.addEventListener('click', function() {
-                    printWindow.print();
-                });
-            }
+            printWindow.print();
+            printWindow.close();
         } catch (error) {
-            // This will catch any errors if the window was closed before the script ran
-            console.error("Could not attach print event listener:", error);
+            console.error("Could not print the report:", error);
         }
-    }, 250); // A 250ms delay
-
-    printWindow.focus();
+    }, 500);
 }
 
 /**
