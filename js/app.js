@@ -1146,7 +1146,7 @@ function attachPageSpecificEventListeners(page) {
             }, {});
 
             const title = "Part Purchase List";
-            let content = `<h1>${title}</h1><p>Generated on: ${new Date().toLocaleString()}</p>`;
+            let content = `<h1>${title}</h1>`;
 
             for (const department in groupedByDept) {
                 content += `<h2 style="margin-top: 20px; background-color: #f2f2f2; padding: 10px; border-bottom: 1px solid #ddd;">Department: ${department}</h2>`;
