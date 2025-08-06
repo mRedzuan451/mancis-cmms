@@ -215,7 +215,7 @@ export function printReport(title, content) {
                 width: 100%;
             }
             .logo-container img {
-                height: 50px;
+                height: 25px;
             }
             .header-text {
                 text-align: right;
@@ -290,7 +290,6 @@ export function printReport(title, content) {
 
                     <footer class="report-footer">
                         <div class="footer-content">
-                            <span>Confidential Document</span>
                             <span>Page 1</span> 
                         </div>
                     </footer>
