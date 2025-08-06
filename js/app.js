@@ -1134,11 +1134,9 @@ function attachPageSpecificEventListeners(page) {
                 return;
             }
 
-            // --- START: MODIFICATION ---
-            // Group requests by department
             const groupedByDept = requestsToPrint.reduce((acc, req) => {
-                const requester = state.cache.users.find(u => u.id === req.requesterId);
-                const departmentName = requester ? getUserDepartment(requester) : 'Unassigned';
+                // Use the department name provided directly by the API.
+                const departmentName = req.departmentName || 'Unassigned';
                 
                 if (!acc[departmentName]) {
                     acc[departmentName] = [];
@@ -1150,7 +1148,6 @@ function attachPageSpecificEventListeners(page) {
             const title = "Part Purchase List";
             let content = `<h1>${title}</h1><p>Generated on: ${new Date().toLocaleString()}</p>`;
 
-            // Loop through each department and create a separate table
             for (const department in groupedByDept) {
                 content += `<h2 style="margin-top: 20px; background-color: #f2f2f2; padding: 10px; border-bottom: 1px solid #ddd;">Department: ${department}</h2>`;
                 content += `
@@ -1169,12 +1166,12 @@ function attachPageSpecificEventListeners(page) {
 
                 groupedByDept[department].forEach(req => {
                     const part = req.partId ? state.cache.parts.find(p => p.id === req.partId) : null;
-                    const requester = state.cache.users.find(u => u.id === req.requesterId);
+                    // Use the requester name provided directly by the API.
+                    const requesterName = req.requesterName || 'N/A';
 
                     const partName = part ? part.name : (req.newPartName || 'N/A');
                     const partNumber = part ? part.sku : (req.newPartNumber || 'N/A');
                     const maker = part ? part.maker : (req.newPartMaker || '');
-                    const requesterName = requester ? requester.fullName : 'N/A';
                     
                     content += `
                         <tr>

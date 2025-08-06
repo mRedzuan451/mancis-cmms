@@ -20,9 +20,18 @@ $offset = ($page - 1) * $limit;
 $total_records = 0;
 $output_array = [];
 
-// Base queries
-$count_base = "SELECT COUNT(DISTINCT pr.id) as total FROM partrequests pr LEFT JOIN users u ON pr.requesterId = u.id";
-$data_base = "SELECT pr.* FROM partrequests pr LEFT JOIN users u ON pr.requesterId = u.id";
+// --- START: MODIFICATION ---
+// Base queries are updated to include joins for requester and department names.
+$count_base = "SELECT COUNT(DISTINCT pr.id) as total 
+               FROM partrequests pr 
+               LEFT JOIN users u ON pr.requesterId = u.id";
+
+$data_base = "SELECT pr.*, u.fullName as requesterName, d.name as departmentName
+              FROM partrequests pr 
+              LEFT JOIN users u ON pr.requesterId = u.id
+              LEFT JOIN departments d ON u.departmentId = d.id";
+// --- END: MODIFICATION ---
+
 $where_clause = " WHERE u.departmentId = ?";
 $order_clause = " ORDER BY pr.requestDate DESC LIMIT ? OFFSET ?";
 
@@ -45,7 +54,6 @@ if ($user_role === 'Admin') {
     $stmt_data = $conn->prepare($data_base . $where_clause . $order_clause);
     $stmt_data->bind_param("iii", $user_department_id, $limit, $offset);
 }
-// --- END: PAGINATION LOGIC ---
 
 $stmt_data->execute();
 $result = $stmt_data->get_result();
@@ -63,12 +71,10 @@ if ($result->num_rows > 0) {
 $stmt_data->close();
 $conn->close();
 
-// --- START: NEW RESPONSE FORMAT ---
 echo json_encode([
     'total' => $total_records,
     'page' => $page,
     'limit' => $limit,
     'data' => $output_array
 ]);
-// --- END: NEW RESPONSE FORMAT ---
 ?>
