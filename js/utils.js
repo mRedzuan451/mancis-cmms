@@ -280,7 +280,6 @@ export function printReport(title, content) {
                                 <div class="logo-container">
                                     <img src="mancis.png" alt="Company Logo">
                                 </div>
-                                <p>ManCIS</p>
                                 <div class="header-text">
                                     <h1>${title}</h1>
                                     <p>Date Generated: ${today}</p>
