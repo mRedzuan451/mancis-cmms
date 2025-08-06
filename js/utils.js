@@ -182,38 +182,40 @@ export function printReport(title, content) {
             body { 
                 font-family: Arial, sans-serif; 
                 font-size: 11pt;
+                margin: 0;
             }
-            @page { 
-                size: A4; 
-                margin: 1in; 
-            }
-            .report-header, .report-footer {
-                position: fixed;
-                left: 0;
-                right: 0;
+            .print-container {
+                display: table;
                 width: 100%;
+                height: 100%;
+                border-collapse: collapse;
             }
             .report-header {
-                top: -0.6in;
-                height: 0.8in;
+                display: table-header-group;
+                padding: 20mm 20mm 10mm 20mm;
                 border-bottom: 2px solid #000;
-                display: flex;
-                align-items: center;
-                justify-content: space-between;
             }
             .report-footer {
-                bottom: -0.6in;
-                height: 0.5in;
+                display: table-footer-group;
+                padding: 10mm 20mm;
                 border-top: 1px solid #ccc;
-                text-align: center;
                 font-size: 9pt;
                 color: #555;
             }
-            .report-footer .page-number::after {
-                content: counter(page);
+            .report-content {
+                display: table-row-group;
+            }
+            .header-content, .footer-content {
+                padding: 0 20mm; /* Match page margins */
+            }
+            .header-flex {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                width: 100%;
             }
             .logo-container img {
-                height: 50px; /* Adjust size as needed */
+                height: 50px;
             }
             .header-text {
                 text-align: right;
@@ -221,21 +223,19 @@ export function printReport(title, content) {
             .header-text h1 {
                 margin: 0;
                 font-size: 18pt;
-                font-weight: bold;
             }
             .header-text p {
                 margin: 0;
                 font-size: 10pt;
-                color: #333;
             }
-            main {
-                padding-top: 1in;
+            .footer-content {
+                display: flex;
+                justify-content: space-between;
             }
             table { 
                 width: 100%; 
                 border-collapse: collapse; 
-                margin-top: 20px;
-                font-size: 10pt;
+                margin-top: 10px;
             }
             th, td { 
                 border: 1px solid #ccc; 
@@ -244,22 +244,28 @@ export function printReport(title, content) {
             }
             th {
                 background-color: #f2f2f2;
-                font-weight: bold;
             }
             h2 { 
                 background-color: #f2f2f2 !important; 
                 padding: 10px; 
                 margin-top: 20px; 
-                border-bottom: 1px solid #ddd; 
+                border-bottom: 1px solid #ddd;
+            }
+
+            @page { 
+                size: A4; 
+                margin: 20mm; 
             }
             @media print {
                 body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-                .no-print { display: none; }
+                .report-header, .report-footer {
+                    display: table-header-group; /* Ensures they repeat on each page */
+                }
             }
         </style>
     `;
-
-    // The main document structure
+    
+    // New document structure using the reliable table layout
     printWindow.document.write(`
         <html>
             <head>
@@ -267,23 +273,34 @@ export function printReport(title, content) {
                 ${formalStyle}
             </head>
             <body>
-                <div class="report-header">
-                    <div class="logo-container">
-                        <img src="mancis.png" alt="Company Logo">
-                    </div>
-                    <div class="header-text">
-                        <h1>${title}</h1>
-                        <p>Date Generated: ${today}</p>
-                    </div>
-                </div>
+                <div class="print-container">
+                    <header class="report-header">
+                        <div class="header-content">
+                            <div class="header-flex">
+                                <div class="logo-container">
+                                    <img src="mancis.png" alt="Company Logo">
+                                </div>
+                                <div class="header-text">
+                                    <h1>${title}</h1>
+                                    <p>Date Generated: ${today}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </header>
 
-                <div class="report-footer">
-                    <p>Confidential Document &nbsp; | &nbsp; Page <span class="page-number"></span></p>
-                </div>
+                    <footer class="report-footer">
+                        <div class="footer-content">
+                            <span>Confidential Document</span>
+                            <span>Page 1</span> 
+                        </div>
+                    </footer>
 
-                <main>
-                    ${content}
-                </main>
+                    <main class="report-content">
+                        <div style="padding: 0 20mm;">
+                            ${content}
+                        </div>
+                    </main>
+                </div>
             </body>
         </html>
     `);
@@ -292,7 +309,6 @@ export function printReport(title, content) {
     printWindow.document.close();
     printWindow.focus();
     
-    // Use a timeout to ensure the popup DOM is ready before printing
     setTimeout(() => {
         try {
             printWindow.print();
