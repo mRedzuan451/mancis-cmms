@@ -1239,24 +1239,32 @@ function attachPageSpecificEventListeners(page) {
             }).join('');
         });
     } else if (page === 'locations') {
-        document.querySelector('#addCabinetForm')?.addEventListener('submit', (e) => {
-            e.preventDefault();
-            const name = e.target.querySelector('input').value;
-            // The parentId is the currently selected department
-            handleLocationFormSubmit({
-                target: e.target,
+        document.querySelector('#addCabinetForm')?.addEventListener('submit', async (e) => {
+            e.preventDefault(); // This 'e' is the correct browser event object
+            const form = e.target;
+            const isAdmin = state.currentUser.role === 'Admin';
+            
+            const locationData = {
                 type: 'cabinet',
-                name: name,
-                parentId: state.selectedLocationDepartmentId
-            });
+                name: form.querySelector('input[type="text"]').value,
+                // The parentId is the department. For Admins, it's from the select box.
+                // For others, it's their own department ID.
+                parentId: isAdmin ? form.querySelector('select').value : state.currentUser.departmentId
+            };
+            
+            // Call the reusable action function
+            await createLocationAction(locationData);
         });
+        
+        // All other location forms now use the simplified handler.
         document.getElementById('downloadLocationsBtn')?.addEventListener('click', handleDownloadLocations);
-        document.querySelector('#addDivisionForm')?.addEventListener('submit', handleLocationFormSubmit);
-        document.querySelector('#addDepartmentForm')?.addEventListener('submit', handleLocationFormSubmit);
-        document.querySelector('#addSubLineForm')?.addEventListener('submit', handleLocationFormSubmit);
-        document.querySelector('#addProductionLineForm')?.addEventListener('submit', handleLocationFormSubmit);
-        document.querySelector('#addShelfForm')?.addEventListener('submit', handleLocationFormSubmit);
-        document.querySelector('#addBoxForm')?.addEventListener('submit', handleLocationFormSubmit);
+        document.querySelector('#addDivisionForm')?.addEventListener('submit', handleSimpleLocationFormSubmit);
+        document.querySelector('#addDepartmentForm')?.addEventListener('submit', handleSimpleLocationFormSubmit);
+        document.querySelector('#addSubLineForm')?.addEventListener('submit', handleSimpleLocationFormSubmit);
+        document.querySelector('#addProductionLineForm')?.addEventListener('submit', handleSimpleLocationFormSubmit);
+        document.querySelector('#addShelfForm')?.addEventListener('submit', handleSimpleLocationFormSubmit);
+        document.querySelector('#addBoxForm')?.addEventListener('submit', handleSimpleLocationFormSubmit);
+        
     } else if (page === 'inventoryReport') {
         document.getElementById('reportForm')?.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -2147,6 +2155,46 @@ async function fetchAndDisplayNotifications() {
         console.error("Failed to fetch notifications:", error);
         return []; // Return empty array on error
     }
+}
+
+async function createLocationAction(locationData) {
+    try {
+        await api.createLocation(locationData);
+        await logActivity("Location Created", `Created new ${locationData.type}: ${locationData.name}`);
+        state.cache.locations = await api.getLocations();
+        renderMainContent();
+        showTemporaryMessage(`${locationData.type} created successfully.`);
+    } catch (error) {
+        showTemporaryMessage(`Failed to create ${locationData.type}. ${error.message}`, true);
+    }
+}
+
+async function handleSimpleLocationFormSubmit(e) {
+    e.preventDefault();
+    const form = e.target;
+    let type, name, parentId;
+
+    // A map to correctly identify the location type from the form's ID
+    const typeMap = {
+        'addDivisionForm': { type: 'division', hasParent: false },
+        'addDepartmentForm': { type: 'department', hasParent: true },
+        'addSubLineForm': { type: 'subLine', hasParent: true },
+        'addProductionLineForm': { type: 'productionLine', hasParent: true },
+        'addShelfForm': { type: 'shelf', hasParent: true },
+        'addBoxForm': { type: 'box', hasParent: true }
+    };
+
+    const formConfig = typeMap[form.id];
+    if (!formConfig) {
+        showTemporaryMessage('Unknown form submission.', true);
+        return;
+    }
+    
+    type = formConfig.type;
+    name = form.querySelector('input[type="text"]').value;
+    parentId = formConfig.hasParent ? form.querySelector('select').value : null;
+    
+    await createLocationAction({ type, name, parentId });
 }
 
 // js/app.js
