@@ -279,7 +279,7 @@ export function printReport(title, content) {
                             <div class="header-flex">
                                 <div class="logo-container">
                                     <img src="mancis.png" alt="Company Logo">
-                                    <p>ManCIS: Maintenance Management</p>
+                                    <p>ManCIS</p>
                                 </div>
                                 <div class="header-text">
                                     <h1>${title}</h1>
