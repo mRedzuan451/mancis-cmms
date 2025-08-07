@@ -1013,7 +1013,7 @@ export function showWorkOrderModal(woId = null) {
     document.getElementById("woPartsSection").style.display = "none";
     const assets = state.cache.assets.filter(can.view);
     document.getElementById("woAsset").innerHTML = '<option value="">Select Asset</option>' + assets.map((a) => `<option value="${a.id}">${a.name}</option>`).join("");
-    const users = state.cache.users.filter((u) => ["Engineer", "Technician", "Supervisor"].includes(u.role) && can.view(u));
+    const users = state.cache.users.filter((u) => can.view(u));
     document.getElementById("woAssignedTo").innerHTML = '<option value="">Assign To</option>' + users.map((u) => `<option value="${u.id}">${u.fullName}</option>`).join("");
     document.getElementById("addWoPartBtn").onclick = () => addWoPartRow();
     document.getElementById("woTask").onchange = (e) => {
