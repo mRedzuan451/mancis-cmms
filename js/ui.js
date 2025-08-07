@@ -255,7 +255,6 @@ export function renderWorkOrderCalendar() {
     const daysInMonth = new Date(year, month + 1, 0).getDate();
     const workOrders = state.cache.workOrders.filter(can.view);
 
-    // --- START: MODIFICATION ---
     // 1. Calculate summary stats for the current month
     const monthlyWOs = workOrders.filter(wo => {
         const woDate = new Date(wo.start_date + 'T00:00:00');
@@ -288,7 +287,6 @@ export function renderWorkOrderCalendar() {
             </div>
         </div>
     `;
-    // --- END: MODIFICATION ---
     
     let calendarHtml = `
       <div class="flex justify-between items-center mb-6">

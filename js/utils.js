@@ -60,14 +60,14 @@ export function getFullLocationName(locationId) {
       if (!subLine) return pLine.name;
       const dept = departments.find((d) => d.id === subLine.departmentId);
       const div = dept ? divisions.find((d) => d.id === dept.divisionId) : null;
-      return `${div ? div.name + " > " : ""}${dept ? dept.name + " > " : ""}${subLine.name} > ${pLine.name}`;
+      return `${dept ? dept.name + " > " : ""}${subLine.name} > ${pLine.name}`;
     }
     case "sl": {
       const subLine = subLines.find((sl) => sl.id === numId);
       if (!subLine) return "N/A";
       const dept = departments.find((d) => d.id === subLine.departmentId);
       const div = dept ? divisions.find((d) => d.id === dept.divisionId) : null;
-      return `${div ? div.name + " > " : ""}${dept ? dept.name + " > " : ""}${subLine.name}`;
+      return `${dept ? dept.name + " > " : ""}${subLine.name}`;
     }
     case "box": {
       const box = boxes.find((b) => b.id === numId);
@@ -78,7 +78,7 @@ export function getFullLocationName(locationId) {
       if (!cabinet) return `${shelf.name} > ${box.name}`;
       const dept = departments.find((d) => d.id === cabinet.departmentId);
       const div = dept ? divisions.find((d) => d.id === dept.divisionId) : null;
-      return `${div ? div.name + " > " : ""}${dept ? dept.name + " > " : ""}${cabinet.name} > ${shelf.name} > ${box.name}`;
+      return `${dept ? dept.name + " > " : ""}${cabinet.name} > ${shelf.name} > ${box.name}`;
     }
     case "sh": {
       const shelf = shelves.find((s) => s.id === numId);
@@ -87,16 +87,15 @@ export function getFullLocationName(locationId) {
       if (!cabinet) return shelf.name;
       const dept = departments.find((d) => d.id === cabinet.departmentId);
       const div = dept ? divisions.find((d) => d.id === dept.divisionId) : null;
-      return `${div ? div.name + " > " : ""}${dept ? dept.name + " > " : ""}${cabinet.name} > ${shelf.name}`;
+      return `${dept ? dept.name + " > " : ""}${cabinet.name} > ${shelf.name}`;
     }
     case "cab": {
       const cabinet = cabinets.find((c) => c.id === numId);
       if (!cabinet) return "N/A";
       const dept = departments.find((d) => d.id === cabinet.departmentId);
       const div = dept ? divisions.find((d) => d.id === dept.divisionId) : null;
-      return `${div ? div.name + " > " : ""}${dept ? dept.name + " > " : ""}${cabinet.name}`;
+      return `${dept ? dept.name + " > " : ""}${cabinet.name}`;
     }
-    // --- START: ADDED LOGIC ---
     case "dept": {
       const dept = departments.find((d) => d.id === numId);
       if (!dept) return "N/A";
@@ -107,7 +106,6 @@ export function getFullLocationName(locationId) {
       const div = divisions.find((d) => d.id === numId);
       return div ? div.name : "N/A";
     }
-    // --- END: ADDED LOGIC ---
     default:
       return "N/A";
   }
