@@ -1011,7 +1011,14 @@ export function showWorkOrderModal(woId = null) {
     document.getElementById("woPartsSection").style.display = "none";
     const assets = state.cache.assets.filter(can.view);
     document.getElementById("woAsset").innerHTML = '<option value="">Select Asset</option>' + assets.map((a) => `<option value="${a.id}">${a.name} (${getFullLocationName(a.locationId)})</option>`).join("");
-    const users = state.cache.users.filter((u) => can.view(u));
+        // Start with the users already loaded from the backend
+    let users = state.cache.users.filter((u) => can.view(u));
+
+    // Check if the current user is not in the list (e.g., if their department is unique)
+    if (!users.some(user => user.id === state.currentUser.id)) {
+        users.push(state.currentUser);
+    }
+
     document.getElementById("woAssignedTo").innerHTML = '<option value="">Assign To</option>' + users.map((u) => `<option value="${u.id}">${u.fullName}</option>`).join("");
     document.getElementById("addWoPartBtn").onclick = () => addWoPartRow();
     document.getElementById("woTask").onchange = (e) => {
