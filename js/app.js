@@ -250,6 +250,15 @@ async function handleAssetFormSubmit(e) {
     e.preventDefault();
     const assetIdValue = document.getElementById("assetId").value;
     const isEditing = !!assetIdValue;
+    
+    // --- START: MODIFICATION ---
+    let oldRelatedParts = [];
+    if (isEditing) {
+        const existingAsset = state.cache.assets.find(a => a.id === parseInt(assetIdValue));
+        oldRelatedParts = existingAsset.relatedParts;
+    }
+    // --- END: MODIFICATION ---
+
     const assetData = {
       name: document.getElementById("assetName").value,
       tag: document.getElementById("assetTag").value,
@@ -269,8 +278,40 @@ async function handleAssetFormSubmit(e) {
         await api.createAsset(assetData);
         await logActivity("Asset Created", `Created asset: ${assetData.name}`);
       }
+      
       const response = await api.getAssets(); // Get the full response object
       state.cache.assets = response.data; // Assign only the 'data' array to the cache
+      
+      // --- START: MODIFICATION ---
+      // Update relatedAssets on the parts side
+      if (isEditing) {
+          const newRelatedParts = assetData.relatedParts;
+          const partsAdded = newRelatedParts.filter(pId => !oldRelatedParts.includes(pId));
+          const partsRemoved = oldRelatedParts.filter(pId => !newRelatedParts.includes(pId));
+
+          const partUpdatePromises = [];
+          partsAdded.forEach(partId => {
+              const part = state.cache.parts.find(p => p.id.toString() === partId);
+              if (part) {
+                  const newRelatedAssets = Array.isArray(part.relatedAssets) ? [...part.relatedAssets, assetIdValue] : [assetIdValue];
+                  partUpdatePromises.push(api.updatePart(part.id, { ...part, relatedAssets: newRelatedAssets }));
+              }
+          });
+          partsRemoved.forEach(partId => {
+              const part = state.cache.parts.find(p => p.id.toString() === partId);
+              if (part) {
+                  const newRelatedAssets = (part.relatedAssets || []).filter(aId => aId !== assetIdValue);
+                  partUpdatePromises.push(api.updatePart(part.id, { ...part, relatedAssets: newRelatedAssets }));
+              }
+          });
+          await Promise.all(partUpdatePromises);
+          
+          // Re-fetch parts data to update the cache
+          const partsResponse = await api.getParts();
+          state.cache.parts = partsResponse.data;
+      }
+      // --- END: MODIFICATION ---
+
       document.getElementById("assetModal").style.display = "none";
       renderMainContent();
       showTemporaryMessage('Asset saved successfully!');
