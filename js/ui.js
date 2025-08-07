@@ -1031,9 +1031,7 @@ export function showWorkOrderModal(woId = null) {
             document.getElementById("woAsset").value = wo.assetId;
             document.getElementById("woAssignedTo").value = wo.assignedTo;
             document.getElementById("woTask").value = wo.task;
-            
             document.getElementById("woStartDate").value = wo.start_date;
-            
             document.getElementById("woDueDate").value = wo.dueDate;
             document.getElementById("woBreakdownTime").value = wo.breakdownTimestamp || "";
             document.getElementById("woPriority").value = wo.priority;
