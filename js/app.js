@@ -250,14 +250,16 @@ async function handleAssetFormSubmit(e) {
     e.preventDefault();
     const assetIdValue = document.getElementById("assetId").value;
     const isEditing = !!assetIdValue;
+
+    // Get the current list of related parts from the form
+    const newRelatedParts = Array.from(document.getElementById("assetRelatedParts").selectedOptions).map(opt => parseInt(opt.value));
     
-    // --- START: MODIFICATION ---
+    // Get the old list of related parts from the cache
     let oldRelatedParts = [];
     if (isEditing) {
         const existingAsset = state.cache.assets.find(a => a.id === parseInt(assetIdValue));
-        oldRelatedParts = existingAsset.relatedParts;
+        oldRelatedParts = Array.isArray(existingAsset.relatedParts) ? existingAsset.relatedParts.map(id => parseInt(id)) : [];
     }
-    // --- END: MODIFICATION ---
 
     const assetData = {
       name: document.getElementById("assetName").value,
@@ -267,58 +269,58 @@ async function handleAssetFormSubmit(e) {
       purchaseDate: document.getElementById("assetPurchaseDate").value,
       cost: parseFloat(document.getElementById("assetCost").value),
       currency: document.getElementById("assetCurrency").value,
-      relatedParts: Array.from(document.getElementById("assetRelatedParts").selectedOptions).map(opt => opt.value),
+      relatedParts: newRelatedParts, // Use the numeric array
     };
+    
     try {
+      let assetId;
+
       if (isEditing) {
-        const assetId = parseInt(assetIdValue);
-        await api.updateAsset(assetId, assetData);
+        assetId = parseInt(assetIdValue);
+        await api.updateAsset(assetId, { ...assetData, relatedParts: JSON.stringify(newRelatedParts) });
         await logActivity("Asset Updated", `Updated asset: ${assetData.name} (ID: ${assetId})`);
       } else {
-        await api.createAsset(assetData);
+        const response = await api.createAsset({ ...assetData, relatedParts: JSON.stringify(newRelatedParts) });
+        assetId = response.id;
         await logActivity("Asset Created", `Created asset: ${assetData.name}`);
       }
       
-      const response = await api.getAssets(); // Get the full response object
-      state.cache.assets = response.data; // Assign only the 'data' array to the cache
+      const partsToAdd = newRelatedParts.filter(pId => !oldRelatedParts.includes(pId));
+      const partsToRemove = oldRelatedParts.filter(pId => !newRelatedParts.includes(pId));
+
+      const partUpdatePromises = [];
       
-      // --- START: MODIFICATION ---
-      // Update relatedAssets on the parts side
-      if (isEditing) {
-          const newRelatedParts = assetData.relatedParts;
-          const partsAdded = newRelatedParts.filter(pId => !oldRelatedParts.includes(pId));
-          const partsRemoved = oldRelatedParts.filter(pId => !newRelatedParts.includes(pId));
+      // Update parts that were newly added to the asset
+      partsToAdd.forEach(partId => {
+          const part = state.cache.parts.find(p => p.id === partId);
+          if (part) {
+              const updatedRelatedAssets = Array.isArray(part.relatedAssets) ? [...part.relatedAssets, assetId.toString()] : [assetId.toString()];
+              partUpdatePromises.push(api.updatePart(part.id, { ...part, relatedAssets: updatedRelatedAssets }));
+          }
+      });
+      
+      // Update parts that were removed from the asset
+      partsToRemove.forEach(partId => {
+          const part = state.cache.parts.find(p => p.id === partId);
+          if (part) {
+              const updatedRelatedAssets = (part.relatedAssets || []).filter(aId => aId !== assetId.toString());
+              partUpdatePromises.push(api.updatePart(part.id, { ...part, relatedAssets: updatedRelatedAssets }));
+          }
+      });
 
-          const partUpdatePromises = [];
-          partsAdded.forEach(partId => {
-              const part = state.cache.parts.find(p => p.id.toString() === partId);
-              if (part) {
-                  const newRelatedAssets = Array.isArray(part.relatedAssets) ? [...part.relatedAssets, assetIdValue] : [assetIdValue];
-                  partUpdatePromises.push(api.updatePart(part.id, { ...part, relatedAssets: newRelatedAssets }));
-              }
-          });
-          partsRemoved.forEach(partId => {
-              const part = state.cache.parts.find(p => p.id.toString() === partId);
-              if (part) {
-                  const newRelatedAssets = (part.relatedAssets || []).filter(aId => aId !== assetIdValue);
-                  partUpdatePromises.push(api.updatePart(part.id, { ...part, relatedAssets: newRelatedAssets }));
-              }
-          });
-          await Promise.all(partUpdatePromises);
-          
-          // Re-fetch parts data to update the cache
-          const partsResponse = await api.getParts();
-          state.cache.parts = partsResponse.data;
-      }
-      // --- END: MODIFICATION ---
-
+      await Promise.all(partUpdatePromises);
+      
+      // Re-fetch all data to ensure cache is fully synchronized
+      await loadInitialData();
+      
       document.getElementById("assetModal").style.display = "none";
       renderMainContent();
-      showTemporaryMessage('Asset saved successfully!');
+      showTemporaryMessage('Asset saved and relationships updated successfully!');
     } catch(error) {
-      showTemporaryMessage('Failed to save asset.', true);
+      showTemporaryMessage('Failed to save asset or update relationships.', true);
     }
 }
+// --- END: MODIFICATION ---
 
 async function deleteItem(type, id) {
     const typeName = type.slice(0, -1);
