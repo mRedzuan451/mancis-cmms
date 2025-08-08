@@ -358,6 +358,7 @@ async function deleteItem(type, id) {
             case 'parts':
                 itemToDelete = state.cache.parts.find(i => i.id === id);
                 await api.deletePart(id);
+                const currentPartsPage = state.pagination.parts.currentPage || 1;
                 const partsResponse = await api.getParts(currentPartsPage);
                 processPaginatedResponse('parts', partsResponse);
                 break;
@@ -424,8 +425,6 @@ async function handlePartFormSubmit(e) {
             state.pagination[module].limit = response.limit;
         };
 
-        const currentPartsPage = state.pagination.parts.currentPage || 1;
-        const response = await api.getParts(currentPartsPage);
         processPaginatedResponse('parts', response);
 
         document.getElementById("partModal").style.display = "none";
