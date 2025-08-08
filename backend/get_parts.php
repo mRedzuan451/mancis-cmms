@@ -19,19 +19,34 @@ $offset = ($page - 1) * $limit;
 $total_records = 0;
 $output_array = [];
 
-// Get Total Records
-$count_sql = ($user_role === 'Admin') ? "SELECT COUNT(*) as total FROM parts" : "SELECT COUNT(*) as total FROM parts WHERE departmentId = ?";
-$stmt_count = $conn->prepare($count_sql);
-if ($user_role !== 'Admin') {
+// --- START: MODIFICATION ---
+// New, more robust queries that correctly filter parts for non-admins.
+$count_base = "SELECT COUNT(DISTINCT p.id) as total 
+               FROM parts p 
+               LEFT JOIN departments d ON p.departmentId = d.id";
+
+$data_base = "SELECT p.*, d.name as departmentName 
+              FROM parts p 
+              LEFT JOIN departments d ON p.departmentId = d.id";
+
+// For non-admins, we only show parts that are in their department's storage.
+$where_clause = " WHERE p.departmentId = ?";
+$order_clause = " ORDER BY p.name ASC";
+
+// 1. Get the total count of records
+if ($user_role === 'Admin') {
+    $stmt_count = $conn->prepare($count_base);
+} else {
+    $stmt_count = $conn->prepare($count_base . $where_clause);
     $stmt_count->bind_param("i", $user_department_id);
 }
 $stmt_count->execute();
 $total_records = $stmt_count->get_result()->fetch_assoc()['total'];
 $stmt_count->close();
 
-// Get Paginated Data
+// 2. Get the paginated data
 if ($user_role === 'Admin') {
-    $data_sql = "SELECT p.*, d.name as departmentName FROM parts p LEFT JOIN departments d ON p.departmentId = d.id ORDER BY p.name ASC";
+    $data_sql = $data_base . $order_clause;
     if ($limit > 0) {
         $data_sql .= " LIMIT ? OFFSET ?";
         $stmt_data = $conn->prepare($data_sql);
@@ -40,7 +55,7 @@ if ($user_role === 'Admin') {
         $stmt_data = $conn->prepare($data_sql);
     }
 } else {
-    $data_sql = "SELECT * FROM parts WHERE departmentId = ? ORDER BY name ASC";
+    $data_sql = $data_base . $where_clause . $order_clause;
     if ($limit > 0) {
         $data_sql .= " LIMIT ? OFFSET ?";
         $stmt_data = $conn->prepare($data_sql);
@@ -50,6 +65,8 @@ if ($user_role === 'Admin') {
         $stmt_data->bind_param("i", $user_department_id);
     }
 }
+// --- END: MODIFICATION ---
+
 
 $stmt_data->execute();
 $result = $stmt_data->get_result();
