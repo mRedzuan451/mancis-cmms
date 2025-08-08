@@ -20,23 +20,29 @@ $total_records = 0;
 $output_array = [];
 
 // --- START: MODIFICATION ---
-// New, more robust queries that correctly filter parts for non-admins.
+// These new queries are more robust. Instead of relying on a stored departmentId on the parts table,
+// they dynamically join through the location tables (boxes, shelves, cabinets) to find the correct department.
+// This is the same reliable logic used by the Work Orders list.
+
 $count_base = "SELECT COUNT(DISTINCT p.id) as total 
                FROM parts p 
-               LEFT JOIN departments d ON p.departmentId = d.id";
+               LEFT JOIN boxes b ON p.locationId = CONCAT('box-', b.id)
+               LEFT JOIN shelves sh ON b.shelfId = sh.id
+               LEFT JOIN cabinets cab ON sh.cabinetId = cab.id";
 
 $data_base = "SELECT p.*, d.name as departmentName 
               FROM parts p 
-              LEFT JOIN departments d ON p.departmentId = d.id";
+              LEFT JOIN departments d ON p.departmentId = d.id"; // This join is now just for getting the name for Admins
 
-// For non-admins, we only show parts that are in their department's storage.
-$where_clause = " WHERE p.departmentId = ?";
+// The WHERE clause now correctly filters by the department linked to the part's storage location.
+$where_clause = " WHERE cab.departmentId = ?";
 $order_clause = " ORDER BY p.name ASC";
 
 // 1. Get the total count of records
 if ($user_role === 'Admin') {
     $stmt_count = $conn->prepare($count_base);
 } else {
+    // We add the joins here for non-admins to correctly filter the count.
     $stmt_count = $conn->prepare($count_base . $where_clause);
     $stmt_count->bind_param("i", $user_department_id);
 }
@@ -55,7 +61,14 @@ if ($user_role === 'Admin') {
         $stmt_data = $conn->prepare($data_sql);
     }
 } else {
-    $data_sql = $data_base . $where_clause . $order_clause;
+    // For non-admins, we add the joins to the main data query as well.
+    $data_sql = "SELECT p.*, d.name as departmentName 
+                 FROM parts p 
+                 LEFT JOIN departments d ON p.departmentId = d.id
+                 LEFT JOIN boxes b ON p.locationId = CONCAT('box-', b.id)
+                 LEFT JOIN shelves sh ON b.shelfId = sh.id
+                 LEFT JOIN cabinets cab ON sh.cabinetId = cab.id
+                 " . $where_clause . $order_clause;
     if ($limit > 0) {
         $data_sql .= " LIMIT ? OFFSET ?";
         $stmt_data = $conn->prepare($data_sql);
