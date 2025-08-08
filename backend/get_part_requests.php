@@ -12,7 +12,6 @@ authorize('part_request_view', $conn);
 $user_role = $_SESSION['user_role'];
 $user_department_id = $_SESSION['user_department_id'];
 
-// --- START: PAGINATION LOGIC ---
 $page = isset($_GET['page']) ? intval($_GET['page']) : 1;
 $limit = isset($_GET['limit']) ? intval($_GET['limit']) : 20;
 $offset = ($page - 1) * $limit;
@@ -21,7 +20,8 @@ $total_records = 0;
 $output_array = [];
 
 // --- START: MODIFICATION ---
-// Base queries are updated to include joins for requester and department names.
+// The query to get the department name now correctly joins from the users table (u)
+// instead of the partrequests table (pr).
 $count_base = "SELECT COUNT(DISTINCT pr.id) as total 
                FROM partrequests pr 
                LEFT JOIN users u ON pr.requesterId = u.id";
