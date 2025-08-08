@@ -404,9 +404,18 @@ async function handlePartFormSubmit(e) {
             await api.createPart(partData);
             await logActivity("Part Created", `Created part: ${partData.name}`);
         }
-        const response = await api.getParts(1);
-        state.cache.parts = response.data;
-        state.pagination.parts.currentPage = response.page;
+        const currentPartsPage = state.pagination.parts.currentPage || 1;
+        const response = await api.getParts(currentPartsPage);
+
+        // Use the helper function to ensure all pagination data is updated
+        const processPaginatedResponse = (module, response) => {
+            state.cache[module] = response.data;
+            state.pagination[module].currentPage = response.page;
+            state.pagination[module].totalPages = Math.ceil(response.total / response.limit);
+            state.pagination[module].totalRecords = response.total;
+            state.pagination[module].limit = response.limit;
+        };
+        processPaginatedResponse('parts', response);
         document.getElementById("partModal").style.display = "none";
         renderMainContent();
         showTemporaryMessage('Part saved successfully!');
