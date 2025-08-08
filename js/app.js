@@ -2193,10 +2193,10 @@ async function fetchAndDisplayNotifications() {
         } else {
             badge.classList.add('hidden');
         }
-        return notifications; // Return the data for the modal to use
+        return notifications;
     } catch (error) {
         console.error("Failed to fetch notifications:", error);
-        return []; // Return empty array on error
+        return [];
     }
 }
 

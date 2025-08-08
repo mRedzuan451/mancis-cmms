@@ -821,6 +821,18 @@ export function renderSidebar() {
             </button>
         `);
     }
+
+    const userInfo = document.getElementById("userInfo");
+    if (!userInfo.querySelector('#notificationBellBtn')) {
+        userInfo.querySelector('.flex.justify-between').innerHTML += `
+            <div class="relative">
+                <button id="notificationBellBtn" class="relative text-gray-400 hover:text-white">
+                    <i class="fas fa-bell fa-lg"></i>
+                    <span id="notificationBadge" class="absolute -top-2 -right-2 h-5 w-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center border-2 border-gray-800 hidden"></span>
+                </button>
+            </div>
+        `;
+    }
 }
 
 export function showAssetModal(assetId = null) {

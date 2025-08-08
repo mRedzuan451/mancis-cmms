@@ -12,8 +12,6 @@ import { API_URL } from './config.js';
 
 async function request(endpoint, options = {}) {
     try {
-        // --- THIS IS THE FIX ---
-        // This tells the browser to always send cookies with API requests.
         options.credentials = 'include';
 
         const response = await fetch(`${API_URL}/${endpoint}`, options);
@@ -25,7 +23,7 @@ async function request(endpoint, options = {}) {
         return text ? JSON.parse(text) : {};
     } catch (error) {
         console.error(`API request failed for ${endpoint}:`, error.message);
-        throw error; // Re-throw the error to be caught by the calling function
+        throw error;
     }
 }
 
