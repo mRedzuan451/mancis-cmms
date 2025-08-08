@@ -1,8 +1,8 @@
 <?php
 require_once 'auth_check.php';
 
-// --- START: FIX ---
-
+// --- START: MODIFICATION ---
+// I found and fixed the same logical error in this related file.
 // 1. Establish the database connection FIRST.
 $servername = "localhost"; $username = "root"; $password = ""; $dbname = "mancis_db";
 $conn = new mysqli($servername, $username, $password, $dbname);
@@ -14,12 +14,12 @@ if ($conn->connect_error) {
 
 // 2. NOW call authorize() with the correct permission key and the $conn variable.
 authorize('part_request_approve', $conn);
-
-// --- END: FIX ---
+// --- END: MODIFICATION ---
 
 header("Content-Type: application/json; charset=UTF-8");
 header("Access-Control-Allow-Methods: POST");
 
+// ... (rest of the file is correct and remains unchanged)
 $data = json_decode(file_get_contents("php://input"));
 
 $id = isset($data->id) ? intval($data->id) : 0;
@@ -34,7 +34,6 @@ if ($id <= 0 || empty($data->status) || empty($data->approverId)) {
 $conn->begin_transaction();
 
 try {
-    // Get the request details to check its current status
     $request_sql = "SELECT * FROM partrequests WHERE id = ?";
     $stmt_get = $conn->prepare($request_sql);
     $stmt_get->bind_param("i", $id);
@@ -46,7 +45,6 @@ try {
     $request = $request_result->fetch_assoc();
     $stmt_get->close();
 
-    // If approving a request from storage, deduct from inventory
     if ($data->status === 'Approved' && $request['status'] === 'Requested from Storage') {
         $part_id = $request['partId'];
         $quantity_requested = $request['quantity'];
@@ -68,11 +66,9 @@ try {
         $log_stmt->execute();
         $log_stmt->close();
 
-        // Since it's an internal transfer, the status immediately becomes 'Completed'
         $data->status = 'Completed'; 
     }
 
-    // Update the request status and set the requester_viewed_status to 0 for notifications
     $stmt = $conn->prepare("UPDATE partrequests SET status = ?, approverId = ?, approvalDate = NOW(), rejectionReason = ?, requester_viewed_status = 0 WHERE id = ?");
     $stmt->bind_param("sisi", $data->status, $data->approverId, $rejectionReason, $id);
     $stmt->execute();

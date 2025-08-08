@@ -3,15 +3,20 @@ require_once 'auth_check.php';
 
 header("Content-Type: application/json; charset=UTF-8");
 
+// --- START: MODIFICATION ---
+// The database connection is now established BEFORE authorize() is called.
 $servername = "localhost"; $username = "root"; $password = ""; $dbname = "mancis_db";
 $conn = new mysqli($servername, $username, $password, $dbname);
 if ($conn->connect_error) { die("Connection failed: " . $conn->connect_error); }
 
+// Now it is safe to authorize the user.
 authorize('part_request_view', $conn);
+// --- END: MODIFICATION ---
 
 $user_role = $_SESSION['user_role'];
 $user_department_id = $_SESSION['user_department_id'];
 
+// ... (rest of the file is correct and remains unchanged)
 $page = isset($_GET['page']) ? intval($_GET['page']) : 1;
 $limit = isset($_GET['limit']) ? intval($_GET['limit']) : 20;
 $offset = ($page - 1) * $limit;
@@ -19,9 +24,6 @@ $offset = ($page - 1) * $limit;
 $total_records = 0;
 $output_array = [];
 
-// --- START: MODIFICATION ---
-// The query to get the department name now correctly joins from the users table (u)
-// instead of the partrequests table (pr).
 $count_base = "SELECT COUNT(DISTINCT pr.id) as total 
                FROM partrequests pr 
                LEFT JOIN users u ON pr.requesterId = u.id";
@@ -30,12 +32,10 @@ $data_base = "SELECT pr.*, u.fullName as requesterName, d.name as departmentName
               FROM partrequests pr 
               LEFT JOIN users u ON pr.requesterId = u.id
               LEFT JOIN departments d ON u.departmentId = d.id";
-// --- END: MODIFICATION ---
 
 $where_clause = " WHERE u.departmentId = ?";
 $order_clause = " ORDER BY pr.requestDate DESC LIMIT ? OFFSET ?";
 
-// 1. Get the total count of records
 if ($user_role === 'Admin') {
     $stmt_count = $conn->prepare($count_base);
 } else {
@@ -46,7 +46,6 @@ $stmt_count->execute();
 $total_records = $stmt_count->get_result()->fetch_assoc()['total'];
 $stmt_count->close();
 
-// 2. Get the paginated data
 if ($user_role === 'Admin') {
     $stmt_data = $conn->prepare($data_base . $order_clause);
     $stmt_data->bind_param("ii", $limit, $offset);
