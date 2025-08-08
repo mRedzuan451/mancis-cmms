@@ -1764,21 +1764,25 @@ function attachGlobalEventListeners() {
             const type = notificationItem.dataset.notificationType;
             const relatedId = parseInt(notificationItem.dataset.relatedId);
 
-            // Close the notification modal first
             document.getElementById('notificationModal').style.display = 'none';
 
             if (type === 'team_message') {
                 state.currentPage = 'feedback';
-                render(); // Navigate to the team messages page
-            } else if (type === 'part_request_update') {
+                render();
+            } else if (type === 'part_request_update' || type === 'part_request_new') {
+                // Now handles both new requests and updates
                 const request = state.cache.partRequests.find(pr => pr.id === relatedId);
                 if (request) {
-                    showPartRequestDetailModal(request); // Show the specific request detail
+                    showPartRequestDetailModal(request);
                 } else {
-                    showTemporaryMessage('Could not find the related part request. It may have been deleted.', true);
+                    // If the request isn't in the cache, it might be on another page.
+                    // For now, we'll navigate to the requests page as a fallback.
+                    showTemporaryMessage('Request details not immediately available. Navigating to Part Requests page.', true);
+                    state.currentPage = 'partRequests';
+                    render();
                 }
             }
-            return; // Stop further execution
+            return; 
         }
 
         const button = target.closest('button');

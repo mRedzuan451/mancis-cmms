@@ -2233,10 +2233,14 @@ export async function showNotificationModal() {
                     const req = notif.details;
                     const partName = req.newPartName || `request #${req.id}`;
                     message = `Your request for <strong>${partName}</strong> has been <strong>${req.status}</strong>.`;
+                } else if (notif.type === 'part_request_new') {
+                    // This is the new message for managers
+                    message = `A <strong>new part request</strong> has been submitted.`;
                 } else {
-                    message = notif.message; // Fallback for any other type
+                    message = notif.message; // Fallback
                 }
 
+                // Add data attributes for the click handler
                 return `
                     <div class="notification-item p-3 text-sm text-gray-600 border-b border-gray-100 hover:bg-gray-50 cursor-pointer"
                          data-notification-id="${notif.id}"
