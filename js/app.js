@@ -241,7 +241,14 @@ async function checkForLowStockAndCreateRequests() {
                 console.error(`Failed to create request for part ${part.name}:`, error);
             }
         }
-        state.cache.partRequests = await api.getPartRequests();
+        // --- START: MODIFICATION ---
+        // This is the corrected block. It correctly handles the paginated response.
+        const prResponse = await api.getPartRequests(1);
+        state.cache.partRequests = prResponse.data;
+        state.pagination.partRequests.currentPage = prResponse.page;
+        state.pagination.partRequests.totalPages = Math.ceil(prResponse.total / prResponse.limit);
+        state.pagination.partRequests.totalRecords = prResponse.total;
+        // --- END: MODIFICATION ---
         if(state.currentPage === 'partRequests') renderMainContent();
     }
 }
