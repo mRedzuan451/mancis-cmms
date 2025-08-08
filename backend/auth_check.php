@@ -80,16 +80,13 @@ function authorize($permission_key, $conn) {
         return; // Admins are always authorized
     }
     
-    // Include the checker function
     require_once 'permission_checker.php';
     
-    // Get the currently logged-in user's complete permissions using the provided connection
     $currentUserPermissions = getEffectivePermissions($_SESSION['user_id'], $conn);
 
-    // Check if the user has the required permission
-    if (empty($currentUserPermissions[$permission_key])) { // Checks if the key is missing or false
+    if (empty($currentUserPermissions[$permission_key])) {
         http_response_code(403); // Forbidden
-        $conn->close(); // Close the connection before exiting
+        $conn->close(); 
         echo json_encode(["message" => "You do not have permission to perform this action."]);
         exit();
     }

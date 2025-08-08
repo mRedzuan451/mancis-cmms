@@ -3,14 +3,13 @@ require_once 'auth_check.php';
 
 header("Content-Type: application/json; charset=UTF-8");
 
+// 1. Establish the database connection FIRST.
 $servername = "localhost"; $username = "root"; $password = ""; $dbname = "mancis_db";
 $conn = new mysqli($servername, $username, $password, $dbname);
 if ($conn->connect_error) { die("Connection failed: " . $conn->connect_error); }
 
-// --- START: MODIFICATION ---
-// The authorize() call has been removed. Access is now controlled by the SQL
-// query below, which is the correct and consistent approach for list views.
-// --- END: MODIFICATION ---
+// 2. NOW, it is safe to authorize the user by passing the connection.
+authorize('part_request_view', $conn);
 
 $user_role = $_SESSION['user_role'];
 $user_department_id = $_SESSION['user_department_id'];
