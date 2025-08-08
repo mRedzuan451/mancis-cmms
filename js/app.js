@@ -325,7 +325,6 @@ async function handleAssetFormSubmit(e) {
 async function deleteItem(type, id) {
     const typeName = type.slice(0, -1);
 
-    // --- FIX: Add frontend safety checks for deleting users ---
     if (type === 'users') {
         if (id === 1) {
             showTemporaryMessage("Cannot delete the primary admin user.", true);
@@ -343,22 +342,32 @@ async function deleteItem(type, id) {
 
     try {
         let itemToDelete;
+        const processPaginatedResponse = (module, response) => {
+            state.cache[module] = response.data;
+            state.pagination[module].currentPage = response.page;
+            state.pagination[module].totalPages = Math.ceil(response.total / response.limit);
+            state.pagination[module].totalRecords = response.total;
+            state.pagination[module].limit = response.limit;
+        };
         switch (type) {
             case 'assets':
                 itemToDelete = state.cache.assets.find(i => i.id === id);
                 await api.deleteAsset(id);
-                state.cache.assets = await api.getAssets();
-                state.cache.workOrders = await api.getWorkOrders();
+                await loadInitialData();
                 break;
             case 'parts':
                 itemToDelete = state.cache.parts.find(i => i.id === id);
                 await api.deletePart(id);
-                state.cache.parts = await api.getParts();
+                const currentPartsPage = state.pagination.parts.currentPage || 1;
+                const partsResponse = await api.getParts(currentPartsPage);
+                processPaginatedResponse('parts', partsResponse);
                 break;
             case 'workOrders':
                 itemToDelete = state.cache.workOrders.find(i => i.id === id);
                 await api.deleteWorkOrder(id);
-                state.cache.workOrders = await api.getWorkOrders();
+                const currentWoPage = state.pagination.workOrders.currentPage || 1;
+                const woResponse = await api.getWorkOrders(currentWoPage);
+                processPaginatedResponse('workOrders', woResponse);
                 break;
             case 'users':
                 itemToDelete = state.cache.users.find(i => i.id === id);
@@ -415,7 +424,11 @@ async function handlePartFormSubmit(e) {
             state.pagination[module].totalRecords = response.total;
             state.pagination[module].limit = response.limit;
         };
+
+        const currentPartsPage = state.pagination.parts.currentPage || 1;
+        const response = await api.getParts(currentPartsPage);
         processPaginatedResponse('parts', response);
+
         document.getElementById("partModal").style.display = "none";
         renderMainContent();
         showTemporaryMessage('Part saved successfully!');
@@ -783,23 +796,28 @@ async function handleRestockPartsFormSubmit(e) {
             logMessage = `Restocked parts from received request ID: ${receivedId}`;
         }
         
+        const processPaginatedResponse = (module, response) => {
+            state.cache[module] = response.data;
+            state.pagination[module].currentPage = response.page;
+            state.pagination[module].totalPages = Math.ceil(response.total / response.limit);
+            state.pagination[module].totalRecords = response.total;
+            state.pagination[module].limit = response.limit;
+        };
+
         const currentPartsPage = state.pagination.parts.currentPage || 1;
         const currentRequestsPage = state.pagination.partRequests.currentPage || 1;
 
         state.cache.receivedParts = await api.getReceivedParts();
         
         const prResponse = await api.getPartRequests(currentRequestsPage);
-        state.cache.partRequests = prResponse.data;
-        state.pagination.partRequests.currentPage = prResponse.page;
+        processPaginatedResponse('partRequests', prResponse);
         
         const partsResponse = await api.getParts(currentPartsPage);
-        state.cache.parts = partsResponse.data;
-        state.pagination.parts.currentPage = partsResponse.page;
+        processPaginatedResponse('parts', partsResponse);
 
         if (state.currentUser.permissions.log_view) {
             state.cache.logs = await api.getLogs();
         }
-        // --- END: FIX ---
         
         document.getElementById('restockPartsModal').style.display = 'none';
         renderMainContent();
