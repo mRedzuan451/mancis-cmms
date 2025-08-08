@@ -761,8 +761,10 @@ async function handleRestockPartsFormSubmit(e) {
                 payload.newPartCategory = document.getElementById('newPartCategory').value;
                 logMessage = `Direct restock (new part): ${payload.quantity} x ${payload.newPartName}`;
             } else {
-                payload.partId = parseInt(document.getElementById('directStockPartId').value);
-                logMessage = `Direct restock (existing part): ${payload.quantity} x Part ID ${payload.partId}`;
+                const receivedId = parseInt(document.getElementById('restockPartId').value);
+                const locationId = document.getElementById('restockLocationId').value;
+                await api.restockParts({ receivedId, locationId });
+                logMessage = `Restocked parts from received request ID: ${receivedId}`;
             }
             await api.directRestockPart(payload);
         } else {
@@ -772,16 +774,19 @@ async function handleRestockPartsFormSubmit(e) {
             logMessage = `Restocked parts from received request ID: ${receivedId}`;
         }
         
+        const currentPartsPage = state.pagination.parts.currentPage || 1;
+        const currentRequestsPage = state.pagination.partRequests.currentPage || 1;
+
         state.cache.receivedParts = await api.getReceivedParts();
         
-        // --- START: MODIFICATION ---
-        const prResponse = await api.getPartRequests(1);
+        const prResponse = await api.getPartRequests(currentRequestsPage);
         state.cache.partRequests = prResponse.data;
         state.pagination.partRequests.currentPage = prResponse.page;
         
-        const partsResponse = await api.getParts(1);
+        const partsResponse = await api.getParts(currentPartsPage);
         state.cache.parts = partsResponse.data;
         state.pagination.parts.currentPage = partsResponse.page;
+
         if (state.currentUser.permissions.log_view) {
             state.cache.logs = await api.getLogs();
         }
