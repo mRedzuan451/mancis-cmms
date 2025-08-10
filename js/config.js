@@ -1,6 +1,6 @@
 // js/config.js
 
-export const API_URL = 'http://10.228.149.42/mancis-cmms/backend';
+export const API_URL = 'http://10.151.254.42/mancis-cmms/backend';
 
 export const state = {
   currentUser: null,
