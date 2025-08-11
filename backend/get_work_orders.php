@@ -56,6 +56,7 @@ if ($result && $result->num_rows > 0) {
         $row['assetId'] = intval($row['assetId']);
         $row['assignedTo'] = $row['assignedTo'] ? intval($row['assignedTo']) : null;
         $row['pm_schedule_id'] = $row['pm_schedule_id'] ? intval($row['pm_schedule_id']) : null;
+        $row['workDuration'] = $row['workDuration'] ? intval($row['workDuration']) : null; // Add this line
         
         $row['checklist'] = json_decode($row['checklist'], true) ?: [];
         $row['requiredParts'] = json_decode($row['requiredParts'], true) ?: [];

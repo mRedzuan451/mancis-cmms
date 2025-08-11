@@ -652,6 +652,9 @@ export function generateTableRows(type, data) {
                   <td class="p-2"><span class="px-2 py-1 text-xs font-semibold rounded-full ${statusColorClass}">${wo.status}</span></td>
                   <td class="p-2 space-x-2 whitespace-nowrap">
                       <button class="view-wo-btn text-blue-500 hover:text-blue-700" data-id="${wo.id}" title="View Details"><i class="fas fa-eye"></i></button>
+                      ${(wo.status === 'Open' || wo.status === 'On Hold') ? `
+                          <button class="start-wo-btn text-green-500 hover:text-green-700" data-id="${wo.id}" title="Start Work"><i class="fas fa-play-circle"></i></button>
+                      ` : ''}
                       ${wo.status !== 'Completed' ? `
                           <button class="edit-wo-btn text-yellow-500 hover:text-yellow-700" data-id="${wo.id}" title="Edit"><i class="fas fa-edit"></i></button>
                           <button class="complete-wo-btn text-green-500 hover:text-green-700" data-id="${wo.id}" title="Complete"><i class="fas fa-check-circle"></i></button>
@@ -1280,6 +1283,23 @@ export function showWorkOrderDetailModal(workOrder) {
     const asset = state.cache.assets.find(a => a.id === workOrder.assetId);
     const assignedUser = state.cache.users.find(u => u.id === workOrder.assignedTo);
 
+    let durationHtml = '';
+    if (workOrder.workDuration) {
+        const seconds = parseInt(workOrder.workDuration);
+        const d = Math.floor(seconds / (3600*24));
+        const h = Math.floor(seconds % (3600*24) / 3600);
+        const m = Math.floor(seconds % 3600 / 60);
+        
+        let durationString = '';
+        if (d > 0) durationString += `${d} day(s) `;
+        if (h > 0) durationString += `${h} hour(s) `;
+        if (m > 0) durationString += `${m} minute(s)`;
+
+        if (durationString) {
+             durationHtml = `<div><strong>Work Duration:</strong> ${durationString.trim()}</div>`;
+        }
+    }
+
     contentEl.innerHTML = `
         <h2 class="text-2xl font-bold mb-4">${workOrder.title}</h2>
         <div class="grid grid-cols-2 gap-4 text-sm">
@@ -1289,6 +1309,8 @@ export function showWorkOrderDetailModal(workOrder) {
             <div><strong>Assigned To:</strong> ${assignedUser?.fullName || 'N/A'}</div>
             <div><strong>Due Date:</strong> ${workOrder.dueDate}</div>
             <div><strong>Task Type:</strong> ${workOrder.task}</div>
+            ${workOrder.completedDate ? `<div><strong>Completed On:</strong> ${workOrder.completedDate}</div>` : ''}
+            ${durationHtml}
         </div>
         <h3 class="text-lg font-bold mt-6 mb-2">Description</h3>
         <p class="text-sm bg-gray-50 p-3 rounded">${workOrder.description}</p>

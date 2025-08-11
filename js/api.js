@@ -111,6 +111,11 @@ export const api = {
         body: JSON.stringify(data)
     }),
     deleteWorkOrder: (id) => request(`delete_work_order.php?id=${id}`, { method: 'POST' }),
+    startWorkOrder: (id) => request('start_work_order.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id })
+    }),
 
     // LOCATION operations
     createLocation: (data) => request('create_location.php', {

@@ -1906,6 +1906,17 @@ function attachGlobalEventListeners() {
             "edit-wo-btn": () => showWorkOrderModal(id),
             "delete-wo-btn": () => deleteItem('workOrders', id),
             "complete-wo-btn": () => showCompleteWorkOrderModal(state.cache.workOrders.find(w => w.id === id)),
+            "start-wo-btn": async () => {
+                try {
+                    await api.startWorkOrder(id);
+                    showTemporaryMessage("Work order status changed to 'In Progress'.");
+                    const woResponse = await api.getWorkOrders(state.pagination.workOrders.currentPage);
+                    state.cache.workOrders = woResponse.data;
+                    renderMainContent();
+                } catch (error) {
+                    showTemporaryMessage(`Failed to start work order. ${error.message}`, true);
+                }
+            },
             "edit-user-btn": () => showEditUserModal(id),
             "delete-user-btn": () => deleteItem('users', id),
             "view-pr-btn": () => showPartRequestDetailModal(state.cache.partRequests.find(pr => pr.id === id)),
