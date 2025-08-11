@@ -2372,6 +2372,7 @@ export function renderBorrowRequestsPage() {
         'Pending': 'bg-yellow-200 text-yellow-800',
         'Approved': 'bg-green-200 text-green-800',
         'Rejected': 'bg-red-200 text-red-800',
+        'Returned': 'bg-blue-200 text-blue-800', // New status color
     };
 
     return `
@@ -2400,6 +2401,9 @@ export function renderBorrowRequestsPage() {
                                 ${canApprove && req.status === 'Pending' && req.lendingDeptId === state.currentUser.departmentId ? `
                                     <button class="approve-borrow-btn text-green-500 hover:text-green-700" data-id="${req.id}" title="Approve"><i class="fas fa-check"></i></button>
                                     <button class="reject-borrow-btn text-red-500 hover:text-red-700" data-id="${req.id}" title="Reject"><i class="fas fa-times"></i></button>
+                                ` : ''}
+                                ${req.status === 'Approved' && req.borrowingDeptId === state.currentUser.departmentId ? `
+                                    <button class="return-borrow-btn text-blue-500 hover:text-blue-700" data-id="${req.id}" title="Return Part"><i class="fas fa-undo-alt"></i></button>
                                 ` : ''}
                             </td>
                         </tr>

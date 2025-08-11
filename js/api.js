@@ -273,4 +273,9 @@ export const api = {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id, status })
     }),
+    returnBorrowedPart: (id) => request('return_borrowed_part.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id })
+    }),
 };

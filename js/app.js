@@ -2022,6 +2022,21 @@ function attachGlobalEventListeners() {
                     }
                 }
             },
+            "return-borrow-btn": async () => {
+                if (confirm("Are you sure you want to return this part? This will add the stock back to the lender's inventory.")) {
+                    try {
+                        await api.returnBorrowedPart(id);
+                        showTemporaryMessage("Part returned successfully.");
+                        // Refresh both lists
+                        state.cache.partBorrows = await api.getBorrowRequests();
+                        const partsResponse = await api.getParts(1);
+                        state.cache.parts = partsResponse.data;
+                        renderMainContent();
+                    } catch (error) {
+                        showTemporaryMessage(error.message, true);
+                    }
+                }
+            },
             "delete-stock-take-btn": () => {
             if (confirm('Are you sure you want to permanently delete this session and all its counting data?')) {
                 api.deleteStockTake(id)
