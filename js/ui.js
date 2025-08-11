@@ -1707,12 +1707,15 @@ export function showPmScheduleDetailModal(schedule) {
     const asset = state.cache.assets.find(a => a.id === schedule.assetId);
     const assignedUser = state.cache.users.find(u => u.id === schedule.assignedTo);
     
+    const assetLocation = asset ? getFullLocationName(asset.locationId).split(' > ').pop() : 'N/A';
+    
     const frequencyText = `${schedule.frequency_interval} ${schedule.frequency_unit}(s)`;
     const nextPmDate = calculateNextPmDate(schedule);
 
     contentEl.innerHTML = `
         <p><strong>Title:</strong> ${schedule.title}</p>
         <p><strong>Asset:</strong> ${asset?.name || 'N/A'}</p>
+        <p><strong>Location:</strong> ${assetLocation}</p>
         <p><strong>Status:</strong> ${schedule.is_active ? 'Active' : 'Inactive'}</p>
         <hr class="my-2">
         <p><strong>Frequency:</strong> ${frequencyText}</p>
@@ -1724,6 +1727,7 @@ export function showPmScheduleDetailModal(schedule) {
         <p><strong>Task Type:</strong> ${schedule.task}</p>
         <p><strong>Description:</strong> ${schedule.description || 'None'}</p>
     `;
+    // --- END: MODIFICATION ---
     document.getElementById('pmScheduleDetailModal').style.display = 'flex';
 }
 
