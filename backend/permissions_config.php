@@ -44,6 +44,9 @@ $permissions = [
     'feedback_delete'     => 'Delete feedback messages',
     'report_cost_view'    => 'View maintenance cost reports',
     'report_kpi_view'     => 'View maintenance KPI reports',
+
+    'part_borrow_request'  => 'Request to borrow parts from other departments',
+    'part_borrow_approve'  => 'Approve/Reject part borrow requests',
 ];
 
 $role_permissions = [
@@ -61,6 +64,7 @@ $role_permissions = [
         'report_view', 'feedback_view',
         'stock_take_create', 'stock_take_approve',
         'report_cost_view','report_kpi_view',
+        'part_borrow_request', 'part_borrow_approve',
     ],
 
     'Supervisor' => [
@@ -73,6 +77,7 @@ $role_permissions = [
         'location_management', 'feedback_view',
         'stock_take_create', 'stock_take_approve',
         'report_cost_view','report_view','report_kpi_view',
+        'part_borrow_request', 'part_borrow_approve',
     ],
 
     'Engineer' => [
@@ -84,6 +89,7 @@ $role_permissions = [
         'pm_schedule_view','asset_create',
         'pm_schedule_create','stock_take_create',
         'feedback_view','report_view',
+        'part_borrow_request',
     ],
 
     'Technician' => [
@@ -94,6 +100,7 @@ $role_permissions = [
         'location_management','part_restock',
         'stock_take_create', 'pm_schedule_view','report_view',
         'pm_schedule_create', 'feedback_view',
+        'part_borrow_request',
     ],
 
     'Clerk' => [
@@ -101,6 +108,7 @@ $role_permissions = [
         'part_request_view', 'part_request_create',
         'location_management','part_restock',
         'stock_take_create', 'part_view', 'feedback_view',
+        'part_borrow_request',
     ],
 ];
 ?>

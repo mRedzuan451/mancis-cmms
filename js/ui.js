@@ -622,16 +622,18 @@ export function generateTableRows(type, data) {
             const departmentCell = isAdmin 
                 ? `<td class="p-2">${part.departmentName || 'N/A'}</td>` 
                 : '';
+            const isLowStock = parseInt(part.quantity) <= parseInt(part.minQuantity);
             return `
-              <tr class="border-b hover:bg-gray-50 ${parseInt(part.quantity) <= parseInt(part.minQuantity) ? "bg-red-100" : ""}">
+              <tr class="border-b hover:bg-gray-50 ${isLowStock ? "bg-red-100" : ""}">
                   <td class="p-2"><input type="checkbox" class="row-checkbox" data-id="${part.id}"></td>
                   <td class="p-2">${part.name}</td>
                   <td class="p-2">${part.sku}</td>
-                  <td class="p-2">${part.quantity} ${parseInt(part.quantity) <= parseInt(part.minQuantity) ? '<span class="text-red-600 font-bold">(Low)</span>' : ""}</td>
+                  <td class="p-2">${part.quantity} ${isLowStock ? '<span class="text-red-600 font-bold">(Low)</span>' : ""}</td>
                   ${departmentCell}
                   <td class="p-2 space-x-2">
                       <button class="view-part-btn text-blue-500 hover:text-blue-700" data-id="${part.id}" title="View Details"><i class="fas fa-eye"></i></button>
                       <button class="edit-part-btn text-yellow-500 hover:text-yellow-700" data-id="${part.id}" title="Edit"><i class="fas fa-edit"></i></button>
+                      ${isLowStock ? `<button class="borrow-part-btn text-purple-500 hover:text-purple-700" data-id="${part.id}" title="Borrow from another department"><i class="fas fa-people-carry"></i></button>` : ''}
                       <button class="delete-part-btn text-red-500 hover:text-red-700" data-id="${part.id}"><i class="fas fa-trash"></i></button>
                   </td>
               </tr>`;
@@ -751,6 +753,7 @@ export function renderSidebar() {
                 { page: "assets", icon: "fa-box", text: "Assets" },
                 { page: "parts", icon: "fa-cogs", text: "Spare Parts" },
                 { page: "partRequests", icon: "fa-inbox", text: "Part Requests" },
+                { page: "partBorrows", icon: "fa-people-carry", text: "Borrow Requests" }, // Add this line
                 { page: "stockTake", icon: "fa-clipboard-check", text: "Stock Take" },
                 { page: "workOrders", icon: "fa-clipboard-list", text: "Work Orders" }, 
                 { page: "pmSchedules", icon: "fa-calendar-check", text: "PM Schedules" },
@@ -2356,4 +2359,81 @@ export function showFeedbackToAdminModal() {
     const form = document.getElementById('feedbackToAdminForm');
     form.reset();
     document.getElementById('feedbackToAdminModal').style.display = 'flex';
+}
+
+export function renderBorrowRequestsPage() {
+    const header = renderPageHeader("Part Borrow Requests", [
+        '<button id="refreshDataBtn" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded"><i class="fas fa-sync-alt mr-2"></i>Refresh</button>'
+    ]);
+    const requests = state.cache.partBorrows || [];
+    const canApprove = state.currentUser.permissions.part_borrow_approve;
+
+    const statusColors = {
+        'Pending': 'bg-yellow-200 text-yellow-800',
+        'Approved': 'bg-green-200 text-green-800',
+        'Rejected': 'bg-red-200 text-red-800',
+    };
+
+    return `
+        ${header}
+        <div class="bg-white p-4 rounded-lg shadow">
+            <table class="w-full">
+                <thead>
+                    <tr class="border-b">
+                        <th class="p-2 text-left">Part</th>
+                        <th class="p-2 text-left">Request From</th>
+                        <th class="p-2 text-left">Request To</th>
+                        <th class="p-2 text-right">Qty</th>
+                        <th class="p-2 text-left">Status</th>
+                        <th class="p-2 text-left">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${requests.map(req => `
+                        <tr class="border-b hover:bg-gray-50">
+                            <td class="p-2">${req.partName} (${req.partSku})</td>
+                            <td class="p-2">${req.borrowingDeptName}</td>
+                            <td class="p-2">${req.lendingDeptName}</td>
+                            <td class="p-2 text-right">${req.quantity}</td>
+                            <td class="p-2"><span class="px-2 py-1 text-xs font-semibold rounded-full ${statusColors[req.status] || 'bg-gray-200'}">${req.status}</span></td>
+                            <td class="p-2">
+                                ${canApprove && req.status === 'Pending' && req.lendingDeptId === state.currentUser.departmentId ? `
+                                    <button class="approve-borrow-btn text-green-500 hover:text-green-700" data-id="${req.id}" title="Approve"><i class="fas fa-check"></i></button>
+                                    <button class="reject-borrow-btn text-red-500 hover:text-red-700" data-id="${req.id}" title="Reject"><i class="fas fa-times"></i></button>
+                                ` : ''}
+                            </td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        </div>
+    `;
+}
+
+export function showBorrowRequestModal(part) {
+    const modal = document.getElementById('borrowPartModal');
+    modal.style.display = 'flex';
+
+    document.getElementById('borrowPartName').textContent = `${part.name} (SKU: ${part.sku})`;
+    document.getElementById('borrowPartId').value = part.id;
+    
+    const container = document.getElementById('borrowablePartsContainer');
+    container.innerHTML = '<p>Searching for available stock...</p>';
+
+    api.getBorrowableParts(part.id).then(borrowable => {
+        if (borrowable.length > 0) {
+            container.innerHTML = borrowable.map(item => `
+                <div class="border p-2 rounded-md">
+                    <label class="flex items-center">
+                        <input type="radio" name="lendingDept" value="${item.departmentId}" data-part-id="${item.id}" class="h-4 w-4 text-blue-600 border-gray-300">
+                        <span class="ml-3">
+                            <strong>${item.departmentName}</strong> (Available: ${item.quantity})
+                        </span>
+                    </label>
+                </div>
+            `).join('');
+        } else {
+            container.innerHTML = '<p class="text-red-500">Sorry, no other departments currently have this part in stock.</p>';
+        }
+    });
 }

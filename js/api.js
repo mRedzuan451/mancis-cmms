@@ -261,5 +261,16 @@ export const api = {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
     }),
-    
+    getBorrowableParts: (partId) => request(`get_borrowable_parts.php?partId=${partId}`),
+    createBorrowRequest: (data) => request('create_borrow_request.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+    }),
+    getBorrowRequests: () => request('get_borrow_requests.php'),
+    updateBorrowRequestStatus: (id, status) => request('update_borrow_request_status.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, status })
+    }),
 };

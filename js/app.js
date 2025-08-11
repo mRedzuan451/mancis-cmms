@@ -22,9 +22,11 @@ import {
     renderStockTakePage,
     renderStockTakeCountPage,
     renderTeamMessagesPage,
+    renderBorrowRequestsPage,
     generateTableRows,
     showAssetModal,
     showPartModal,
+    showBorrowRequestModal,
     showWorkOrderModal,
     showEditUserModal,
     showCalendarDetailModal,
@@ -81,6 +83,7 @@ function renderMainContent() {
         case "pmSchedules":         content = renderPmSchedulesPage(); break;
         case "stockTake":           content = renderStockTakePage(); break;
         case "feedback":            content = renderTeamMessagesPage(); break;
+        case "partBorrows":         content = renderBorrowRequestsPage(); break; // Add this
         default:                    content = renderDashboard();
     }
     mainContent.innerHTML = content;
@@ -138,7 +141,10 @@ async function loadInitialData() {
         if (permissions.pm_schedule_view) dataPromises.push(api.getPmSchedules().then(res => state.cache.pmSchedules = res));
         if (permissions.stock_take_create) dataPromises.push(api.getStockTakes().then(res => state.cache.stockTakes = res));
         if (permissions.feedback_view) dataPromises.push(api.getFeedback().then(res => state.cache.feedback = res));
-        
+        if (permissions.part_borrow_request || permissions.part_borrow_approve) { // Add this block
+            dataPromises.push(api.getBorrowRequests().then(res => state.cache.partBorrows = res));
+        }
+
         dataPromises.push(api.getReceivedParts().then(res => state.cache.receivedParts = res));
         dataPromises.push(api.getSystemSettings().then(res => state.settings = res));
         
@@ -1748,6 +1754,44 @@ function attachPageSpecificEventListeners(page) {
                 e.target.checked = !isEnabled;
             }
         });
+    } else if (page === 'partBorrows') {
+        document.getElementById('refreshDataBtn')?.addEventListener('click', async () => {
+            state.cache.partBorrows = await api.getBorrowRequests();
+            renderMainContent();
+        });
+
+        document.querySelector('.bg-white')?.addEventListener('click', async (e) => {
+            const approveBtn = e.target.closest('.approve-borrow-btn');
+            const rejectBtn = e.target.closest('.reject-borrow-btn');
+            let action = null;
+            let button = null;
+
+            if (approveBtn) {
+                action = 'Approved';
+                button = approveBtn;
+            } else if (rejectBtn) {
+                action = 'Rejected';
+                button = rejectBtn;
+            }
+
+            if (action) {
+                const id = parseInt(button.dataset.id);
+                if (confirm(`Are you sure you want to ${action.toLowerCase()} this request?`)) {
+                    try {
+                        await api.updateBorrowRequestStatus(id, action);
+                        showTemporaryMessage(`Request ${action.toLowerCase()} successfully.`);
+                        state.cache.partBorrows = await api.getBorrowRequests();
+                        if (action === 'Approved') { // Refresh parts list if stock changed
+                             const partsResponse = await api.getParts(1);
+                             state.cache.parts = partsResponse.data;
+                        }
+                        renderMainContent();
+                    } catch (error) {
+                        showTemporaryMessage(error.message, true);
+                    }
+                }
+            }
+        });
     }
 }
 
@@ -1853,6 +1897,12 @@ function attachGlobalEventListeners() {
              return;
         }
         if (!button) return;
+        if (button.classList.contains('borrow-part-btn')) {
+            const partId = parseInt(button.dataset.id);
+            const part = state.cache.parts.find(p => p.id === partId);
+            if(part) showBorrowRequestModal(part);
+            return;
+        }
         if (button.classList.contains('feedback-reply-btn')) {
             const messageId = button.dataset.id;
             
@@ -2026,6 +2076,33 @@ function attachGlobalEventListeners() {
     // Form Submissions
     document.getElementById("assetForm").addEventListener("submit", handleAssetFormSubmit);
     document.getElementById("partForm").addEventListener("submit", handlePartFormSubmit);
+    document.getElementById("borrowPartForm")?.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const selectedRadio = document.querySelector('input[name="lendingDept"]:checked');
+        if (!selectedRadio) {
+            showTemporaryMessage("Please select a department to borrow from.", true);
+            return;
+        }
+
+        const payload = {
+            partId: parseInt(selectedRadio.dataset.partId),
+            lendingDeptId: parseInt(selectedRadio.value),
+            quantity: parseInt(document.getElementById('borrowQuantity').value),
+            notes: document.getElementById('borrowNotes').value,
+        };
+
+        try {
+            await api.createBorrowRequest(payload);
+            showTemporaryMessage("Borrow request submitted successfully.");
+            document.getElementById('borrowPartModal').style.display = 'none';
+            state.cache.partBorrows = await api.getBorrowRequests();
+            if (state.currentPage === 'partBorrows') {
+                renderMainContent();
+            }
+        } catch (error) {
+            showTemporaryMessage(error.message, true);
+        }
+    });
     document.getElementById("workOrderForm").addEventListener("submit", handleWorkOrderFormSubmit);
     document.getElementById("editUserForm").addEventListener("submit", handleEditUserFormSubmit);
     document.getElementById("transferAssetForm").addEventListener("submit", handleTransferAssetFormSubmit);

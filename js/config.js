@@ -21,6 +21,7 @@ export const state = {
     users: [],
     workOrders: [],
     partRequests: [],
+    partBorrows: [],
     locations: {},
     logs: [],
     receivedParts: [],
