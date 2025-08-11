@@ -1754,45 +1754,7 @@ function attachPageSpecificEventListeners(page) {
                 e.target.checked = !isEnabled;
             }
         });
-    } else if (page === 'partBorrows') {
-        document.getElementById('refreshDataBtn')?.addEventListener('click', async () => {
-            state.cache.partBorrows = await api.getBorrowRequests();
-            renderMainContent();
-        });
-
-        document.querySelector('.bg-white')?.addEventListener('click', async (e) => {
-            const approveBtn = e.target.closest('.approve-borrow-btn');
-            const rejectBtn = e.target.closest('.reject-borrow-btn');
-            let action = null;
-            let button = null;
-
-            if (approveBtn) {
-                action = 'Approved';
-                button = approveBtn;
-            } else if (rejectBtn) {
-                action = 'Rejected';
-                button = rejectBtn;
-            }
-
-            if (action) {
-                const id = parseInt(button.dataset.id);
-                if (confirm(`Are you sure you want to ${action.toLowerCase()} this request?`)) {
-                    try {
-                        await api.updateBorrowRequestStatus(id, action);
-                        showTemporaryMessage(`Request ${action.toLowerCase()} successfully.`);
-                        state.cache.partBorrows = await api.getBorrowRequests();
-                        if (action === 'Approved') { // Refresh parts list if stock changed
-                             const partsResponse = await api.getParts(1);
-                             state.cache.parts = partsResponse.data;
-                        }
-                        renderMainContent();
-                    } catch (error) {
-                        showTemporaryMessage(error.message, true);
-                    }
-                }
-            }
-        });
-    }
+    } 
 }
 
 function attachGlobalEventListeners() {
@@ -2031,6 +1993,33 @@ function attachGlobalEventListeners() {
                     renderMainContent();
                 } catch(error) {
                     showTemporaryMessage('Could not update status.', true);
+                }
+            },
+                "approve-borrow-btn": async () => {
+                if (confirm("Are you sure you want to approve this borrow request?")) {
+                    try {
+                        await api.updateBorrowRequestStatus(id, 'Approved');
+                        showTemporaryMessage("Request approved successfully.");
+                        // Refresh both borrow requests and parts list (for stock update)
+                        state.cache.partBorrows = await api.getBorrowRequests();
+                        const partsResponse = await api.getParts(1);
+                        state.cache.parts = partsResponse.data;
+                        renderMainContent();
+                    } catch (error) {
+                        showTemporaryMessage(error.message, true);
+                    }
+                }
+            },
+            "reject-borrow-btn": async () => {
+                if (confirm("Are you sure you want to reject this borrow request?")) {
+                    try {
+                        await api.updateBorrowRequestStatus(id, 'Rejected');
+                        showTemporaryMessage("Request rejected.");
+                        state.cache.partBorrows = await api.getBorrowRequests();
+                        renderMainContent();
+                    } catch (error) {
+                        showTemporaryMessage(error.message, true);
+                    }
                 }
             },
             "delete-stock-take-btn": () => {
