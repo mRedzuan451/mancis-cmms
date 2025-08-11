@@ -1,8 +1,35 @@
 <?php
-// This file contains a reusable function to get the final permissions for any user.
+// This file contains reusable functions to check user permissions.
 
+/**
+ * Checks if the current user has a specific permission without exiting the script.
+ * @param string $permission_key The permission to check.
+ * @param mysqli $conn The database connection.
+ * @return bool True if the user has permission, false otherwise.
+ */
+function has_permission($permission_key, $conn) {
+    if (!isset($_SESSION['user_id'])) {
+        return false;
+    }
+    if (isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'Admin') {
+        return true; // Admins always have permission
+    }
+    
+    // Get all effective permissions for the user
+    $currentUserPermissions = getEffectivePermissions($_SESSION['user_id'], $conn);
+
+    // Return true only if the key exists and its value is true
+    return !empty($currentUserPermissions[$permission_key]);
+}
+
+/**
+ * Calculates the final, effective permission set for a user by combining role defaults and individual overrides.
+ * @param int $userId The user's ID.
+ * @param mysqli $conn The database connection.
+ * @return array The user's final permission set.
+ */
 function getEffectivePermissions($userId, $conn) {
-    require_once 'permissions_config.php'; // Needs the master lists
+    require 'permissions_config.php'; // Needs the master lists
 
     // 1. Get the user's role from the database.
     $stmt_role = $conn->prepare("SELECT role FROM users WHERE id = ?");
@@ -22,7 +49,7 @@ function getEffectivePermissions($userId, $conn) {
     }
     $defaultPermissions = $roleKey ? $role_permissions[$roleKey] : [];
 
-    // 3. Get the specific overrides for this user from the user_permissions table.
+    // 3. Get specific overrides for this user from the user_permissions table.
     $stmt_perms = $conn->prepare("SELECT permission_key, has_permission FROM user_permissions WHERE user_id = ?");
     $stmt_perms->bind_param("i", $userId);
     $stmt_perms->execute();
@@ -36,7 +63,6 @@ function getEffectivePermissions($userId, $conn) {
 
     // 4. Combine defaults and overrides to create the final permission set.
     $final_permissions = [];
-    // The `$permissions` variable comes from permissions_config.php
     foreach ($permissions as $key => $label) {
         if (isset($overrides[$key])) {
             $final_permissions[$key] = $overrides[$key]; // Override takes precedence

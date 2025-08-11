@@ -1,24 +1,17 @@
 <?php
 require_once 'auth_check.php';
+require_once 'permission_checker.php'; // Include the permission functions
 
 $servername = "localhost"; $username = "root"; $password = ""; $dbname = "mancis_db";
 $conn = new mysqli($servername, $username, $password, $dbname);
 if ($conn->connect_error) { die("Connection failed: " . $conn->connect_error); }
 
-// Users with either permission can view the page
+// Check if the user has permission to either request or approve borrows.
 if (!has_permission('part_borrow_request', $conn) && !has_permission('part_borrow_approve', $conn)) {
      http_response_code(403);
      echo json_encode(["message" => "You do not have permission to view this page."]);
      exit();
 }
-// Helper function to check permission without exiting
-function has_permission($key, $conn) {
-    if ($_SESSION['user_role'] === 'Admin') return true;
-    require_once 'permission_checker.php';
-    $perms = getEffectivePermissions($_SESSION['user_id'], $conn);
-    return !empty($perms[$key]);
-}
-
 
 $user_id = $_SESSION['user_id'];
 $department_id = $_SESSION['user_department_id'];
