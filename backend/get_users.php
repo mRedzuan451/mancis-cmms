@@ -12,28 +12,47 @@ if ($conn->connect_error) {
     exit();
 }
 
+authorize('user_view', $conn);
+
 $user_role = $_SESSION['user_role'];
 $user_department_id = $_SESSION['user_department_id'];
 
-$sql = "";
-// Select all fields EXCEPT the password for security
-$base_sql = "SELECT id, fullName, employeeId, username, email, contact_number, role, divisionId, departmentId FROM users";
+// --- START: PAGINATION LOGIC ---
+$page = isset($_GET['page']) ? intval($_GET['page']) : 1;
+$limit = isset($_GET['limit']) ? intval($_GET['limit']) : 20;
+$offset = ($page - 1) * $limit;
 
+$total_records = 0;
+$output_array = [];
+
+$count_base = "SELECT COUNT(DISTINCT u.id) as total FROM users u";
+$data_base = "SELECT u.id, u.fullName, u.employeeId, u.username, u.email, u.contact_number, u.role, u.divisionId, u.departmentId FROM users u";
+$where_clause = " WHERE u.departmentId = ?";
+$order_clause = " ORDER BY u.fullName ASC LIMIT ? OFFSET ?";
+
+// 1. Get the total count of records
 if ($user_role === 'Admin') {
-    // Admin gets all users
-    $sql = "$base_sql ORDER BY fullName ASC";
-    $stmt = $conn->prepare($sql);
+    $stmt_count = $conn->prepare($count_base);
 } else {
-    // Non-Admins (like Managers) only see users within their own department.
-    $sql = "$base_sql WHERE departmentId = ? ORDER BY fullName ASC";
-    $stmt = $conn->prepare($sql);
-    $stmt->bind_param("i", $user_department_id);
+    $stmt_count = $conn->prepare($count_base . $where_clause);
+    $stmt_count->bind_param("i", $user_department_id);
+}
+$stmt_count->execute();
+$total_records = $stmt_count->get_result()->fetch_assoc()['total'];
+$stmt_count->close();
+
+// 2. Get the paginated data
+if ($user_role === 'Admin') {
+    $stmt_data = $conn->prepare($data_base . $order_clause);
+    $stmt_data->bind_param("ii", $limit, $offset);
+} else {
+    $stmt_data = $conn->prepare($data_base . $where_clause . $order_clause);
+    $stmt_data->bind_param("iii", $user_department_id, $limit, $offset);
 }
 
-$stmt->execute();
-$result = $stmt->get_result();
+$stmt_data->execute();
+$result = $stmt_data->get_result();
 
-$output_array = array();
 while($row = $result->fetch_assoc()) {
     $row['id'] = intval($row['id']);
     $row['divisionId'] = intval($row['divisionId']);
@@ -41,7 +60,13 @@ while($row = $result->fetch_assoc()) {
     $output_array[] = $row;
 }
 
-$stmt->close();
+$stmt_data->close();
 $conn->close();
-echo json_encode($output_array);
+
+echo json_encode([
+    'total' => $total_records,
+    'page' => $page,
+    'limit' => $limit,
+    'data' => $output_array
+]);
 ?>

@@ -118,9 +118,9 @@ async function loadInitialData() {
         if (permissions.part_view) dataPromises.push(api.getParts(1).then(res => processPaginatedResponse('parts', res)));
         if (permissions.wo_view) dataPromises.push(api.getWorkOrders(1).then(res => processPaginatedResponse('workOrders', res)));
         if (permissions.part_request_view) dataPromises.push(api.getPartRequests(1).then(res => processPaginatedResponse('partRequests', res)));
+        if (permissions.user_view) dataPromises.push(api.getUsers(1).then(res => processPaginatedResponse('users', res)));
         
         // Non-Paginated Data
-        if (permissions.user_view) dataPromises.push(api.getUsers().then(res => state.cache.users = res));
         if (permissions.location_management) {
             dataPromises.push(api.getLocations().then(res => state.cache.locations = res));
         } else {
@@ -166,7 +166,6 @@ async function loadAndRender() {
     await fetchAndDisplayNotifications();
 }
 
-// REPLACE your existing handlePageChange function with this
 async function handlePageChange(module, page) {
     try {
         let response;
@@ -178,6 +177,8 @@ async function handlePageChange(module, page) {
             response = await api.getWorkOrders(page);
         } else if (module === 'partRequests') {
             response = await api.getPartRequests(page);
+        } else if (module === 'users') {
+            response = await api.getUsers(page);
         }
 
         if (response) {

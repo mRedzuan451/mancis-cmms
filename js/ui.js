@@ -244,6 +244,9 @@ export function renderUserManagementPage() {
                   <tbody id="userTableBody">${generateTableRows("users", users)}</tbody>
               </table>
           </div>
+          <div id="userPagination">
+              ${renderPagination('users')}
+          </div>
       </div>`;
 }
 
