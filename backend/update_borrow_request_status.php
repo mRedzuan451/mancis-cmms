@@ -22,16 +22,28 @@ if ($id <= 0 || !in_array($newStatus, ['Approved', 'Rejected'])) {
 
 $conn->begin_transaction();
 try {
-    // Get request details, ensure it's pending and belongs to the approver's department
-    $stmt_get = $conn->prepare("SELECT * FROM part_borrows WHERE id = ? AND lendingDeptId = ? AND status = 'Pending'");
-    $stmt_get->bind_param("ii", $id, $userDeptId);
+    // --- START: IMPROVED VALIDATION ---
+    // 1. First, find the request by its ID to see if it exists.
+    $stmt_get = $conn->prepare("SELECT * FROM part_borrows WHERE id = ?");
+    $stmt_get->bind_param("i", $id);
     $stmt_get->execute();
     $request = $stmt_get->get_result()->fetch_assoc();
     $stmt_get->close();
 
     if (!$request) {
-        throw new Exception("Request not found, already processed, or you don't have permission to approve it.");
+        throw new Exception("Request not found. It may have been deleted.");
     }
+    
+    // 2. Next, check if the request is still pending.
+    if ($request['status'] !== 'Pending') {
+        throw new Exception("This request has already been processed. Its status is: " . $request['status']);
+    }
+
+    // 3. Finally, verify the supervisor is in the correct department to approve it.
+    if ($request['lendingDeptId'] != $userDeptId) {
+        throw new Exception("Permission denied. You can only approve requests for your own department.");
+    }
+    // --- END: IMPROVED VALIDATION ---
 
     // If approved, deduct stock from the lender's inventory
     if ($newStatus === 'Approved') {
