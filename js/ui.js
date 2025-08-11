@@ -652,7 +652,7 @@ export function generateTableRows(type, data) {
                   <td class="p-2"><span class="px-2 py-1 text-xs font-semibold rounded-full ${statusColorClass}">${wo.status}</span></td>
                   <td class="p-2 space-x-2 whitespace-nowrap">
                       <button class="view-wo-btn text-blue-500 hover:text-blue-700" data-id="${wo.id}" title="View Details"><i class="fas fa-eye"></i></button>
-                      ${(wo.status === 'Open' || wo.status === 'On Hold') ? `
+                      ${(wo.status === 'Open' || wo.status === 'On Hold' || wo.status === 'Delay') ? `
                           <button class="start-wo-btn text-green-500 hover:text-green-700" data-id="${wo.id}" title="Start Work"><i class="fas fa-play-circle"></i></button>
                       ` : ''}
                       ${wo.status !== 'Completed' ? `

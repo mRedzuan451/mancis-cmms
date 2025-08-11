@@ -22,7 +22,8 @@ if ($id <= 0) {
 date_default_timezone_set('Asia/Kuala_Lumpur');
 $now = date('Y-m-d H:i:s');
 
-$stmt = $conn->prepare("UPDATE workorders SET status = 'In Progress', actualStartDate = ? WHERE id = ? AND status IN ('Open', 'On Hold')");
+// Updated to include 'Delay' in the list of valid statuses
+$stmt = $conn->prepare("UPDATE workorders SET status = 'In Progress', actualStartDate = ? WHERE id = ? AND status IN ('Open', 'On Hold', 'Delay')");
 $stmt->bind_param("si", $now, $id);
 
 if ($stmt->execute()) {
