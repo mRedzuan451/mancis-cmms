@@ -71,39 +71,39 @@ export function renderDashboard() {
             <h3 class="text-gray-500">Low Stock Items</h3>
             <p class="text-3xl font-bold">${lowStockItems}</p>
         </div>
-        </div>
+    </div>
     
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div class="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-8">
-             <div>
+        <div class="lg:col-span-2">
+            <h2 class="text-2xl font-bold mb-4">Overdue Work Orders</h2>
+            <div class="bg-white p-4 rounded-lg shadow">
+                ${overdueWOs.length > 0 ? `
+                    <table class="w-full">
+                        <thead><tr class="border-b"><th class="text-left p-2">Title</th><th class="text-left p-2">Asset</th><th class="text-left p-2">Days Overdue</th></tr></thead>
+                        <tbody>${overdueWOs.map(wo => {
+                            const diffTime = Math.abs(today - new Date(wo.dueDate + 'T00:00:00'));
+                            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                            return `<tr class="border-b hover:bg-gray-50"><td class="p-2">${wo.title}</td><td class="p-2">${state.cache.assets.find(a => a.id === parseInt(wo.assetId))?.name || "N/A"}</td><td class="p-2 text-red-600 font-bold">${diffDays} day(s)</td></tr>`}).join("")}</tbody>
+                    </table>` : `<p class="text-gray-500">No overdue work orders. Great job!</p>`}
+            </div>
+        </div>
+
+        <div class="space-y-8">
+            <div>
+                <h2 class="text-2xl font-bold mb-4">Work Order Status</h2>
+                <div class="bg-white p-4 rounded-lg shadow" style="height: 350px;">
+                    <canvas id="woStatusChart"></canvas>
+                </div>
+            </div>
+            <div>
                 <h2 class="text-2xl font-bold mb-4">Upcoming PMs (Next 7 Days)</h2>
-                <div class="bg-white p-4 rounded-lg shadow min-h-[200px]">
+                <div class="bg-white p-4 rounded-lg shadow">
                     ${upcomingPMs.length > 0 ? `
                         <table class="w-full">
                             <thead><tr class="border-b"><th class="text-left p-2">Title</th><th class="text-left p-2">Asset</th><th class="text-left p-2">Start Date</th></tr></thead>
                             <tbody>${upcomingPMs.map(wo => `<tr class="border-b hover:bg-gray-50"><td class="p-2">${wo.title}</td><td class="p-2">${state.cache.assets.find(a => a.id === parseInt(wo.assetId))?.name || "N/A"}</td><td class="p-2">${wo.start_date}</td></tr>`).join("")}</tbody>
                         </table>` : `<p class="text-gray-500">No upcoming PMs in the next 7 days.</p>`}
                 </div>
-            </div>
-            <div class="lg:col-span-2">
-                <h2 class="text-2xl font-bold mb-4">Overdue Work Orders</h2>
-                <div class="bg-white p-4 rounded-lg shadow min-h-[200px]">
-                    ${overdueWOs.length > 0 ? `
-                        <table class="w-full">
-                            <thead><tr class="border-b"><th class="text-left p-2">Title</th><th class="text-left p-2">Asset</th><th class="text-left p-2">Days Overdue</th></tr></thead>
-                            <tbody>${overdueWOs.map(wo => {
-                                const diffTime = Math.abs(today - new Date(wo.dueDate + 'T00:00:00'));
-                                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                                return `<tr class="border-b hover:bg-gray-50"><td class="p-2">${wo.title}</td><td class="p-2">${state.cache.assets.find(a => a.id === parseInt(wo.assetId))?.name || "N/A"}</td><td class="p-2 text-red-600 font-bold">${diffDays} day(s)</td></tr>`}).join("")}</tbody>
-                        </table>` : `<p class="text-gray-500">No overdue work orders. Great job!</p>`}
-                </div>
-            </div>
-        </div>
-        
-        <div>
-            <h2 class="text-2xl font-bold mb-4">Work Order Status</h2>
-            <div class="bg-white p-4 rounded-lg shadow" style="height: 350px;">
-                <canvas id="woStatusChart"></canvas>
             </div>
         </div>
     </div>`;
