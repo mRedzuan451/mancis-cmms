@@ -1707,7 +1707,7 @@ export function showPmScheduleDetailModal(schedule) {
     const asset = state.cache.assets.find(a => a.id === schedule.assetId);
     const assignedUser = state.cache.users.find(u => u.id === schedule.assignedTo);
     
-    const assetLocation = asset ? getFullLocationName(asset.locationId).split(' > ').pop() : 'N/A';
+    const assetLocation = asset ? getFullLocationName(asset.locationId): 'N/A';
     
     const frequencyText = `${schedule.frequency_interval} ${schedule.frequency_unit}(s)`;
     const nextPmDate = calculateNextPmDate(schedule);
