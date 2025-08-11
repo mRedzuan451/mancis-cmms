@@ -34,9 +34,11 @@ async function request(endpoint, options = {}) {
 export const api = {
     // GET operations
     getAssets: (page = 1, limit = 20) => request(`get_assets.php?page=${page}&limit=${limit}`),
+    getAllAssets: () => request('get_assets.php?limit=0'),
     getParts: (page = 1, limit = 20) => request(`get_parts.php?page=${page}&limit=${limit}`),
     getAllParts: () => request('get_parts.php?limit=0'),
     getUsers: (page = 1, limit = 20) => request(`get_users.php?page=${page}&limit=${limit}`),
+    getAllUsers: () => request('get_users.php?limit=0'),
     getWorkOrders: (page = 1, limit = 20) => request(`get_work_orders.php?page=${page}&limit=${limit}`),
     getPartRequests: (page = 1, limit = 20) => request(`get_part_requests.php?page=${page}&limit=${limit}`),
     getLocations: () => request('get_locations.php'),

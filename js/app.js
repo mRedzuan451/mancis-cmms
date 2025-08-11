@@ -119,6 +119,14 @@ async function loadInitialData() {
         if (permissions.wo_view) dataPromises.push(api.getWorkOrders(1).then(res => processPaginatedResponse('workOrders', res)));
         if (permissions.part_request_view) dataPromises.push(api.getPartRequests(1).then(res => processPaginatedResponse('partRequests', res)));
         if (permissions.user_view) dataPromises.push(api.getUsers(1).then(res => processPaginatedResponse('users', res)));
+
+        // --- NEW: Fetch all users and assets for lookups ---
+        if (permissions.user_view) {
+            dataPromises.push(api.getAllUsers().then(res => state.lookupCache.users = res.data));
+        }
+        if (permissions.asset_view) {
+            dataPromises.push(api.getAllAssets().then(res => state.lookupCache.assets = res.data));
+        }
         
         // Non-Paginated Data
         if (permissions.location_management) {

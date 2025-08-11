@@ -640,7 +640,7 @@ export function generateTableRows(type, data) {
       case "workOrders":
         const woStatusColors = { Open: "bg-blue-200 text-blue-800", "In Progress": "bg-yellow-200 text-yellow-800", "On Hold": "bg-orange-200 text-orange-800", Delay: "bg-red-200 text-red-800", Completed: "bg-green-200 text-green-800" };
         return data.map((wo) => {
-            const assetName = state.cache.assets.find((a) => a.id === parseInt(wo.assetId))?.name || "N/A";
+            const assetName = state.lookupCache.assets.find((a) => a.id === parseInt(wo.assetId))?.name || "N/A";
             const statusColorClass = woStatusColors[wo.status] || "bg-gray-200 text-gray-800";
             return `
               <tr class="border-b hover:bg-gray-50">
@@ -1027,16 +1027,12 @@ export function showWorkOrderModal(woId = null) {
     document.getElementById("woChecklistContainer").innerHTML = "";
     document.getElementById("woPartsContainer").innerHTML = "";
     document.getElementById("woPartsSection").style.display = "none";
-    const assets = state.cache.assets.filter(can.view);
+    const assets = state.lookupCache.assets.filter(can.view);
     document.getElementById("woAsset").innerHTML = '<option value="">Select Asset</option>' + assets.map((a) => `<option value="${a.id}">${a.name} (${getFullLocationName(a.locationId)})</option>`).join("");
-        // Start with the users already loaded from the backend
-    let users = state.cache.users.filter((u) => can.view(u));
-
-    // Check if the current user is not in the list (e.g., if their department is unique)
+    let users = state.lookupCache.users.filter((u) => can.view(u));
     if (!users.some(user => user.id === state.currentUser.id)) {
         users.push(state.currentUser);
     }
-
     document.getElementById("woAssignedTo").innerHTML = '<option value="">Assign To</option>' + users.map((u) => `<option value="${u.id}">${u.fullName}</option>`).join("");
     document.getElementById("addWoPartBtn").onclick = () => addWoPartRow();
     document.getElementById("woTask").onchange = (e) => {
@@ -1280,8 +1276,8 @@ export function showPartDetailModal(part) {
 export function showWorkOrderDetailModal(workOrder) {
     if (!workOrder) return;
     const contentEl = document.getElementById('workOrderDetailContent');
-    const asset = state.cache.assets.find(a => a.id === workOrder.assetId);
-    const assignedUser = state.cache.users.find(u => u.id === workOrder.assignedTo);
+    const asset = state.lookupCache.assets.find(a => a.id === workOrder.assetId);
+    const assignedUser = state.lookupCache.users.find(u => u.id === workOrder.assignedTo);
 
     let durationHtml = '';
     if (workOrder.workDuration) {

@@ -28,6 +28,10 @@ export const state = {
     stockTakes: [],
     feedback: [],
   },
+  lookupCache: {
+    users: [],
+    assets: [],
+  },
   charts: {},
   sidebarSections: {
     management: true,
