@@ -1300,6 +1300,8 @@ export function showWorkOrderDetailModal(workOrder) {
         }
     }
 
+    const completedDateOnly = workOrder.completedDate ? workOrder.completedDate.split(' ')[0] : null;
+    
     contentEl.innerHTML = `
         <h2 class="text-2xl font-bold mb-4">${workOrder.title}</h2>
         <div class="grid grid-cols-2 gap-4 text-sm">
@@ -1309,7 +1311,7 @@ export function showWorkOrderDetailModal(workOrder) {
             <div><strong>Assigned To:</strong> ${assignedUser?.fullName || 'N/A'}</div>
             <div><strong>Due Date:</strong> ${workOrder.dueDate}</div>
             <div><strong>Task Type:</strong> ${workOrder.task}</div>
-            ${workOrder.completedDate ? `<div><strong>Completed On:</strong> ${workOrder.completedDate}</div>` : ''}
+            ${completedDateOnly ? `<div><strong>Completed On:</strong> ${completedDateOnly}</div>` : ''}
             ${durationHtml}
         </div>
         <h3 class="text-lg font-bold mt-6 mb-2">Description</h3>
