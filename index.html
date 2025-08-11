@@ -1397,8 +1397,9 @@
     </div>
       <div id="messageModal" class="modal">
         <div class="modal-content">
-          <h2 class="text-xl font-bold mb-4">Send Team Message</h2>
+          <h2 id="messageModalTitle" class="text-xl font-bold mb-4">Send Team Message</h2>
           <form id="messageForm">
+              <input type="hidden" id="messageParentId" value="">
               <div id="messageTargetDeptContainer" class="mb-4" style="display: none;">
                   <label for="messageTargetDept" class="block text-sm font-medium text-gray-700">Target Department (Admin)</label>
                   <select id="messageTargetDept" class="w-full mt-1 px-3 py-2 border rounded"></select>

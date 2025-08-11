@@ -1617,6 +1617,22 @@ function attachPageSpecificEventListeners(page) {
                 showTemporaryMessage('The messaging feature is currently disabled by the administrator.', true);
                 return;
             }
+            // Reset the modal for a new top-level message
+            document.getElementById('messageModalTitle').textContent = 'Send Team Message';
+            document.getElementById('messageParentId').value = '';
+            document.getElementById('messageForm').reset();
+            
+            const targetRoleContainer = document.getElementById('messageTargetRoleContainer');
+            if (['Admin', 'Manager', 'Supervisor'].includes(state.currentUser.role)) {
+                targetRoleContainer.style.display = 'block';
+            } else {
+                targetRoleContainer.style.display = 'none';
+            }
+            if(state.currentUser.role === 'Admin'){
+                 document.getElementById('messageTargetDeptContainer').style.display = 'block';
+            } else {
+                 document.getElementById('messageTargetDeptContainer').style.display = 'none';
+            }
             showMessageModal();
         });
 
@@ -1828,6 +1844,21 @@ function attachGlobalEventListeners() {
              return;
         }
         if (!button) return;
+        if (button.classList.contains('feedback-reply-btn')) {
+            const messageId = button.dataset.id;
+            
+            // Set the parent ID in the hidden form field
+            document.getElementById('messageParentId').value = messageId;
+            
+            // Update modal title and hide targeting options for replies
+            document.getElementById('messageModalTitle').textContent = 'Post a Reply';
+            document.getElementById('messageTargetRoleContainer').style.display = 'none';
+            document.getElementById('messageTargetDeptContainer').style.display = 'none';
+
+            // Show the modal
+            document.getElementById('messageModal').style.display = 'flex';
+            return; // Stop further execution
+        }
         if (button && button.id === 'sendFeedbackBtn') {
             showFeedbackToAdminModal(); // This now calls the correct, new modal
             return;
@@ -1990,16 +2021,22 @@ function attachGlobalEventListeners() {
         const targetRole = document.getElementById("messageTargetRole").value;
         const targetDept = document.getElementById("messageTargetDept").value;
 
-        const payload = { message, target_role: targetRole };
-        if (state.currentUser.role === 'Admin' && targetDept) {
-            payload.department_id = targetDept;
+        const parentId = document.getElementById("messageParentId").value;
+        
+        const payload = { message, parentId }; // Add parentId to payload
+        
+        // Only add targeting info if it's a new message, not a reply
+        if (!parentId) {
+            payload.target_role = targetRole;
+            if (state.currentUser.role === 'Admin' && targetDept) {
+                payload.department_id = targetDept;
+            }
         }
 
         try {
             await api.submitFeedback(payload); // The API endpoint is the same
             showTemporaryMessage("Message sent successfully!");
             document.getElementById("messageModal").style.display = "none";
-            // Refresh messages after sending
             state.cache.feedback = await api.getFeedback();
             renderMainContent();
         } catch(error) {

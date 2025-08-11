@@ -11,13 +11,19 @@ $user_id = $_SESSION['user_id'];
 $user_role = $_SESSION['user_role'];
 $user_department_id = $_SESSION['user_department_id'];
 $message = $data->message ?? '';
+// --- START: MODIFICATION ---
+$parent_id = isset($data->parentId) && !empty($data->parentId) ? intval($data->parentId) : null;
 
 // Determine the target role based on the 'action' parameter or default
-if (isset($data->action) && $data->action === 'send_to_admin') {
+// If it's a reply, target role is inherited, otherwise check the form data.
+if ($parent_id) {
+    $target_role = 'All'; // Replies don't have new targets
+} elseif (isset($data->action) && $data->action === 'send_to_admin') {
     $target_role = 'Admin';
 } else {
     $target_role = $data->target_role ?? 'All';
 }
+// --- END: MODIFICATION ---
 
 if (empty(trim($message))) {
     http_response_code(400);
@@ -26,7 +32,7 @@ if (empty(trim($message))) {
 }
 
 // Security check: Only certain roles can send targeted messages
-if (!in_array($user_role, ['Admin', 'Manager', 'Supervisor']) && $target_role !== 'All' && $target_role !== 'Admin') {
+if (!$parent_id && !in_array($user_role, ['Admin', 'Manager', 'Supervisor']) && $target_role !== 'All' && $target_role !== 'Admin') {
     http_response_code(403);
     echo json_encode(['message' => 'You do not have permission to send targeted messages.']);
     exit();
@@ -38,82 +44,77 @@ if ($user_role === 'Admin' && isset($data->department_id) && !empty($data->depar
     $department_id_to_log = intval($data->department_id);
 }
 
-// Start a transaction to ensure all database operations succeed or fail together
 $conn->begin_transaction();
 
 try {
-    // 1. Insert the main message into the feedback table
-    $sql = "INSERT INTO feedback (user_id, department_id, message, target_role) VALUES (?, ?, ?, ?)";
+    // --- START: MODIFICATION (Query and Bind Params) ---
+    $sql = "INSERT INTO feedback (user_id, department_id, message, target_role, parent_id) VALUES (?, ?, ?, ?, ?)";
     $stmt = $conn->prepare($sql);
     if ($stmt === false) {
         throw new Exception("Failed to prepare the database query. Ensure the 'feedback' table structure is correct.");
     }
-    $stmt->bind_param("iiss", $user_id, $department_id_to_log, $message, $target_role);
+    // The bind param string is now "iissi" to account for the integer parent_id
+    $stmt->bind_param("iissi", $user_id, $department_id_to_log, $message, $target_role, $parent_id);
+    // --- END: MODIFICATION ---
     $stmt->execute();
-    $feedback_id = $stmt->insert_id; // Get the ID of the new message
+    $feedback_id = $stmt->insert_id; 
     $stmt->close();
 
-    // 2. Find all users who should receive this message
-    $get_users_sql = "SELECT id FROM users";
-    $params = [];
-    $types = "";
-
-    if ($target_role === 'Admin') {
-        $get_users_sql .= " WHERE role = 'Admin'";
+    // The rest of the notification logic remains largely the same
+    if ($parent_id) {
+        // If it's a reply, notify only the parent author (if they aren't the one replying)
+        $stmt_parent = $conn->prepare("SELECT user_id FROM feedback WHERE id = ?");
+        $stmt_parent->bind_param("i", $parent_id);
+        $stmt_parent->execute();
+        $parent_author_id = $stmt_parent->get_result()->fetch_assoc()['user_id'];
+        $stmt_parent->close();
+        
+        $recipients = [['id' => $parent_author_id]];
     } else {
-        $get_users_sql .= " WHERE departmentId = ?";
-        $params[] = $department_id_to_log;
-        $types .= "i";
-        if ($target_role !== 'All') {
-            $get_users_sql .= " AND role = ?";
-            $params[] = $target_role;
-            $types .= "s";
+        // If it's a new message, find recipients as before
+        $get_users_sql = "SELECT id FROM users";
+        $params = [];
+        $types = "";
+        if ($target_role === 'Admin') {
+            $get_users_sql .= " WHERE role = 'Admin'";
+        } else {
+            $get_users_sql .= " WHERE departmentId = ?";
+            $params[] = $department_id_to_log;
+            $types .= "i";
+            if ($target_role !== 'All') {
+                $get_users_sql .= " AND role = ?";
+                $params[] = $target_role;
+                $types .= "s";
+            }
         }
+        $stmt_users = $conn->prepare($get_users_sql);
+        if (!empty($params)) { $stmt_users->bind_param($types, ...$params); }
+        $stmt_users->execute();
+        $recipients = $stmt_users->get_result()->fetch_all(MYSQLI_ASSOC);
+        $stmt_users->close();
     }
-
-    $stmt_users = $conn->prepare($get_users_sql);
-    if (!empty($params)) {
-        $stmt_users->bind_param($types, ...$params);
-    }
-    $stmt_users->execute();
-    $recipients = $stmt_users->get_result();
-
-    // 3. Create a 'New' status entry for each recipient in the tracking table
+    
+    // Create status and notification entries for recipients
     $stmt_status = $conn->prepare("INSERT INTO feedback_read_status (feedback_id, user_id, status) VALUES (?, ?, 'New')");
-    while ($user = $recipients->fetch_assoc()) {
-        // A user does not need a 'New' status for their own message
+    $notification_message = ($parent_id ? "New reply from " : "New message from ") . $_SESSION['user_fullname'];
+    $stmt_notify = $conn->prepare("INSERT INTO notifications (user_id, type, message, related_id) VALUES (?, 'team_message', ?, ?)");
+
+    foreach ($recipients as $user) {
         if ($user['id'] != $user_id) {
             $stmt_status->bind_param("ii", $feedback_id, $user['id']);
             $stmt_status->execute();
-        }
-    }
-    $stmt_users->close();
-    $stmt_status->close();
-
-    // 4. Create notifications for recipients
-    $sender_name = $_SESSION['user_fullname'];
-    $notification_message = "New message from " . $sender_name;
-    $stmt_notify = $conn->prepare("INSERT INTO notifications (user_id, type, message, related_id) VALUES (?, 'team_message', ?, ?)");
-    
-    // Rewind the recipients result set to loop through it again
-    $recipients->data_seek(0); 
-
-    while ($user = $recipients->fetch_assoc()) {
-        // Don't send a notification to the person who sent the message
-        if ($user['id'] != $user_id) {
             $stmt_notify->bind_param("isi", $user['id'], $notification_message, $feedback_id);
             $stmt_notify->execute();
         }
     }
+    $stmt_status->close();
     $stmt_notify->close();
-
-    // If everything was successful, commit the changes to the database
+    
     $conn->commit();
     http_response_code(201);
     echo json_encode(['message' => 'Message sent successfully.']);
 
 } catch (Exception $e) {
-    // If any step failed, roll back all database changes
     $conn->rollback();
     http_response_code(500);
     echo json_encode(['message' => 'Failed to send message.', 'error' => $e->getMessage()]);

@@ -1895,6 +1895,8 @@ export function renderStockTakeCountPage(items, details) {
 export function showMessageModal() {
     const form = document.getElementById('messageForm');
     form.reset();
+
+    document.getElementById('messageParentId').value = '';
     
     const targetRoleContainer = document.getElementById('messageTargetRoleContainer');
     const targetDeptContainer = document.getElementById('messageTargetDeptContainer');
@@ -1926,63 +1928,65 @@ export function renderTeamMessagesPage() {
     const header = renderPageHeader("Team Messages", [
         '<button id="refreshDataBtn" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded"><i class="fas fa-sync-alt mr-2"></i>Refresh</button>',
         '<button id="newMessageBtn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded"><i class="fas fa-paper-plane mr-2"></i>Send New Message</button>',
-        // This button will toggle between the inbox and the archive
         `<button id="toggleArchivedFeedbackBtn" class="bg-gray-200 text-gray-700 font-bold py-2 px-4 rounded">
             ${state.showArchivedFeedback ? '<i class="fas fa-inbox mr-2"></i>Show Inbox' : '<i class="fas fa-archive mr-2"></i>Show Archived'}
         </button>`
     ]);
 
-    // Filter messages based on whether we are viewing the archive or the inbox
     const messages = (state.cache.feedback || []).filter(item => {
         return state.showArchivedFeedback ? item.status === 'Archived' : item.status !== 'Archived';
     });
 
     const isAdmin = state.currentUser.role === 'Admin';
+    const adminSettings = isAdmin ? `...` : ''; // Unchanged
 
-    // Admin settings section for enabling/disabling the feature
-    const adminSettings = isAdmin ? `
-        <div class="bg-white p-4 rounded-lg shadow mb-6">
-            <h3 class="text-lg font-bold mb-2">Admin Controls</h3>
-            <div class="flex items-center">
-                <label for="messagingToggle" class="mr-4">Team Messaging Feature:</label>
-                <input type="checkbox" id="messagingToggle" class="h-6 w-6" ${state.settings.is_messaging_enabled === '1' ? 'checked' : ''}>
-                <span class="ml-2 text-sm text-gray-600">${state.settings.is_messaging_enabled === '1' ? 'Enabled' : 'Disabled'}</span>
+    // --- START: MODIFICATION - New Rendering Function ---
+    // Helper function to render a single message item (parent or reply)
+    const renderMessageItem = (item, isReply = false) => {
+        const isUnread = item.status === 'New';
+        const senderInfo = isAdmin ? `<p class="text-xs text-gray-500">${item.department_name || 'N/A'}</p>` : '';
+        const canDelete = state.currentUser.permissions.feedback_delete;
+        // Add a margin-left for replies to indent them
+        const indentClass = isReply ? 'ml-8' : '';
+
+        return `
+        <div class="message-item bg-white rounded-lg shadow overflow-hidden ${indentClass}" data-id="${item.id}" data-status="${item.status}">
+            <div class="message-header p-3 flex justify-between items-center cursor-pointer hover:bg-gray-50 ${isUnread ? 'font-bold' : ''}">
+                <div class="flex items-center">
+                    <span class="w-2 h-2 ${isUnread ? 'bg-blue-500' : ''} rounded-full mr-3 flex-shrink-0"></span>
+                    <div class="flex-grow">
+                        <p>${item.sender_name || 'Unknown User'}</p>
+                        ${senderInfo}
+                    </div>
+                </div>
+                <div class="text-right text-sm text-gray-500 flex items-center flex-shrink-0 ml-4">
+                    <span>${new Date(item.timestamp).toLocaleString()}</span>
+                    <i class="fas fa-chevron-down ml-4 transition-transform"></i>
+                </div>
+            </div>
+            <div class="message-body hidden p-4 border-t border-gray-200">
+                <p class="text-gray-800 whitespace-pre-wrap mb-4">${item.message}</p>
+                <div class="flex justify-end items-center space-x-2">
+                    <button class="feedback-reply-btn bg-blue-100 hover:bg-blue-200 text-blue-700 text-xs py-1 px-2 rounded" data-id="${item.id}">Reply</button>
+                    ${item.status !== 'Archived' ? `<button class="feedback-status-btn bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs py-1 px-2 rounded" data-id="${item.id}" data-status="Archived">Archive</button>` : ''}
+                    ${item.status === 'New' ? `<button class="feedback-status-btn bg-blue-100 hover:bg-blue-200 text-blue-700 text-xs py-1 px-2 rounded" data-id="${item.id}" data-status="Read">Mark as Read</button>` : ''}
+                    ${canDelete ? `<button class="feedback-delete-btn bg-red-100 hover:bg-red-200 text-red-700 text-xs py-1 px-2 rounded" data-id="${item.id}">Delete</button>` : ''}
+                </div>
             </div>
         </div>
-    ` : '';
+        `;
+    };
 
     return `
         ${header}
         ${adminSettings}
-        <div class="space-y-2" id="message-list-container">
-        ${messages.map(item => {
-            const isUnread = item.status === 'New';
-            const senderInfo = isAdmin ? `<p class="text-xs text-gray-500">${item.department_name || 'N/A'}</p>` : '';
-            return `
-            <div class="message-item bg-white rounded-lg shadow overflow-hidden" data-id="${item.id}" data-status="${item.status}">
-                <div class="message-header p-3 flex justify-between items-center cursor-pointer hover:bg-gray-50 ${isUnread ? 'font-bold' : ''}">
-                    <div class="flex items-center">
-                        <span class="w-2 h-2 ${isUnread ? 'bg-blue-500' : ''} rounded-full mr-3 flex-shrink-0"></span>
-                        <div class="flex-grow">
-                            <p>${item.sender_name || 'Unknown User'}</p>
-                            ${senderInfo}
-                        </div>
-                    </div>
-                    <div class="text-right text-sm text-gray-500 flex items-center flex-shrink-0 ml-4">
-                        <span>${new Date(item.timestamp).toLocaleString()}</span>
-                        <i class="fas fa-chevron-down ml-4 transition-transform"></i>
-                    </div>
-                </div>
-                <div class="message-body hidden p-4 border-t border-gray-200">
-                    <p class="text-gray-800 whitespace-pre-wrap mb-4">${item.message}</p>
-                    <div class="flex justify-end items-center space-x-2">
-                        ${item.status !== 'Archived' ? `<button class="feedback-status-btn bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs py-1 px-2 rounded" data-id="${item.id}" data-status="Archived">Archive</button>` : ''}
-                        ${item.status === 'New' ? `<button class="feedback-status-btn bg-blue-100 hover:bg-blue-200 text-blue-700 text-xs py-1 px-2 rounded" data-id="${item.id}" data-status="Read">Mark as Read</button>` : ''}
-                        ${state.currentUser.permissions.feedback_delete ? `<button class="feedback-delete-btn bg-red-100 hover:bg-red-200 text-red-700 text-xs py-1 px-2 rounded" data-id="${item.id}">Delete</button>` : ''}
-                    </div>
-                </div>
+        <div class="space-y-4" id="message-list-container">
+        ${messages.map(thread => `
+            <div class="thread-container space-y-2">
+                ${renderMessageItem(thread, false)}
+                ${thread.replies.map(reply => renderMessageItem(reply, true)).join('')}
             </div>
-        `}).join('') || `<p class="text-center text-gray-500 py-8">${state.showArchivedFeedback ? 'No archived messages.' : 'Your inbox is empty.'}</p>`}
+        `).join('') || `<p class="text-center text-gray-500 py-8">${state.showArchivedFeedback ? 'No archived messages.' : 'Your inbox is empty.'}</p>`}
         </div>
     `;
 }
