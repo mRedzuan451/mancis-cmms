@@ -1666,7 +1666,7 @@ export function showPmScheduleModal(schedule = null) {
     document.getElementById("pmDueDateBuffer").value = "";
 
     const assets = state.cache.assets.filter(can.view);
-    document.getElementById("pmAsset").innerHTML = '<option value="">Select Asset</option>' + assets.map((a) => `<option value="${a.id}">${a.name}</option>`).join("");
+    document.getElementById("pmAsset").innerHTML = '<option value="">Select Asset</option>' + assets.map((a) => `<option value="${a.id}">${a.name} (${getFullLocationName(a.locationId).split(' > ').pop()})</option>`).join("");
     const users = state.cache.users.filter((u) => ["Engineer", "Technician", "Supervisor"].includes(u.role) && can.view(u));
     document.getElementById("pmAssignedTo").innerHTML = '<option value="">Assign To</option>' + users.map((u) => `<option value="${u.id}">${u.fullName}</option>`).join("");
 
