@@ -1596,10 +1596,13 @@ export function renderPmSchedulesPage() {
         return dateB - dateA;
     });
 
+    const { permissions } = state.currentUser;
+
     const header = renderPageHeader("Preventive Maintenance Schedules", [
-        '<button id="generatePmWoBtn" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded"><i class="fas fa-cogs mr-2"></i>Generate PM Work Orders</button>',
-        '<button id="addPmScheduleBtn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded"><i class="fas fa-plus mr-2"></i>Add PM Schedule</button>'
+        permissions.wo_create ? '<button id="generatePmWoBtn" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded"><i class="fas fa-cogs mr-2"></i>Generate PM Work Orders</button>' : '',
+        permissions.pm_schedule_create ? '<button id="addPmScheduleBtn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded"><i class="fas fa-plus mr-2"></i>Add PM Schedule</button>' : ''
     ]);
+
     const statusColors = { 
         "Active": "bg-green-200 text-green-800",
         "Inactive": "bg-gray-200 text-gray-800",
@@ -1648,8 +1651,13 @@ export function renderPmSchedulesPage() {
                 
                 const followingPmDate = calculateNextPmDate({ ...s, last_generated_date: nextStartDateStr });
                 const statusColorClass = statusColors[status] || 'bg-gray-200';
-
                 const frequencyText = `${s.frequency_interval} ${s.frequency_unit}(s)`;
+                
+                // --- MODIFICATION START ---
+                // Check for create and delete permissions
+                const canCreate = state.currentUser.permissions.pm_schedule_create;
+                const canDelete = state.currentUser.permissions.pm_schedule_delete;
+                // --- MODIFICATION END ---
 
                 return `<tr class="border-b hover:bg-gray-50">
                     <td class="p-2">${s.title}</td>
@@ -1661,8 +1669,8 @@ export function renderPmSchedulesPage() {
                     <td class="p-2"><span class="px-2 py-1 text-xs font-semibold rounded-full ${statusColorClass}">${status}</span></td>
                     <td class="p-2 space-x-2">
                         <button class="view-pm-btn text-blue-500 hover:text-blue-700" data-id="${s.id}" title="View Details"><i class="fas fa-eye"></i></button>
-                        <button class="edit-pm-btn text-yellow-500 hover:text-yellow-700" data-id="${s.id}" title="Edit"><i class="fas fa-edit"></i></button>
-                        <button class="delete-pm-btn text-red-500 hover:text-red-700" data-id="${s.id}" title="Delete"><i class="fas fa-trash"></i></button>
+                        ${canCreate ? `<button class="edit-pm-btn text-yellow-500 hover:text-yellow-700" data-id="${s.id}" title="Edit"><i class="fas fa-edit"></i></button>` : ''}
+                        ${canDelete ? `<button class="delete-pm-btn text-red-500 hover:text-red-700" data-id="${s.id}" title="Delete"><i class="fas fa-trash"></i></button>` : ''}
                     </td>
                 </tr>`
             }).join('')}
