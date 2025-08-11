@@ -37,6 +37,10 @@ export const can = {
       return true;
     }
 
+    if (page === 'partBorrows') {
+        return permissions.part_borrow_request || permissions.part_borrow_approve;
+    }
+
     // Map pages to the specific permission required to view them.
     const pagePermissions = {
       assets: 'asset_view',
