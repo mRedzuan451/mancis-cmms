@@ -578,7 +578,6 @@ export function generateTableRows(type, data) {
       return `<tr><td colspan="10" class="text-center p-4 text-gray-500">No data available.</td></tr>`;
     }
 
-    // --- START: MODIFICATION (Added departmentId to sorter) ---
     data.sort((a, b) => {
       let valA = a[state.sortKey];
       let valB = b[state.sortKey];
@@ -592,7 +591,6 @@ export function generateTableRows(type, data) {
         valA = state.cache.locations.departments?.find(d => d.id === a.departmentId)?.name || '';
         valB = state.cache.locations.departments?.find(d => d.id === b.departmentId)?.name || '';
       }
-      // --- END: MODIFICATION ---
       if (typeof valA === "string") valA = valA.toLowerCase();
       if (typeof valB === "string") valB = valB.toLowerCase();
       if (valA < valB) return state.sortOrder === "asc" ? -1 : 1;
@@ -602,7 +600,6 @@ export function generateTableRows(type, data) {
     
     switch (type) {
       case "assets":
-        // --- START: MODIFICATION (Added department name and new <td>) ---
         return data.map((asset) => {
             const department = state.cache.locations.departments?.find(d => d.id === asset.departmentId);
             const departmentName = department ? department.name : 'N/A';
@@ -651,33 +648,34 @@ export function generateTableRows(type, data) {
         }).join("");
 
       case "workOrders":
-        const woStatusColors = { Open: "bg-blue-200 text-blue-800", "In Progress": "bg-yellow-200 text-yellow-800", "On Hold": "bg-orange-200 text-orange-800", Delay: "bg-red-200 text-red-800", Completed: "bg-green-200 text-green-800" };
-        return data.map((wo) => {
-            const assetName = state.lookupCache.assets.find((a) => a.id === parseInt(wo.assetId))?.name || "N/A";
-            const statusColorClass = woStatusColors[wo.status] || "bg-gray-200 text-gray-800";
-            return `
-              <tr class="border-b hover:bg-gray-50">
-                  <td class="p-2"><input type="checkbox" class="row-checkbox" data-id="${wo.id}"></td>
-                  <td class="p-2">${wo.title}</td>
-                  <td class="p-2">${assetName}</td>
-                  <td class="p-2">${wo.start_date}</td>
-                  <td class="p-2">${wo.dueDate}</td>
-                  <td class="p-2"><span class="px-2 py-1 text-xs font-semibold rounded-full ${statusColorClass}">${wo.status}</span></td>
-                  <td class="p-2 space-x-2 whitespace-nowrap">
-                      <button class="view-wo-btn text-blue-500 hover:text-blue-700" data-id="${wo.id}" title="View Details"><i class="fas fa-eye"></i></button>
-                      ${(wo.status === 'Open' || wo.status === 'On Hold' || wo.status === 'Delay') ? `
-                          <button class="start-wo-btn text-green-500 hover:text-green-700" data-id="${wo.id}" title="Start Work"><i class="fas fa-play-circle"></i></button>
-                      ` : ''}
-                      ${wo.status !== 'Completed' ? `
-                          <button class="edit-wo-btn text-yellow-500 hover:text-yellow-700" data-id="${wo.id}" title="Edit"><i class="fas fa-edit"></i></button>
-                          <button class="complete-wo-btn text-green-500 hover:text-green-700" data-id="${wo.id}" title="Complete"><i class="fas fa-check-circle"></i></button>
-                      ` : ''}
-                      ${state.currentUser.permissions.wo_delete ? `
-                          <button class="delete-wo-btn text-red-500 hover:text-red-700" data-id="${wo.id}" title="Delete"><i class="fas fa-trash"></i></button>
-                      ` : ''}
-                  </td>
-              </tr>`;
-          }).join("");
+            const woStatusColors = { Open: "bg-blue-200 text-blue-800", "In Progress": "bg-yellow-200 text-yellow-800", "On Hold": "bg-orange-200 text-orange-800", Delay: "bg-red-200 text-red-800", Completed: "bg-green-200 text-green-800" };
+            return data.map((wo) => {
+                const assetName = state.lookupCache.assets.find((a) => a.id === parseInt(wo.assetId))?.name || "N/A";
+                const statusColorClass = woStatusColors[wo.status] || "bg-gray-200 text-gray-800";
+                
+                // --- START: MODIFICATION ---
+                // Check if the WO is assigned to the current user and not yet complete
+                const isAssignedToMe = wo.assignedTo === state.currentUser.id;
+                const isNotCompleted = wo.status !== 'Completed';
+                const highlightClass = isAssignedToMe && isNotCompleted ? 'bg-blue-100 font-semibold' : '';
+                // --- END: MODIFICATION ---
+
+                return `
+                  <tr class="border-b hover:bg-gray-50 ${highlightClass}">
+                      <td class="p-2"><input type="checkbox" class="row-checkbox" data-id="${wo.id}"></td>
+                      <td class="p-2">${wo.title}</td>
+                      <td class="p-2">${assetName}</td>
+                      <td class="p-2">${wo.start_date}</td>
+                      <td class="p-2">${wo.dueDate}</td>
+                      <td class="p-2"><span class="px-2 py-1 text-xs font-semibold rounded-full ${statusColorClass}">${wo.status}</span></td>
+                      <td class="p-2 space-x-2 whitespace-nowrap">
+                          <button class="view-wo-btn text-blue-500 hover:text-blue-700" data-id="${wo.id}" title="View Details"><i class="fas fa-eye"></i></button>
+                          ${(wo.status === 'Open' || wo.status === 'On Hold' || wo.status === 'Delay') ? `<button class="start-wo-btn text-green-500 hover:text-green-700" data-id="${wo.id}" title="Start Work"><i class="fas fa-play-circle"></i></button>` : ''}
+                          ${wo.status !== 'Completed' ? `<button class="edit-wo-btn text-yellow-500 hover:text-yellow-700" data-id="${wo.id}" title="Edit"><i class="fas fa-edit"></i></button><button class="complete-wo-btn text-green-500 hover:text-green-700" data-id="${wo.id}" title="Complete"><i class="fas fa-check-circle"></i></button>` : ''}
+                          ${state.currentUser.permissions.wo_delete ? `<button class="delete-wo-btn text-red-500 hover:text-red-700" data-id="${wo.id}" title="Delete"><i class="fas fa-trash"></i></button>` : ''}
+                      </td>
+                  </tr>`;
+              }).join("");
       case "users":
         const canEditUsers = state.currentUser.permissions.user_edit;
         return data.map((user) => `
