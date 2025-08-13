@@ -130,7 +130,7 @@ export function renderAssetsPage() {
                           <th class="p-2 w-4"><input type="checkbox" id="selectAllCheckbox"></th>
                           <th class="p-2 text-left cursor-pointer" data-sort="name">Name <i class="fas fa-sort"></i></th>
                           <th class="p-2 text-left cursor-pointer" data-sort="tag">Tag <i class="fas fa-sort"></i></th>
-                          <th class="p-2 text-left cursor-pointer" data-sort="locationId">Location <i class="fas fa-sort"></i></th>
+                          <th class="p-2 text-left cursor-pointer" data-sort="locationId">Production Line <i class="fas fa-sort"></i></th>
                           <th class="p-2 text-left cursor-pointer" data-sort="status">Status <i class="fas fa-sort"></i></th>
                           <th class="p-2 text-left">Actions</th>
                       </tr>
@@ -578,6 +578,7 @@ export function generateTableRows(type, data) {
       return `<tr><td colspan="10" class="text-center p-4 text-gray-500">No data available.</td></tr>`;
     }
 
+    // --- START: MODIFICATION (Added departmentId to sorter) ---
     data.sort((a, b) => {
       let valA = a[state.sortKey];
       let valB = b[state.sortKey];
@@ -587,7 +588,11 @@ export function generateTableRows(type, data) {
       } else if (state.sortKey === "assetId") {
         valA = state.cache.assets.find((asset) => asset.id === parseInt(a.assetId))?.name || "";
         valB = state.cache.assets.find((asset) => asset.id === parseInt(b.assetId))?.name || "";
+      } else if (state.sortKey === "departmentId") {
+        valA = state.cache.locations.departments?.find(d => d.id === a.departmentId)?.name || '';
+        valB = state.cache.locations.departments?.find(d => d.id === b.departmentId)?.name || '';
       }
+      // --- END: MODIFICATION ---
       if (typeof valA === "string") valA = valA.toLowerCase();
       if (typeof valB === "string") valB = valB.toLowerCase();
       if (valA < valB) return state.sortOrder === "asc" ? -1 : 1;
@@ -597,11 +602,17 @@ export function generateTableRows(type, data) {
     
     switch (type) {
       case "assets":
-        return data.map((asset) => `
+        // --- START: MODIFICATION (Added department name and new <td>) ---
+        return data.map((asset) => {
+            const department = state.cache.locations.departments?.find(d => d.id === asset.departmentId);
+            const departmentName = department ? department.name : 'N/A';
+
+            return `
               <tr class="border-b hover:bg-gray-50">
                   <td class="p-2"><input type="checkbox" class="row-checkbox" data-id="${asset.id}"></td>
                   <td class="p-2">${asset.name}</td>
                   <td class="p-2">${asset.tag}</td>
+                  <td class="p-2">${departmentName}</td>
                   <td class="p-2">${getFullLocationName(asset.locationId)}</td>
                   <td class="p-2"><span class="px-2 py-1 text-xs font-semibold rounded-full ${asset.status === "Active" ? "bg-green-200 text-green-800" : "bg-gray-200 text-gray-800"}">${asset.status}</span></td>
                   <td class="p-2 space-x-2">
@@ -614,7 +625,8 @@ export function generateTableRows(type, data) {
                       
                       ${asset.status !== "Decommissioned" && state.currentUser.permissions.asset_edit ? `<button class="dispose-asset-btn text-gray-500 hover:text-gray-700" data-id="${asset.id}" title="Dispose"><i class="fas fa-ban"></i></button>` : ""}
                   </td>
-              </tr>`).join("");
+              </tr>`
+            }).join("");
       
       case "parts":
         const isAdmin = state.currentUser.role === 'Admin';
