@@ -612,7 +612,6 @@ export function generateTableRows(type, data) {
                   <td class="p-2"><input type="checkbox" class="row-checkbox" data-id="${asset.id}"></td>
                   <td class="p-2">${asset.name}</td>
                   <td class="p-2">${asset.tag}</td>
-                  <td class="p-2">${departmentName}</td>
                   <td class="p-2">${getFullLocationName(asset.locationId)}</td>
                   <td class="p-2"><span class="px-2 py-1 text-xs font-semibold rounded-full ${asset.status === "Active" ? "bg-green-200 text-green-800" : "bg-gray-200 text-gray-800"}">${asset.status}</span></td>
                   <td class="p-2 space-x-2">
