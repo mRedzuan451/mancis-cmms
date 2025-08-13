@@ -168,6 +168,7 @@ export function renderPartsPage() {
                           <th class="p-2 w-4"><input type="checkbox" id="selectAllCheckbox"></th>
                           <th class="p-2 text-left cursor-pointer" data-sort="name">Part Name <i class="fas fa-sort"></i></th>
                           <th class="p-2 text-left cursor-pointer" data-sort="sku">SKU <i class="fas fa-sort"></i></th>
+                          <th class="p-2 text-left cursor-pointer" data-sort="maker">Maker <i class="fas fa-sort"></i></th>
                           <th class="p-2 text-left cursor-pointer" data-sort="quantity">Quantity <i class="fas fa-sort"></i></th>
                           ${departmentHeader}
                           <th class="p-2 text-left">Actions</th>
@@ -636,6 +637,7 @@ export function generateTableRows(type, data) {
                   <td class="p-2"><input type="checkbox" class="row-checkbox" data-id="${part.id}"></td>
                   <td class="p-2">${part.name}</td>
                   <td class="p-2">${part.sku}</td>
+                  <td class="p-2">${part.maker || 'N/A'}</td>
                   <td class="p-2">${part.quantity} ${isLowStock ? '<span class="text-red-600 font-bold">(Low)</span>' : ""}</td>
                   ${departmentCell}
                   <td class="p-2 space-x-2">
