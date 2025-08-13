@@ -1,5 +1,6 @@
 <?php
 require_once 'auth_check.php';
+require_once 'location_helper.php'; // <-- ADD THIS LINE
 
 $servername = "localhost"; $username = "root"; $password = ""; $dbname = "mancis_db";
 $conn = new mysqli($servername, $username, $password, $dbname);
@@ -33,22 +34,25 @@ try {
     foreach ($data as $index => $asset) {
         $rowNum = $index + 2; // CSV row number (accounting for header)
 
-        if (empty($asset['tag']) || empty($asset['name'])) {
+        if (empty($asset['tag']) || empty($asset['name']) || empty($asset['locationId'])) {
             $failed++;
-            $errors[] = "Row $rowNum: Missing required field 'tag' or 'name'.";
+            $errors[] = "Row $rowNum: Missing required field 'tag', 'name', or 'locationId'.";
             continue;
         }
 
         $tag = trim($asset['tag']);
+        // --- START: MODIFICATION ---
+        $departmentId = getDepartmentIdFromLocation($asset['locationId'], $conn); // Calculate departmentId
 
         if (isset($existing_tags[$tag])) {
             // --- UPDATE ---
             $id = $existing_tags[$tag];
-            $stmt = $conn->prepare("UPDATE assets SET name=?, category=?, locationId=?, purchaseDate=?, cost=?, currency=?, status=? WHERE id=?");
-            $stmt->bind_param("ssssdssi", 
+            // Add departmentId to the UPDATE statement
+            $stmt = $conn->prepare("UPDATE assets SET name=?, category=?, locationId=?, purchaseDate=?, cost=?, currency=?, status=?, departmentId=? WHERE id=?");
+            $stmt->bind_param("ssssdssii", 
                 $asset['name'], $asset['category'], $asset['locationId'], 
                 $asset['purchaseDate'], $asset['cost'], $asset['currency'], 
-                $asset['status'], $id
+                $asset['status'], $departmentId, $id
             );
             if ($stmt->execute()) {
                 $updated++;
@@ -59,11 +63,13 @@ try {
             $stmt->close();
         } else {
             // --- CREATE ---
-            $stmt = $conn->prepare("INSERT INTO assets (tag, name, category, locationId, purchaseDate, cost, currency, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
-            $stmt->bind_param("sssssdss",
+            // Add departmentId and purchaseDate to the INSERT statement
+            $stmt = $conn->prepare("INSERT INTO assets (tag, name, category, locationId, purchaseDate, cost, currency, status, departmentId) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            $stmt->bind_param("sssssdssi",
                 $tag, $asset['name'], $asset['category'], $asset['locationId'],
-                $asset['purchaseDate'], $asset['cost'], $asset['currency'], $asset['status']
+                $asset['purchaseDate'], $asset['cost'], $asset['currency'], $asset['status'], $departmentId
             );
+            // --- END: MODIFICATION ---
             if ($stmt->execute()) {
                 $created++;
             } else {
