@@ -1,5 +1,6 @@
 // js/app.js
 
+import Papa from 'https://cdn.skypack.dev/papaparse'; // <-- 1. ADD THIS NEW LINE AT THE TOP
 import { state } from './config.js';
 import { api } from './api.js';
 import { handleLogin, handleLogout, handleRegistration, can } from './auth.js';
@@ -2208,8 +2209,6 @@ async function deletePartRequest(id) {
 }
 
 async function handleFileUpload(file, type) {
-    const Papa = window.Papa; // <-- ADD THIS LINE
-
     if (!file) return;
     if (file.type !== 'text/csv') {
         showTemporaryMessage('Please upload a valid .csv file.', true);
