@@ -2208,6 +2208,8 @@ async function deletePartRequest(id) {
 }
 
 async function handleFileUpload(file, type) {
+    const Papa = window.Papa; // <-- ADD THIS LINE
+
     if (!file) return;
     if (file.type !== 'text/csv') {
         showTemporaryMessage('Please upload a valid .csv file.', true);
