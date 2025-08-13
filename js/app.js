@@ -2225,7 +2225,7 @@ async function handleFileUpload(file, type) {
     Papa.parse(file, {
         header: true, // Automatically uses the first row as keys
         skipEmptyLines: true,
-        worker: true, // Use a separate thread for performance
+        worker: false, // Use a separate thread for performance
         
         // 'chunk' is called for each batch of rows
         chunk: async (results, parser) => {
