@@ -1,5 +1,6 @@
 // js/app.js
 
+import Papa from 'https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js'; // <-- ADD THIS LINE
 import { state } from './config.js';
 import { api } from './api.js';
 import { handleLogin, handleLogout, handleRegistration, can } from './auth.js';
