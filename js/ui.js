@@ -981,16 +981,11 @@ export function showPartModal(partId = null) {
     const form = document.getElementById("partForm");
     form.reset();
     document.getElementById("partId").value = "";
-
-    // --- START: MODIFICATION ---
-    // Create unique lists for part names and makers from the cache
+    
     const uniquePartNames = [...new Set(state.cache.parts.map(p => p.name))];
-    const uniqueMakers = [...new Set(state.cache.parts.map(p => p.maker).filter(Boolean))]; // filter(Boolean) removes null/empty values
-
-    // Populate the datalists for autocomplete suggestions
+    const uniqueMakers = [...new Set(state.cache.parts.map(p => p.maker).filter(Boolean))]; 
     document.getElementById('partNameList').innerHTML = uniquePartNames.map(name => `<option value="${name}"></option>`).join('');
     document.getElementById('partMakerList').innerHTML = uniqueMakers.map(maker => `<option value="${maker}"></option>`).join('');
-    // --- END: MODIFICATION ---
     
     const assetSelect = document.getElementById("partRelatedAssets");
     assetSelect.innerHTML = '';
@@ -1030,6 +1025,25 @@ export function showPartModal(partId = null) {
     } else {
         document.getElementById("partModalTitle").textContent = "Add Spare Part";
     }
+
+    // --- START: MODIFICATION ---
+    // Add event listener for the new asset search input
+    const assetSearchInput = document.getElementById('assetSearchInput');
+    assetSearchInput.value = ''; // Clear previous search
+    assetSearchInput.addEventListener('input', (e) => {
+        const searchTerm = e.target.value.toLowerCase();
+        const options = assetSelect.options;
+        for (let i = 0; i < options.length; i++) {
+            const optionText = options[i].textContent.toLowerCase();
+            if (optionText.includes(searchTerm)) {
+                options[i].style.display = '';
+            } else {
+                options[i].style.display = 'none';
+            }
+        }
+    });
+    // --- END: MODIFICATION ---
+
     document.getElementById("partModal").style.display = "flex";
 }
 
