@@ -1191,6 +1191,16 @@ export function addWoPartRow(selectedPartId = "", quantity = 1) {
 export function populateLocationDropdown(selectElement, type = "all") {
     const { productionLines = [], cabinets = [], shelves = [], boxes = [] } = state.cache.locations || {};
     let options = '<option value="">Select a location</option>';
+
+    // Helper to filter locations by the current user's department if they are not an Admin
+    const filterByDept = (locations, parentKey, parentList) => {
+        if (state.currentUser.role === 'Admin') return locations;
+        return locations.filter(loc => {
+            const parent = parentList.find(p => p.id === loc[parentKey]);
+            return parent && parent.departmentId === state.currentUser.departmentId;
+        });
+    };
+    
     if (type === "all" || type === "operational") {
         const filteredOpLocations = (state.currentUser.role === "Admin" ? productionLines : productionLines.filter((loc) => {
             const { subLines = [] } = state.cache.locations || {};
@@ -1201,16 +1211,26 @@ export function populateLocationDropdown(selectElement, type = "all") {
             options += `<optgroup label="Production Lines">${filteredOpLocations}</optgroup>`;
         }
     }
+
     if (type === "all" || type === "storage") {
-        const filteredStorageLocations = (state.currentUser.role === "Admin" ? boxes : boxes.filter((box) => {
-            const shelf = state.cache.locations.shelves.find((s) => s.id === box.shelfId);
-            const cabinet = shelf ? state.cache.locations.cabinets.find((c) => c.id === shelf.cabinetId) : null;
-            return cabinet && cabinet.departmentId === state.currentUser.departmentId;
-        })).map((loc) => `<option value="box-${loc.id}">${getFullLocationName(`box-${loc.id}`)}</option>`).join("");
-        if (filteredStorageLocations) {
-            options += `<optgroup label="Storage Boxes">${filteredStorageLocations}</optgroup>`;
-        }
+        // Filter cabinets, shelves, and boxes based on user's department
+        const userCabinets = state.currentUser.role === 'Admin' ? cabinets : cabinets.filter(c => c.departmentId === state.currentUser.departmentId);
+        const userCabinetIds = userCabinets.map(c => c.id);
+        const userShelves = shelves.filter(s => userCabinetIds.includes(s.cabinetId));
+        const userShelfIds = userShelves.map(s => s.id);
+        const userBoxes = boxes.filter(b => userShelfIds.includes(b.shelfId));
+
+        // Generate <option> tags for each type
+        const cabinetOptions = userCabinets.map(loc => `<option value="cab-${loc.id}">${getFullLocationName(`cab-${loc.id}`)}</option>`).join("");
+        const shelfOptions = userShelves.map(loc => `<option value="sh-${loc.id}">${getFullLocationName(`sh-${loc.id}`)}</option>`).join("");
+        const boxOptions = userBoxes.map(loc => `<option value="box-${loc.id}">${getFullLocationName(`box-${loc.id}`)}</option>`).join("");
+
+        // Add to the main options string with optgroups
+        if (cabinetOptions) options += `<optgroup label="Cabinets">${cabinetOptions}</optgroup>`;
+        if (shelfOptions) options += `<optgroup label="Shelves">${shelfOptions}</optgroup>`;
+        if (boxOptions) options += `<optgroup label="Storage Boxes">${boxOptions}</optgroup>`;
     }
+
     selectElement.innerHTML = options;
 }
 
