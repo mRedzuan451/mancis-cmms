@@ -2,9 +2,8 @@
 // backend/get_system_settings.php
 require_once 'auth_check.php';
 
-$servername = "localhost"; $username = "root"; $password = ""; $dbname = "mancis_db";
-$conn = new mysqli($servername, $username, $password, $dbname);
-if ($conn->connect_error) { die("Connection failed: " . $conn->connect_error); }
+require_once 'database.php';
+$conn = getDbConnection();
 
 $sql = "SELECT setting_key, setting_value FROM system_settings";
 $result = $conn->query($sql);

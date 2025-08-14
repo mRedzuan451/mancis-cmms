@@ -5,17 +5,12 @@
  * This script does NOT require authentication.
  */
 
+require_once 'database.php';
+
 header("Access-Control-Allow-Origin: *");
 header("Content-Type: application/json; charset=UTF-8");
 
-$servername = "localhost"; $username = "root"; $password = ""; $dbname = "mancis_db";
-$conn = new mysqli($servername, $username, $password, $dbname);
-
-if ($conn->connect_error) {
-    http_response_code(503); // Service Unavailable
-    echo json_encode(["message" => "Database service is currently unavailable."]);
-    exit();
-}
+$conn = getDbConnection();
 
 /**
  * A helper function to fetch data from a given table.

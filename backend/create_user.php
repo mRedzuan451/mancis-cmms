@@ -5,9 +5,8 @@ header("Content-Type: application/json; charset=UTF-8");
 header("Access-Control-Allow-Methods: POST");
 header("Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With");
 
-$servername = "localhost"; $username = "root"; $password = ""; $dbname = "mancis_db";
-$conn = new mysqli($servername, $username, $password, $dbname);
-if ($conn->connect_error) {
+require_once 'database.php';
+$conn = getDbConnection();
     // Return a server error if connection fails
     http_response_code(500);
     echo json_encode(["message" => "Connection failed: " . $conn->connect_error]);

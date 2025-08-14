@@ -2,9 +2,8 @@
 require_once 'auth_check.php';
 require_once 'permission_checker.php'; // Include the permission functions
 
-$servername = "localhost"; $username = "root"; $password = ""; $dbname = "mancis_db";
-$conn = new mysqli($servername, $username, $password, $dbname);
-if ($conn->connect_error) { die("Connection failed: " . $conn->connect_error); }
+require_once 'database.php';
+$conn = getDbConnection();
 
 // Check if the user has permission to either request or approve borrows.
 if (!has_permission('part_borrow_request', $conn) && !has_permission('part_borrow_approve', $conn)) {

@@ -33,7 +33,7 @@ register_shutdown_function(function () {
 
 
 // 1. SET UP CORS AND HANDLE PREFLIGHT REQUEST
-$allowed_origins = ['http://localhost', 'http://127.0.0.1', 'http://192.168.141.42'];
+require_once 'config.php'; // Load configuration including $allowed_origins
 
 if (isset($_SERVER['HTTP_ORIGIN']) && in_array($_SERVER['HTTP_ORIGIN'], $allowed_origins)) {
     header("Access-Control-Allow-Origin: " . $_SERVER['HTTP_ORIGIN']);
@@ -52,7 +52,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 session_set_cookie_params([
     'lifetime' => 86400,
     'path' => '/',
-    'secure' => false,
+    'secure' => true, // IMPORTANT: Set to true for production to send cookie only over HTTPS.
     'httponly' => true,
     'samesite' => 'Lax'
 ]);

@@ -5,9 +5,8 @@ date_default_timezone_set('Asia/Kuala_Lumpur');
 
 header("Content-Type: application/json; charset=UTF-8");
 
-$servername = "localhost"; $username = "root"; $password = ""; $dbname = "mancis_db";
-$conn = new mysqli($servername, $username, $password, $dbname);
-if ($conn->connect_error) { die("Connection failed: " . $conn->connect_error); }
+require_once 'database.php';
+$conn = getDbConnection();
 
 $data = json_decode(file_get_contents("php://input"));
 

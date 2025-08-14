@@ -14,19 +14,8 @@ error_reporting(E_ALL);
 header("Access-Control-Allow-Origin: *");
 header("Content-Type: application/json; charset=UTF-8");
 
-$servername = "localhost"; 
-$username = "root"; 
-$password = ""; 
-$dbname = "mancis_db";
-
-$conn = new mysqli($servername, $username, $password, $dbname);
-
-// Check connection
-if ($conn->connect_error) {
-    http_response_code(500);
-    echo json_encode(["message" => "Connection failed: " . $conn->connect_error]);
-    exit();
-}
+require_once 'database.php';
+$conn = getDbConnection();
 
 authorize('part_request_view', $conn);
 

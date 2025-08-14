@@ -4,9 +4,8 @@ require_once 'auth_check.php';
 // --- START: MODIFICATION ---
 // I found and fixed the same logical error in this related file.
 // 1. Establish the database connection FIRST.
-$servername = "localhost"; $username = "root"; $password = ""; $dbname = "mancis_db";
-$conn = new mysqli($servername, $username, $password, $dbname);
-if ($conn->connect_error) { 
+require_once 'database.php';
+$conn = getDbConnection();
     http_response_code(503);
     echo json_encode(["message" => "Database connection failed."]);
     exit();
