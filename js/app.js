@@ -395,7 +395,8 @@ async function deleteItem(type, id) {
             case 'users':
                 itemToDelete = state.cache.users.find(i => i.id === id);
                 await api.deleteUser(id);
-                state.cache.users = await api.getUsers();
+                const userResponse = await api.getUsers();
+                state.cache.users = userResponse.data; 
                 break;
             default:
                 throw new Error("Invalid item type for deletion.");
@@ -526,8 +527,6 @@ async function handleEditUserFormSubmit(e) {
     });
 
     try {
-        // --- THIS IS THE FIX ---
-        // We now send the role and permissions together in a single API call.
         await api.updateUserPermissions({ 
             userId, 
             role: newRole, 
@@ -537,7 +536,8 @@ async function handleEditUserFormSubmit(e) {
         await logActivity("User Permissions Updated", `Updated roles and permissions for user ID ${userId}`);
         
         // Refresh data and UI
-        state.cache.users = await api.getUsers();
+        const usersResponse = await api.getUsers();
+        state.cache.users = usersResponse.data;
         document.getElementById('editUserModal').style.display = 'none';
         renderMainContent();
         showTemporaryMessage("User role and permissions updated successfully!");
