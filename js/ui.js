@@ -1570,19 +1570,6 @@ export function renderInventoryReportPage() {
         </div>
         <div class="bg-white p-4 rounded-lg shadow mb-6">
             <form id="reportForm" class="flex items-end gap-4">
-
-                <div>
-                    <label for="dateRangeSelect" class="block text-sm font-medium text-gray-700">Date Range</label>
-                    <select id="dateRangeSelect" class="mt-1 px-3 py-2 border rounded w-full">
-                        <option value="custom">Custom Range</option>
-                        <option value="this-week">This Week</option>
-                        <option value="last-7-days">Last 7 Days</option>
-                        <option value="this-month">This Month</option>
-                        <option value="last-30-days">Last 30 Days</option>
-                        <option value="last-month">Last Month</option>
-                    </select>
-                </div>
-
                 <div>
                     <label for="startDate" class="block text-sm font-medium text-gray-700">Start Date</label>
                     <input type="date" id="startDate" value="${today}" class="mt-1 px-3 py-2 border rounded w-full">
@@ -1593,6 +1580,13 @@ export function renderInventoryReportPage() {
                 </div>
                 <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded">Generate Report</button>
             </form>
+        </div>
+        
+        <div class="bg-white p-4 rounded-lg shadow mb-6">
+            <h2 class="text-xl font-bold mb-4">Stock Movement Value (MYR)</h2>
+            <div id="inventoryTrendChartContainer" style="height: 350px;">
+                <canvas id="inventoryTrendChart"></canvas>
+            </div>
         </div>
         <div id="reportResultContainer" class="grid grid-cols-1 lg:grid-cols-5 gap-6">
             <div class="lg:col-span-3 bg-white p-4 rounded-lg shadow">
@@ -2508,6 +2502,64 @@ export function showBorrowRequestModal(part) {
             `).join('');
         } else {
             container.innerHTML = '<p class="text-red-500">Sorry, no other departments currently have this part in stock.</p>';
+        }
+    });
+}
+
+function renderInventoryTrendChart(trendData) {
+    const ctx = document.getElementById('inventoryTrendChart');
+    if (!ctx) return;
+
+    if (state.charts.inventoryTrendChart) {
+        state.charts.inventoryTrendChart.destroy();
+    }
+
+    const labels = Object.keys(trendData);
+    const stockInData = labels.map(date => trendData[date].stock_in_value);
+    const stockOutData = labels.map(date => trendData[date].stock_out_value);
+
+    state.charts.inventoryTrendChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Value of Parts In Stock',
+                    data: stockInData,
+                    borderColor: 'rgba(59, 130, 246, 1)',
+                    backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                    fill: true,
+                    tension: 0.1
+                },
+                {
+                    label: 'Value of Parts Out Stock',
+                    data: stockOutData,
+                    borderColor: 'rgba(239, 68, 68, 1)',
+                    backgroundColor: 'rgba(239, 68, 68, 0.2)',
+                    fill: true,
+                    tension: 0.1
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value, index, values) {
+                            return 'MYR ' + value;
+                        }
+                    }
+                }
+            },
+            plugins: {
+                tooltip: {
+                    mode: 'index',
+                    intersect: false,
+                },
+            },
         }
     });
 }
