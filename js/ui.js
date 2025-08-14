@@ -2506,7 +2506,7 @@ export function showBorrowRequestModal(part) {
     });
 }
 
-function renderInventoryTrendChart(trendData) {
+export function renderInventoryTrendChart(trendData) {
     const ctx = document.getElementById('inventoryTrendChart');
     if (!ctx) return;
 

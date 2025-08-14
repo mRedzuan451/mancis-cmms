@@ -55,6 +55,7 @@ import {
     renderCostReportPage,
     renderKpiReportPage,
     renderInventoryChart,
+    renderInventoryTrendChart,
     renderCostChart,
     showNotificationModal,
 } from './ui.js';
