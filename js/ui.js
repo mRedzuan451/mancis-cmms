@@ -484,7 +484,13 @@ export function renderLocationsPage() {
                                 ${isAdmin ? `<button class="delete-location-btn text-red-500" data-id="${s.id}" data-type="shelf"><i class="fas fa-trash"></i></button>` : ''}
                                </li>`;
                    }).join("") || '<li class="text-gray-500">No shelves found.</li>'}</ul>
-                  ${state.currentUser.permissions.location_management ? `<form id="addShelfForm" class="border-t pt-2"><select class="w-full mb-2 px-2 py-1 border rounded" required><option value="">Select Cabinet</option>${filteredCabinets.map(c => `<option value="${c.id}">${c.name}</option>`).join("")}</select><div class="flex gap-2"><input type="text" class="flex-grow px-2 py-1 border rounded" placeholder="New Shelf Name" required><button type="submit" class="bg-blue-500 text-white px-3 py-1 rounded">+</button></div></form>` : ''}
+                  ${state.currentUser.permissions.location_management ? `<form id="addShelfForm" class="border-t pt-2">
+                        <select class="w-full mb-2 px-2 py-1 border rounded" required>
+                            <option value="">Select Cabinet</option>
+                            ${filteredCabinets.map(c => `<option value="${c.id}">${getFullLocationName(`cab-${c.id}`)}</option>`).join("")}
+                            </select>
+                        <div class="flex gap-2"><input type="text" class="flex-grow px-2 py-1 border rounded" placeholder="New Shelf Name" required><button type="submit" class="bg-blue-500 text-white px-3 py-1 rounded">+</button></div>
+                    </form>` : ''}
                </div>
 
                <div>
