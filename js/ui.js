@@ -644,8 +644,11 @@ export function generateTableRows(type, data) {
                       <button class="view-part-btn text-blue-500 hover:text-blue-700" data-id="${part.id}" title="View Details"><i class="fas fa-eye"></i></button>
                       <button class="edit-part-btn text-yellow-500 hover:text-yellow-700" data-id="${part.id}" title="Edit"><i class="fas fa-edit"></i></button>
                       ${isLowStock ? `<button class="borrow-part-btn text-purple-500 hover:text-purple-700" data-id="${part.id}" title="Borrow from another department"><i class="fas fa-people-carry"></i></button>` : ''}
-                      <button class="delete-part-btn text-red-500 hover:text-red-700" data-id="${part.id}"><i class="fas fa-trash"></i></button>
-                  </td>
+                      
+                      ${state.currentUser.permissions.part_delete ? `
+                        <button class="delete-part-btn text-red-500 hover:text-red-700" data-id="${part.id}"><i class="fas fa-trash"></i></button>
+                      ` : ''}
+                      </td>
               </tr>`;
         }).join("");
 
