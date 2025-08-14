@@ -1410,25 +1410,28 @@ function attachPageSpecificEventListeners(page) {
             e.preventDefault();
             const startDate = document.getElementById('startDate').value;
             const endDate = document.getElementById('endDate').value;
-            // --- START: MODIFICATION ---
             const tableContainer = document.getElementById('costTableContainer');
             const chartContainer = document.getElementById('costChartContainer');
             tableContainer.innerHTML = '<p>Generating cost report, please wait...</p>';
-            chartContainer.innerHTML = '<canvas id="costChart"></canvas>'; // Reset canvas
-            // --- END: MODIFICATION ---
+            chartContainer.innerHTML = '<canvas id="costChart"></canvas>';
             
             try {
                 const reportData = await api.getCostReport({ startDate, endDate });
                 let grandTotalCost = 0;
                 
+                // --- START: MODIFICATION ---
                 let tableHTML = `
-                    <h2 class="text-xl font-bold mb-4">Report for ${startDate} to ${endDate}</h2>
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-xl font-bold">Report for ${startDate} to ${endDate}</h2>
+                        <button id="printReportBtn" class="bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-2 px-4 rounded"><i class="fas fa-print mr-2"></i>Print Report</button>
+                    </div>
                     <table class="w-full">
                         <thead><tr class="border-b">
                             <th class="p-2 text-left">Asset Name</th>
                             <th class="p-2 text-left">Department</th>
                             <th class="p-2 text-right">Total Parts Cost</th>
                         </tr></thead><tbody>`;
+                // --- END: MODIFICATION ---
                 
                 reportData.forEach(item => {
                     grandTotalCost += item.totalCost;
@@ -1449,9 +1452,13 @@ function attachPageSpecificEventListeners(page) {
                 
                 tableContainer.innerHTML = tableHTML;
 
-                // --- START: MODIFICATION ---
-                // Call the new chart rendering function
                 renderCostChart(reportData);
+                
+                // --- START: MODIFICATION ---
+                // Add the event listener for the newly created print button
+                document.getElementById('printReportBtn').addEventListener('click', () => {
+                    printReport(`Maintenance Cost Report: ${startDate} to ${endDate}`, tableContainer.innerHTML);
+                });
                 // --- END: MODIFICATION ---
 
             } catch (error) {
