@@ -1,16 +1,11 @@
 <?php
 require_once 'auth_check.php';
 
+require_once 'database.php';
+
 header("Content-Type: application/json; charset=UTF-8");
 
-$servername = "localhost"; $username = "root"; $password = ""; $dbname = "mancis_db";
-$conn = new mysqli($servername, $username, $password, $dbname);
-
-if ($conn->connect_error) {
-    http_response_code(500);
-    echo json_encode(["message" => "Database connection failed: " . $conn->connect_error]);
-    exit();
-}
+$conn = getDbConnection();
 
 authorize('asset_view', $conn);
 

@@ -37,14 +37,8 @@ header("Content-Type: application/json; charset=UTF-8");
 
 // --- END: FIX ---
 
-$servername = "localhost"; $username = "root"; $password = ""; $dbname = "mancis_db";
-$conn = new mysqli($servername, $username, $password, $dbname);
-
-if ($conn->connect_error) {
-    http_response_code(503);
-    echo json_encode(["message" => "Database connection failed. Please contact an administrator."]);
-    exit();
-}
+require_once 'database.php';
+$conn = getDbConnection();
 
 $data = json_decode(file_get_contents("php://input"));
 

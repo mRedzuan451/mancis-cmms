@@ -3,9 +3,8 @@ require_once 'auth_check.php';
 
 header("Content-Type: application/json; charset=UTF-8");
 
-$servername = "localhost"; $username = "root"; $password = ""; $dbname = "mancis_db";
-$conn = new mysqli($servername, $username, $password, $dbname);
-if ($conn->connect_error) { die("Connection failed: " . $conn->connect_error); }
+require_once 'database.php';
+$conn = getDbConnection();
 
 authorize('pm_schedule_view', $conn);
 

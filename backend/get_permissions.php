@@ -4,9 +4,8 @@ require_once 'permissions_config.php'; // Includes $permissions and $role_permis
 
 // It's good practice to secure this endpoint.
 // The database connection is now required for the authorize function.
-$servername = "localhost"; $username = "root"; $password = ""; $dbname = "mancis_db";
-$conn = new mysqli($servername, $username, $password, $dbname);
-if ($conn->connect_error) { 
+require_once 'database.php';
+$conn = getDbConnection();
     http_response_code(503);
     echo json_encode(["message"=> "Database connection failed."]);
     exit();

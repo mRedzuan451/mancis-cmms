@@ -2,9 +2,8 @@
 require_once 'auth_check.php';
 require_once 'permissions_config.php';
 
-$servername = "localhost"; $username = "root"; $password = ""; $dbname = "mancis_db";
-$conn = new mysqli($servername, $username, $password, $dbname);
-if ($conn->connect_error) { 
+require_once 'database.php';
+$conn = getDbConnection();
     http_response_code(503);
     echo json_encode(["message" => "Database connection failed."]);
     exit(); 

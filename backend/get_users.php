@@ -3,14 +3,8 @@ require_once 'auth_check.php';
 
 header("Content-Type: application/json; charset=UTF-8");
 
-$servername = "localhost"; $username = "root"; $password = ""; $dbname = "mancis_db";
-$conn = new mysqli($servername, $username, $password, $dbname);
-
-if ($conn->connect_error) {
-    http_response_code(500);
-    echo json_encode(["message" => "Connection Failed", "error" => $conn->connect_error]);
-    exit();
-}
+require_once 'database.php';
+$conn = getDbConnection();
 
 authorize('user_view', $conn);
 
