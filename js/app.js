@@ -1793,6 +1793,8 @@ function attachPageSpecificEventListeners(page) {
     } 
 }
 
+// js/app.js
+
 // --------------------- START: REPLACE THIS ENTIRE FUNCTION ---------------------
 function attachGlobalEventListeners() {
     // Authentication
@@ -1886,7 +1888,11 @@ function attachGlobalEventListeners() {
 
         const button = target.closest('button');
 
-        if (e.target.id === "refreshDataBtn") refreshAllDataAndRender();
+        // THIS IS THE CORRECTED LINE: Changed '=' to '===' for comparison
+        if (e.target.id === "refreshDataBtn") {
+            refreshAllDataAndRender();
+        }
+
         if (target.closest("[data-close-modal]")) {
             target.closest(".modal").style.display = "none";
             return;
@@ -2170,7 +2176,6 @@ function attachGlobalEventListeners() {
     });
 }
 // --------------------- END: REPLACE THIS ENTIRE FUNCTION ---------------------
-
 async function checkForNotifications() {
     try {
         const notifications = await api.getNotifications();
