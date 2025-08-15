@@ -1273,29 +1273,54 @@ function attachPageSpecificEventListeners(page) {
                        assetName.toLowerCase().includes(searchTerm);
             });
             const tableBody = document.getElementById("pmSchedulesTableBody");
-            if(tableBody) {
+            if (tableBody) {
                 tableBody.innerHTML = filtered.map(s => {
                     const assetName = state.cache.assets.find(a => a.id === s.assetId)?.name || 'N/A';
                     const openWoForSchedule = openWorkOrders.find(wo => wo.pm_schedule_id === s.id);
-                    let nextStartDate = s.last_generated_date || s.schedule_start_date;
+                    let nextStartDateStr = calculateNextPmDate(s);
+                    let nextDueDateStr = 'N/A';
+                    let status = s.is_active ? 'Active' : 'Inactive';
+                    
                     if (openWoForSchedule) {
-                        nextStartDate = openWoForSchedule.start_date;
+                        nextStartDateStr = openWoForSchedule.start_date;
+                        nextDueDateStr = openWoForSchedule.dueDate;
+                        status = openWoForSchedule.status;
+                    } else if (s.is_active) {
+                        const nextStartDate = new Date(nextStartDateStr + 'T00:00:00');
+                        if (!isNaN(nextStartDate.getTime())) {
+                            const bufferDays = s.due_date_buffer || 7;
+                            nextStartDate.setDate(nextStartDate.getDate() + bufferDays);
+                            nextDueDateStr = nextStartDate.toISOString().split('T')[0];
+                        }
                     }
-                    const followingPmDate = calculateNextPmDate(s);
+                    
+                    const followingPmDate = calculateNextPmDate({ ...s, last_generated_date: nextStartDateStr });
+                    const statusColors = { 
+                        "Active": "bg-green-200 text-green-800",
+                        "Inactive": "bg-gray-200 text-gray-800",
+                        "Open": "bg-blue-200 text-blue-800", 
+                        "In Progress": "bg-yellow-200 text-yellow-800", 
+                        "On Hold": "bg-orange-200 text-orange-800", 
+                        "Delay": "bg-red-200 text-red-800", 
+                    };
+                    const statusColorClass = statusColors[status] || 'bg-gray-200';
                     const frequencyText = `${s.frequency_interval} ${s.frequency_unit}(s)`;
+                    const canCreate = state.currentUser.permissions.pm_schedule_create;
+                    const canDelete = state.currentUser.permissions.pm_schedule_delete;
                     return `<tr class="border-b hover:bg-gray-50">
                         <td class="p-2">${s.title}</td>
                         <td class="p-2">${assetName}</td>
                         <td class="p-2">${frequencyText}</td>
-                        <td class="p-2 font-semibold">${nextStartDate || 'N/A'}</td>
-                        <td class="p-2 font-semibold">${followingPmDate}</td>
-                        <td class="p-2">${s.is_active ? '<span class="text-green-600">Active</span>' : '<span class="text-gray-500">Inactive</span>'}</td>
+                        <td class="p-2 font-semibold">${nextStartDateStr || 'N/A'}</td>
+                        <td class="p-2 font-semibold">${nextDueDateStr}</td>
+                        <td class="p-2">${followingPmDate}</td>
+                        <td class="p-2"><span class="px-2 py-1 text-xs font-semibold rounded-full ${statusColorClass}">${status}</span></td>
                         <td class="p-2 space-x-2">
                             <button class="view-pm-btn text-blue-500 hover:text-blue-700" data-id="${s.id}" title="View Details"><i class="fas fa-eye"></i></button>
-                            <button class="edit-pm-btn text-yellow-500 hover:text-yellow-700" data-id="${s.id}" title="Edit"><i class="fas fa-edit"></i></button>
-                            <button class="delete-pm-btn text-red-500 hover:text-red-700" data-id="${s.id}" title="Delete"><i class="fas fa-trash"></i></button>
+                            ${canCreate ? `<button class="edit-pm-btn text-yellow-500 hover:text-yellow-700" data-id="${s.id}" title="Edit"><i class="fas fa-edit"></i></button>` : ''}
+                            ${canDelete ? `<button class="delete-pm-btn text-red-500 hover:text-red-700" data-id="${s.id}" title="Delete"><i class="fas fa-trash"></i></button>` : ''}
                         </td>
-                    </tr>`
+                    </tr>`;
                 }).join('');
             }
         });
@@ -1305,7 +1330,7 @@ function attachPageSpecificEventListeners(page) {
             const form = e.target;
             const isAdmin = state.currentUser.role === 'Admin';
             
-            // CORRECTED LINE
+            // CORRECTED BLOCK (Bug 1)
             const locationData = {
                 type: 'cabinet',
                 name: form.querySelector('input[type="text"]').value,
@@ -1518,6 +1543,7 @@ function attachPageSpecificEventListeners(page) {
         const detailsId = parseInt(document.querySelector('.page-header-title').dataset.id);
         const details = state.cache.stockTakes.find(s => s.id === detailsId);
         const saveAndSubmitLogic = async (isSubmitting) => {
+            // CORRECTED BLOCK (Bug 2)
             const items = Array.from(document.querySelectorAll('.stock-take-qty-input')).map(input => ({
                 id: parseInt(input.dataset.id),
                 counted_qty: input.value,
