@@ -1,5 +1,6 @@
 <?php
 require_once 'auth_check.php';
+require_once 'location_helper.php';
 
 require_once 'database.php';
 $conn = getDbConnection();
@@ -39,14 +40,17 @@ try {
 
         $sku = trim($part['sku']);
 
+        $departmentId = getDepartmentIdFromLocation($part['locationId'], $conn); // Calculate departmentId
+
         if (isset($existing_skus[$sku])) {
             // --- UPDATE ---
             $id = $existing_skus[$sku];
-            $stmt = $conn->prepare("UPDATE parts SET name=?, category=?, quantity=?, minQuantity=?, locationId=?, maker=?, supplier=?, price=?, currency=? WHERE id=?");
-            $stmt->bind_param("ssiisssdii",
+            // Add departmentId to the UPDATE statement
+            $stmt = $conn->prepare("UPDATE parts SET name=?, category=?, quantity=?, minQuantity=?, locationId=?, maker=?, supplier=?, price=?, currency=?, departmentId=? WHERE id=?");
+            $stmt->bind_param("ssiisssdiii",
                 $part['name'], $part['category'], $part['quantity'], $part['minQuantity'],
                 $part['locationId'], $part['maker'], $part['supplier'],
-                $part['price'], $part['currency'], $id
+                $part['price'], $part['currency'], $departmentId, $id
             );
             if ($stmt->execute()) {
                 $updated++;
@@ -57,11 +61,12 @@ try {
             $stmt->close();
         } else {
             // --- CREATE ---
-            $stmt = $conn->prepare("INSERT INTO parts (sku, name, category, quantity, minQuantity, locationId, maker, supplier, price, currency) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-            $stmt->bind_param("sssiisssdi",
+            // Add departmentId to the INSERT statement
+            $stmt = $conn->prepare("INSERT INTO parts (sku, name, category, quantity, minQuantity, locationId, maker, supplier, price, currency, departmentId) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            $stmt->bind_param("sssiisssdii",
                 $sku, $part['name'], $part['category'], $part['quantity'], $part['minQuantity'],
                 $part['locationId'], $part['maker'], $part['supplier'],
-                $part['price'], $part['currency']
+                $part['price'], $part['currency'], $departmentId
             );
             if ($stmt->execute()) {
                 $created++;
