@@ -27,6 +27,13 @@ function getDepartmentIdFromLocation($locationId, $conn) {
                 JOIN shelves sh ON cab.id = sh.cabinetId
                 JOIN boxes b ON sh.id = b.shelfId
                 WHERE b.id = ?";
+    } else if ($type === 'sh') { // Shelf
+        $sql = "SELECT d.id FROM departments d
+                JOIN cabinets cab ON d.id = cab.departmentId
+                JOIN shelves sh ON cab.id = sh.cabinetId
+                WHERE sh.id = ?";
+    } else if ($type === 'cab') { // Cabinet
+        $sql = "SELECT departmentId as id FROM cabinets WHERE id = ?";
     } else {
         return null; // Not a location type that contains assets/parts
     }
