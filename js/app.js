@@ -1127,7 +1127,6 @@ function attachPageSpecificEventListeners(page) {
         });
         document.getElementById("addPartBtn")?.addEventListener("click", () => showPartModal());
         
-        // --- START: NEW SEARCH LOGIC ---
         let searchDebounceTimeout;
         document.getElementById("partSearch")?.addEventListener("input", (e) => {
             clearTimeout(searchDebounceTimeout);
@@ -1143,17 +1142,20 @@ function attachPageSpecificEventListeners(page) {
                     state.pagination.parts.totalPages = Math.ceil(response.total / response.limit);
                     state.pagination.parts.totalRecords = response.total;
 
-                    // Re-render only the table body and pagination controls
-                    document.getElementById("partTableBody").innerHTML = generateTableRows("parts", response.data);
-                    document.getElementById("partPagination").innerHTML = renderPagination('parts');
+                    // --- START: MODIFICATION ---
+                    // Added optional chaining (?.) for safety and improved the catch block.
+                    document.getElementById("partTableBody")?.innerHTML = generateTableRows("parts", response.data);
+                    document.getElementById("partPagination")?.innerHTML = renderPagination('parts');
+                    // --- END: MODIFICATION ---
 
                 } catch (error) {
+                    // This will now log the specific error to the console for better debugging.
+                    console.error("Error during search UI update:", error); 
                     showTemporaryMessage('Search failed.', true);
                 }
-            }, 300); // Wait 300ms after user stops typing
+            }, 300); 
         });
 
-        // --- Print Logic for Parts ---
         document.getElementById("printPartListBtn")?.addEventListener("click", () => {
             const partsToPrint = state.cache.parts.filter(can.view);
             const title = "Spare Part Inventory Report";
