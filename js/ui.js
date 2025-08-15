@@ -19,33 +19,34 @@ function renderPageHeader(title, buttons = []) {
 }
 
 export function renderDashboard() {
-  const { assets, workOrders, parts, partRequests } = state.cache;
+  const assets = state.cache.assets.filter(can.view);
+  const workOrders = state.cache.workOrders.filter(can.view);
+  const parts = state.cache.parts.filter(can.view);
+  const partRequests = state.cache.partRequests.filter(can.view);
 
-  // Use totalRecords for the main KPI boxes for accuracy.
-  const totalAssets = state.pagination.assets.totalRecords || 0;
-  const totalWorkOrders = state.pagination.workOrders.totalRecords || 0;
-  const totalPartRequests = state.pagination.partRequests.totalRecords || 0;
-  const totalParts = state.pagination.parts.totalRecords || 0;
-
-  // These calculations remain based on the cached data for the detailed lists on the dashboard.
-  const openWOs = workOrders.filter(can.view).filter((wo) => wo.status !== "Completed").length;
-  const pendingRequests = partRequests.filter(can.view).filter((pr) => pr.status === "Requested" || pr.status === "Requested from Storage").length;
-  const lowStockItems = parts.filter(can.view).filter((p) => parseInt(p.quantity) <= parseInt(p.minQuantity)).length;
+  const openWOs = workOrders.filter((wo) => wo.status !== "Completed").length;
+  const pendingRequests = partRequests.filter((pr) => pr.status === "Requested" || pr.status === "Requested from Storage").length;
+  const lowStockItems = parts.filter((p) => parseInt(p.quantity) <= parseInt(p.minQuantity)).length;
 
   const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  today.setHours(0, 0, 0, 0); // Set to the beginning of the current day.
 
   const sevenDaysFromNow = new Date(today);
-  sevenDaysFromNow.setDate(sevenDaysFromNow.getDate() + 7);
+  sevenDaysFromNow.setDate(sevenDaysFromNow.getDate() + 7); // Set the end of our 7-day window.
 
-  const upcomingPMs = workOrders.filter(can.view).filter(wo => {
+  const upcomingPMs = workOrders.filter(wo => {
       if (wo.wo_type !== 'PM' || wo.status === 'Completed') return false;
+
+      // Create a date object from the WO's start_date string in a way that avoids UTC conversion.
       const woStartDate = new Date(wo.start_date + 'T00:00:00');
+
+      // Check if the PM's start date falls within our 7-day window.
       return woStartDate >= today && woStartDate < sevenDaysFromNow;
   }).sort((a, b) => new Date(a.start_date) - new Date(b.start_date));
 
-  const overdueWOs = workOrders.filter(can.view).filter(wo => {
+  const overdueWOs = workOrders.filter(wo => {
       if (wo.status === 'Completed') return false;
+      // Use the same robust date creation for due dates.
       const woDueDate = new Date(wo.dueDate + 'T00:00:00');
       return woDueDate < today;
   }).sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
@@ -56,19 +57,19 @@ export function renderDashboard() {
         
         <div class="bg-white p-6 rounded-lg shadow cursor-pointer hover:bg-gray-50 dashboard-kpi-box" data-page="assets">
             <h3 class="text-gray-500">Total Assets</h3>
-            <p class="text-3xl font-bold">${totalAssets}</p>
+            <p class="text-3xl font-bold">${state.pagination.assets.totalRecords || 0}</p>
         </div>
         <div class="bg-white p-6 rounded-lg shadow cursor-pointer hover:bg-gray-50 dashboard-kpi-box" data-page="workOrders">
-            <h3 class="text-gray-500">Total Work Orders</h3>
-            <p class="text-3xl font-bold">${totalWorkOrders}</p>
+            <h3 class="text-gray-500">Open Work Orders</h3>
+            <p class="text-3xl font-bold">${openWOs}</p>
         </div>
         <div class="bg-white p-6 rounded-lg shadow cursor-pointer hover:bg-gray-50 dashboard-kpi-box" data-page="partRequests">
-            <h3 class="text-gray-500">Total Part Requests</h3>
-            <p class="text-3xl font-bold">${totalPartRequests}</p>
+            <h3 class="text-gray-500">Pending Part Requests</h3>
+            <p class="text-3xl font-bold">${pendingRequests}</p>
         </div>
         <div class="bg-white p-6 rounded-lg shadow cursor-pointer hover:bg-gray-50 dashboard-kpi-box" data-page="parts">
-            <h3 class="text-gray-500">Total Part Types</h3>
-            <p class="text-3xl font-bold">${totalParts}</p>
+            <h3 class="text-gray-500">Low Stock Items</h3>
+            <p class="text-3xl font-bold">${lowStockItems}</p>
         </div>
     </div>
     
