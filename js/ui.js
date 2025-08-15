@@ -2389,51 +2389,52 @@ export async function showNotificationModal() {
 function renderPagination(module) {
   const paginationState = state.pagination[module];
 
-  // The debug log confirmed this object is correct.
-  if (!paginationState || paginationState.totalPages <= 1) {
-    return '';
+  // If there's no data at all, show nothing.
+  if (!paginationState || paginationState.totalRecords === 0) {
+    return '<div class="flex items-center justify-between mt-4"><p class="text-sm text-gray-700">No results found.</p></div>';
   }
 
-  // --- START: MODIFICATION ---
-  // We will now access properties directly from paginationState to avoid any potential errors.
-  const currentPage = paginationState.currentPage;
-  const totalPages = paginationState.totalPages;
-  const totalRecords = paginationState.totalRecords;
-  const limit = paginationState.limit || 20; // Use a default just in case
+  const { currentPage, totalPages, totalRecords, limit } = paginationState;
 
   const startItem = (currentPage - 1) * limit + 1;
   const endItem = Math.min(currentPage * limit, totalRecords);
-  const showingLabel = `Showing <span class="font-medium">${startItem}</span> to <span class="font-medium">${endItem}</span> of <span class="font-medium">${totalRecords}</span> results`;
-  // --- END: MODIFICATION ---
+
+  // --- START: MODIFICATION ---
+  // The "Showing..." text is now created separately from the buttons.
+  const showingLabel = `
+    <p class="text-sm text-gray-700">
+      Showing <span class="font-medium">${startItem}</span> to <span class="font-medium">${endItem}</span> of <span class="font-medium">${totalRecords}</span> results
+    </p>`;
 
   let pageLinks = '';
-  for (let i = Math.max(1, currentPage - 2); i <= Math.min(totalPages, currentPage + 2); i++) {
-    const isCurrent = i === currentPage;
-    pageLinks += `<button data-page="${i}" data-module="${module}" class="pagination-link ${isCurrent ? 'z-10 bg-blue-50 border-blue-500 text-blue-600' : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'} relative inline-flex items-center px-4 py-2 border text-sm font-medium"> ${i} </button>`;
-  }
+  // The buttons are only created if there is more than one page.
+  if (totalPages > 1) {
+    for (let i = Math.max(1, currentPage - 2); i <= Math.min(totalPages, currentPage + 2); i++) {
+        const isCurrent = i === currentPage;
+        pageLinks += `<button data-page="${i}" data-module="${module}" class="pagination-link ${isCurrent ? 'z-10 bg-blue-50 border-blue-500 text-blue-600' : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'} relative inline-flex items-center px-4 py-2 border text-sm font-medium"> ${i} </button>`;
+    }
 
-  const html = `
+    const prevButton = currentPage > 1 ? `<button data-page="${currentPage - 1}" data-module="${module}" class="pagination-link relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"> &laquo; </button>` : '';
+    const nextButton = currentPage < totalPages ? `<button data-page="${currentPage + 1}" data-module="${module}" class="pagination-link relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"> &raquo; </button>` : '';
+    
+    pageLinks = `
+      <div>
+        <span class="relative z-0 inline-flex shadow-sm rounded-md">
+          ${prevButton}
+          ${pageLinks}
+          ${nextButton}
+        </span>
+      </div>`;
+  }
+  
+  // The final HTML combines the label and the (optional) buttons.
+  return `
     <nav class="flex items-center justify-between mt-4">
-      <div class="flex-1 flex justify-between sm:hidden">
-        ${currentPage > 1 ? `<button data-page="${currentPage - 1}" data-module="${module}" class="pagination-link relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"> Previous </button>` : '<div></div>'}
-        ${currentPage < totalPages ? `<button data-page="${currentPage + 1}" data-module="${module}" class="pagination-link relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"> Next </button>` : ''}
-      </div>
-      <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-        <p class="text-sm text-gray-700">
-          ${showingLabel}
-        </p>
-        <div>
-          <span class="relative z-0 inline-flex shadow-sm rounded-md">
-            ${currentPage > 1 ? `<button data-page="${currentPage - 1}" data-module="${module}" class="pagination-link relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"> &laquo; </button>` : ''}
-            ${pageLinks}
-            ${currentPage < totalPages ? `<button data-page="${currentPage + 1}" data-module="${module}" class="pagination-link relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"> &raquo; </button>` : ''}
-          </span>
-        </div>
-      </div>
+        ${showingLabel}
+        ${pageLinks}
     </nav>
   `;
-  
-  return html;
+  // --- END: MODIFICATION ---
 }
 
 export function showFeedbackToAdminModal() {
