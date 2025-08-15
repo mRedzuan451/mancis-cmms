@@ -859,12 +859,18 @@ export function renderSidebar() {
 
     const userInfo = document.getElementById("userInfo");
     if (!userInfo.querySelector('#notificationBellBtn')) {
+        // I've wrapped the buttons in a flex container to align them
         userInfo.querySelector('.flex.justify-between').innerHTML += `
-            <div class="relative">
-                <button id="notificationBellBtn" class="relative text-gray-400 hover:text-white">
-                    <i class="fas fa-bell fa-lg"></i>
-                    <span id="notificationBadge" class="absolute -top-2 -right-2 h-5 w-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center border-2 border-gray-800 hidden"></span>
+            <div class="flex items-center space-x-4">
+                <button id="sidebarRefreshBtn" class="text-gray-400 hover:text-white" title="Refresh Data">
+                    <i class="fas fa-sync-alt fa-lg"></i>
                 </button>
+                <div class="relative">
+                    <button id="notificationBellBtn" class="relative text-gray-400 hover:text-white">
+                        <i class="fas fa-bell fa-lg"></i>
+                        <span id="notificationBadge" class="absolute -top-2 -right-2 h-5 w-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center border-2 border-gray-800 hidden"></span>
+                    </button>
+                </div>
             </div>
         `;
     }

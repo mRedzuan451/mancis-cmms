@@ -1829,6 +1829,11 @@ function attachGlobalEventListeners() {
     });
     // Global click handler for delegated events
     document.body.addEventListener("click", (e) => {
+        const sidebarRefreshBtn = e.target.closest('#sidebarRefreshBtn');
+        if (sidebarRefreshBtn) {
+            refreshAllDataAndRender();
+            return; // Stop further execution
+        }
         const header = e.target.closest('[data-sort]');
         if (header) {
             const newSortKey = header.dataset.sort;
