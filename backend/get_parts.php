@@ -14,87 +14,68 @@ $user_department_id = $_SESSION['user_department_id'];
 $page = isset($_GET['page']) ? intval($_GET['page']) : 1;
 $limit = isset($_GET['limit']) ? intval($_GET['limit']) : 20;
 $offset = ($page - 1) * $limit;
+$searchTerm = isset($_GET['search']) ? $_GET['search'] : '';
 
-$total_records = 0;
-$output_array = [];
+$params = [];
+$types = "";
+$where_clauses = [];
 
-// --- START: MODIFICATION ---
-// These new queries are more robust. Instead of relying on a stored departmentId on the parts table,
-// they dynamically join through the location tables (boxes, shelves, cabinets) to find the correct department.
-// This is the same reliable logic used by the Work Orders list.
+$count_base = "SELECT COUNT(DISTINCT p.id) as total FROM parts p LEFT JOIN departments d ON p.departmentId = d.id";
+$data_base = "SELECT p.*, d.name as departmentName FROM parts p LEFT JOIN departments d ON p.departmentId = d.id";
 
-$count_base = "SELECT COUNT(DISTINCT p.id) as total 
-               FROM parts p 
-               LEFT JOIN boxes b ON p.locationId = CONCAT('box-', b.id)
-               LEFT JOIN shelves sh ON b.shelfId = sh.id
-               LEFT JOIN cabinets cab ON sh.cabinetId = cab.id";
+if ($user_role !== 'Admin') {
+    $where_clauses[] = "p.departmentId = ?";
+    $params[] = $user_department_id;
+    $types .= "i";
+}
 
-$data_base = "SELECT p.*, d.name as departmentName 
-              FROM parts p 
-              LEFT JOIN departments d ON p.departmentId = d.id"; // This join is now just for getting the name for Admins
+if (!empty($searchTerm)) {
+    $where_clauses[] = "(p.name LIKE ? OR p.sku LIKE ? OR p.maker LIKE ? OR p.category LIKE ?)";
+    $likeSearchTerm = "%" . $searchTerm . "%";
+    array_push($params, $likeSearchTerm, $likeSearchTerm, $likeSearchTerm, $likeSearchTerm);
+    $types .= "ssss";
+}
 
-// The WHERE clause now correctly filters by the department linked to the part's storage location.
-$where_clause = " WHERE cab.departmentId = ?";
-$order_clause = " ORDER BY p.name ASC";
+$where_sql = "";
+if (!empty($where_clauses)) {
+    $where_sql = " WHERE " . implode(" AND ", $where_clauses);
+}
 
-// 1. Get the total count of records
-if ($user_role === 'Admin') {
-    $stmt_count = $conn->prepare($count_base);
-} else {
-    // We add the joins here for non-admins to correctly filter the count.
-    $stmt_count = $conn->prepare($count_base . $where_clause);
-    $stmt_count->bind_param("i", $user_department_id);
+// Get total count
+$count_sql = $count_base . $where_sql;
+$stmt_count = $conn->prepare($count_sql);
+if (!empty($params)) {
+    $stmt_count->bind_param($types, ...$params);
 }
 $stmt_count->execute();
 $total_records = $stmt_count->get_result()->fetch_assoc()['total'];
 $stmt_count->close();
 
-// 2. Get the paginated data
-if ($user_role === 'Admin') {
-    $data_sql = $data_base . $order_clause;
-    if ($limit > 0) {
-        $data_sql .= " LIMIT ? OFFSET ?";
-        $stmt_data = $conn->prepare($data_sql);
-        $stmt_data->bind_param("ii", $limit, $offset);
-    } else {
-        $stmt_data = $conn->prepare($data_sql);
-    }
+// Get paginated data
+if ($limit > 0) {
+    $data_sql = $data_base . $where_sql . " ORDER BY p.name ASC LIMIT ? OFFSET ?";
+    $params[] = $limit;
+    $params[] = $offset;
+    $types .= "ii";
 } else {
-    // For non-admins, we add the joins to the main data query as well.
-    $data_sql = "SELECT p.*, d.name as departmentName 
-                 FROM parts p 
-                 LEFT JOIN departments d ON p.departmentId = d.id
-                 LEFT JOIN boxes b ON p.locationId = CONCAT('box-', b.id)
-                 LEFT JOIN shelves sh ON b.shelfId = sh.id
-                 LEFT JOIN cabinets cab ON sh.cabinetId = cab.id
-                 " . $where_clause . $order_clause;
-    if ($limit > 0) {
-        $data_sql .= " LIMIT ? OFFSET ?";
-        $stmt_data = $conn->prepare($data_sql);
-        $stmt_data->bind_param("iii", $user_department_id, $limit, $offset);
-    } else {
-        $stmt_data = $conn->prepare($data_sql);
-        $stmt_data->bind_param("i", $user_department_id);
-    }
+    $data_sql = $data_base . $where_sql . " ORDER BY p.name ASC";
 }
-// --- END: MODIFICATION ---
 
-
+$stmt_data = $conn->prepare($data_sql);
+if (!empty($params)) {
+    $stmt_data->bind_param($types, ...$params);
+}
 $stmt_data->execute();
 $result = $stmt_data->get_result();
 
-if ($result->num_rows > 0) {
-    while($row = $result->fetch_assoc()) {
-        $row['id'] = intval($row['id']);
-        $row['quantity'] = intval($row['quantity']);
-        $row['minQuantity'] = intval($row['minQuantity']);
-        $row['price'] = floatval($row['price']);
-        $row['relatedAssets'] = json_decode($row['relatedAssets']);
-        if (!is_array($row['relatedAssets'])) {
-            $row['relatedAssets'] = [];
-        }
-        $output_array[] = $row;
-    }
+$output_array = [];
+while($row = $result->fetch_assoc()) {
+    $row['id'] = intval($row['id']);
+    $row['quantity'] = intval($row['quantity']);
+    $row['minQuantity'] = intval($row['minQuantity']);
+    $row['price'] = floatval($row['price']);
+    $row['relatedAssets'] = json_decode($row['relatedAssets']) ?: [];
+    $output_array[] = $row;
 }
 $stmt_data->close();
 $conn->close();

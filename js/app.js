@@ -185,10 +185,14 @@ async function loadAndRender() {
 async function handlePageChange(module, page) {
     try {
         let response;
+        // Get the current search term from the input box, if it exists
+        const searchInput = document.getElementById(`${module.slice(0, -1)}Search`);
+        const searchTerm = searchInput ? searchInput.value : '';
+
         if (module === 'assets') {
-            response = await api.getAssets(page);
+            response = await api.getAssets(page); // Asset search not implemented yet
         } else if (module === 'parts') {
-            response = await api.getParts(page);
+            response = await api.getParts(page, 20, searchTerm); // Pass search term
         } else if (module === 'workOrders') {
             response = await api.getWorkOrders(page);
         } else if (module === 'partRequests') {
@@ -198,7 +202,7 @@ async function handlePageChange(module, page) {
         }
 
         if (response) {
-            state.cache[module] = response.data; // Essential: update the cache
+            state.cache[module] = response.data;
             state.pagination[module].currentPage = response.page;
             state.pagination[module].totalPages = Math.ceil(response.total / response.limit);
             state.pagination[module].totalRecords = response.total;
@@ -1123,15 +1127,30 @@ function attachPageSpecificEventListeners(page) {
         });
         document.getElementById("addPartBtn")?.addEventListener("click", () => showPartModal());
         
-        // --- Search Logic for Parts ---
+        // --- START: NEW SEARCH LOGIC ---
+        let searchDebounceTimeout;
         document.getElementById("partSearch")?.addEventListener("input", (e) => {
-            const searchTerm = e.target.value.toLowerCase();
-            const filtered = state.cache.parts.filter(can.view).filter(p =>
-                p.name.toLowerCase().includes(searchTerm) ||
-                p.sku.toLowerCase().includes(searchTerm) ||
-                p.category.toLowerCase().includes(searchTerm)
-            );
-            document.getElementById("partTableBody").innerHTML = generateTableRows("parts", filtered);
+            clearTimeout(searchDebounceTimeout);
+            const searchTerm = e.target.value;
+
+            searchDebounceTimeout = setTimeout(async () => {
+                try {
+                    showTemporaryMessage(`Searching for "${searchTerm}"...`);
+                    const response = await api.getParts(1, 20, searchTerm);
+
+                    state.cache.parts = response.data;
+                    state.pagination.parts.currentPage = response.page;
+                    state.pagination.parts.totalPages = Math.ceil(response.total / response.limit);
+                    state.pagination.parts.totalRecords = response.total;
+
+                    // Re-render only the table body and pagination controls
+                    document.getElementById("partTableBody").innerHTML = generateTableRows("parts", response.data);
+                    document.getElementById("partPagination").innerHTML = renderPagination('parts');
+
+                } catch (error) {
+                    showTemporaryMessage('Search failed.', true);
+                }
+            }, 300); // Wait 300ms after user stops typing
         });
 
         // --- Print Logic for Parts ---
