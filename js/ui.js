@@ -848,6 +848,18 @@ export function renderSidebar() {
     const navMenu = document.getElementById("navMenu");
     navMenu.innerHTML = navHtml;
 
+    const userInfo = document.getElementById("userInfo");
+    const headerButtonsContainer = userInfo.querySelector('.flex.justify-between > div:last-child');
+    
+    // Check if the refresh button is missing, and if so, add it.
+    if (headerButtonsContainer && !headerButtonsContainer.querySelector('#sidebarRefreshBtn')) {
+        headerButtonsContainer.insertAdjacentHTML('afterbegin', `
+            <button id="sidebarRefreshBtn" class="text-gray-400 hover:text-white mr-4" title="Refresh Data">
+                <i class="fas fa-sync-alt fa-lg"></i>
+            </button>
+        `);
+    }
+
     const sidebarFooter = document.getElementById("sidebar-footer");
     if (!sidebarFooter.querySelector('#sendFeedbackBtn')) {
         sidebarFooter.insertAdjacentHTML('afterbegin', `
@@ -857,7 +869,6 @@ export function renderSidebar() {
         `);
     }
 
-    const userInfo = document.getElementById("userInfo");
     if (!userInfo.querySelector('#notificationBellBtn')) {
         // I've wrapped the buttons in a flex container to align them
         userInfo.querySelector('.flex.justify-between').innerHTML += `
