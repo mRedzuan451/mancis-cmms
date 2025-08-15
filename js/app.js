@@ -975,6 +975,7 @@ async function handleMassDelete(type) {
 }
 
 function attachPageSpecificEventListeners(page) {
+    // This helper function sets up the checkbox and "Delete Selected" button logic for a given page
     const setupCheckboxLogic = (pageType) => {
         const selectAllCheckbox = document.getElementById('selectAllCheckbox');
         const rowCheckboxes = document.querySelectorAll('.row-checkbox');
@@ -992,7 +993,9 @@ function attachPageSpecificEventListeners(page) {
 
         rowCheckboxes.forEach(checkbox => {
             checkbox.addEventListener('change', () => {
-                if (!checkbox.checked) selectAllCheckbox.checked = false;
+                if (!checkbox.checked) {
+                    selectAllCheckbox.checked = false;
+                }
                 toggleDeleteButton();
             });
         });
@@ -1009,11 +1012,13 @@ function attachPageSpecificEventListeners(page) {
         renderStatusChart(statusCounts);
     }
 
+    // Apply the checkbox logic to all pages that have a table list
     if (['assets', 'parts', 'workOrders', 'userManagement'].includes(page)) {
         const itemType = page === 'userManagement' ? 'users' : page;
         setupCheckboxLogic(itemType);
     }
     
+    // Attach any other event listeners that are specific to a certain page
     if (page === 'assets') {
         document.getElementById("uploadAssetsBtn")?.addEventListener("click", () => {
             showUploadModal('assets');
@@ -1027,11 +1032,14 @@ function attachPageSpecificEventListeners(page) {
             const searchTerm = e.target.value.toLowerCase();
             const filtered = state.cache.assets.filter(can.view).filter(a =>
                 a.name.toLowerCase().includes(searchTerm) ||
-                a.tag.toLowerCase().includes(searchTerm) ||
-                a.category.toLowerCase().includes(searchTerm) ||
+                (a.tag && a.tag.toLowerCase().includes(searchTerm)) ||
+                (a.category && a.category.toLowerCase().includes(searchTerm)) ||
                 getFullLocationName(a.locationId).toLowerCase().includes(searchTerm)
             );
-            document.getElementById("assetTableBody").innerHTML = generateTableRows("assets", filtered);
+            const assetTableBody = document.getElementById("assetTableBody");
+            if(assetTableBody) {
+                assetTableBody.innerHTML = generateTableRows("assets", filtered);
+            }
         });
         
         document.getElementById("printAssetListBtn")?.addEventListener("click", () => {
@@ -1265,54 +1273,29 @@ function attachPageSpecificEventListeners(page) {
                        assetName.toLowerCase().includes(searchTerm);
             });
             const tableBody = document.getElementById("pmSchedulesTableBody");
-            if (tableBody) {
+            if(tableBody) {
                 tableBody.innerHTML = filtered.map(s => {
                     const assetName = state.cache.assets.find(a => a.id === s.assetId)?.name || 'N/A';
                     const openWoForSchedule = openWorkOrders.find(wo => wo.pm_schedule_id === s.id);
-                    let nextStartDateStr = calculateNextPmDate(s);
-                    let nextDueDateStr = 'N/A';
-                    let status = s.is_active ? 'Active' : 'Inactive';
-                    
+                    let nextStartDate = s.last_generated_date || s.schedule_start_date;
                     if (openWoForSchedule) {
-                        nextStartDateStr = openWoForSchedule.start_date;
-                        nextDueDateStr = openWoForSchedule.dueDate;
-                        status = openWoForSchedule.status;
-                    } else if (s.is_active) {
-                        const nextStartDate = new Date(nextStartDateStr + 'T00:00:00');
-                        if (!isNaN(nextStartDate.getTime())) {
-                            const bufferDays = s.due_date_buffer || 7;
-                            nextStartDate.setDate(nextStartDate.getDate() + bufferDays);
-                            nextDueDateStr = nextStartDate.toISOString().split('T')[0];
-                        }
+                        nextStartDate = openWoForSchedule.start_date;
                     }
-                    
-                    const followingPmDate = calculateNextPmDate({ ...s, last_generated_date: nextStartDateStr });
-                    const statusColors = { 
-                        "Active": "bg-green-200 text-green-800",
-                        "Inactive": "bg-gray-200 text-gray-800",
-                        "Open": "bg-blue-200 text-blue-800", 
-                        "In Progress": "bg-yellow-200 text-yellow-800", 
-                        "On Hold": "bg-orange-200 text-orange-800", 
-                        "Delay": "bg-red-200 text-red-800", 
-                    };
-                    const statusColorClass = statusColors[status] || 'bg-gray-200';
+                    const followingPmDate = calculateNextPmDate(s);
                     const frequencyText = `${s.frequency_interval} ${s.frequency_unit}(s)`;
-                    const canCreate = state.currentUser.permissions.pm_schedule_create;
-                    const canDelete = state.currentUser.permissions.pm_schedule_delete;
                     return `<tr class="border-b hover:bg-gray-50">
                         <td class="p-2">${s.title}</td>
                         <td class="p-2">${assetName}</td>
                         <td class="p-2">${frequencyText}</td>
-                        <td class="p-2 font-semibold">${nextStartDateStr || 'N/A'}</td>
-                        <td class="p-2 font-semibold">${nextDueDateStr}</td>
-                        <td class="p-2">${followingPmDate}</td>
-                        <td class="p-2"><span class="px-2 py-1 text-xs font-semibold rounded-full ${statusColorClass}">${status}</span></td>
+                        <td class="p-2 font-semibold">${nextStartDate || 'N/A'}</td>
+                        <td class="p-2 font-semibold">${followingPmDate}</td>
+                        <td class="p-2">${s.is_active ? '<span class="text-green-600">Active</span>' : '<span class="text-gray-500">Inactive</span>'}</td>
                         <td class="p-2 space-x-2">
                             <button class="view-pm-btn text-blue-500 hover:text-blue-700" data-id="${s.id}" title="View Details"><i class="fas fa-eye"></i></button>
-                            ${canCreate ? `<button class="edit-pm-btn text-yellow-500 hover:text-yellow-700" data-id="${s.id}" title="Edit"><i class="fas fa-edit"></i></button>` : ''}
-                            ${canDelete ? `<button class="delete-pm-btn text-red-500 hover:text-red-700" data-id="${s.id}" title="Delete"><i class="fas fa-trash"></i></button>` : ''}
+                            <button class="edit-pm-btn text-yellow-500 hover:text-yellow-700" data-id="${s.id}" title="Edit"><i class="fas fa-edit"></i></button>
+                            <button class="delete-pm-btn text-red-500 hover:text-red-700" data-id="${s.id}" title="Delete"><i class="fas fa-trash"></i></button>
                         </td>
-                    </tr>`;
+                    </tr>`
                 }).join('');
             }
         });
@@ -1322,6 +1305,7 @@ function attachPageSpecificEventListeners(page) {
             const form = e.target;
             const isAdmin = state.currentUser.role === 'Admin';
             
+            // CORRECTED LINE
             const locationData = {
                 type: 'cabinet',
                 name: form.querySelector('input[type="text"]').value,
@@ -1685,7 +1669,6 @@ function attachPageSpecificEventListeners(page) {
                 if (deleteButton) {
                     deleteButton.disabled = true;
                     deleteButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-
                     const id = parseInt(deleteButton.dataset.id);
 
                     setTimeout(async () => {
