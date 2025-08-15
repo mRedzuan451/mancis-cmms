@@ -1804,9 +1804,7 @@ function attachGlobalEventListeners() {
         const divisionSelect = document.getElementById('regDivision');
         const departmentSelect = document.getElementById('regDepartment');
 
-        // Always fetch fresh, public location data for the registration form.
         api.getPublicLocations().then(locations => {
-            // Pass the fetched data directly to the dropdown population function.
             populateLocationDropdowns(divisionSelect, departmentSelect, locations);
         }).catch(error => {
             console.error("Could not load locations for registration:", error);
@@ -1816,7 +1814,8 @@ function attachGlobalEventListeners() {
     });
     document.getElementById("registrationForm").addEventListener("submit", (e) => handleRegistration(e, async () => {
         if (state.currentUser?.role === 'Admin') {
-            state.cache.users = await api.getUsers();
+            const usersResponse = await api.getUsers();
+            state.cache.users = usersResponse.data;
             renderMainContent();
         }
     }));
@@ -1834,8 +1833,9 @@ function attachGlobalEventListeners() {
         const sidebarRefreshBtn = e.target.closest('#sidebarRefreshBtn');
         if (sidebarRefreshBtn) {
             refreshAllDataAndRender();
-            return; // Stop further execution
+            return; 
         }
+
         const header = e.target.closest('[data-sort]');
         if (header) {
             const newSortKey = header.dataset.sort;
@@ -1845,7 +1845,6 @@ function attachGlobalEventListeners() {
                 state.sortKey = newSortKey;
                 state.sortOrder = 'asc';
             }
-            // Re-render only the main content area, which will trigger the table to be re-drawn and sorted
             renderMainContent();
         }
         const target = e.target;
@@ -1855,7 +1854,7 @@ function attachGlobalEventListeners() {
             const page = parseInt(paginationLink.dataset.page);
             const module = paginationLink.dataset.module;
             handlePageChange(module, page);
-            return; // Stop further execution
+            return;
         }
 
         const kpiBox = target.closest('.dashboard-kpi-box');
@@ -1865,25 +1864,23 @@ function attachGlobalEventListeners() {
                 state.currentPage = page;
                 render();
             }
-            return; // Stop further execution
+            return;
         }
 
         const notificationItem = e.target.closest('.notification-item');
         if (notificationItem) {
             const type = notificationItem.dataset.notificationType;
             
-            // Close the notification modal first
             document.getElementById('notificationModal').style.display = 'none';
 
             if (type === 'team_message') {
                 state.currentPage = 'feedback';
-                render(); // Navigate to the team messages page
+                render(); 
             } else if (type === 'part_request_update' || type === 'part_request_new') {
-                // Navigate directly to the part requests page
                 state.currentPage = 'partRequests';
                 render(); 
             }
-            return; // Stop further execution
+            return; 
         }
 
         const button = target.closest('button');
@@ -1909,41 +1906,33 @@ function attachGlobalEventListeners() {
         if (button.classList.contains('feedback-reply-btn')) {
             const messageId = button.dataset.id;
             
-            // Set the parent ID in the hidden form field
             document.getElementById('messageParentId').value = messageId;
             
-            // Update modal title and hide targeting options for replies
             document.getElementById('messageModalTitle').textContent = 'Post a Reply';
             document.getElementById('messageTargetRoleContainer').style.display = 'none';
             document.getElementById('messageTargetDeptContainer').style.display = 'none';
 
-            // Show the modal
             document.getElementById('messageModal').style.display = 'flex';
-            return; // Stop further execution
+            return;
         }
         if (button && button.id === 'sendFeedbackBtn') {
-            showFeedbackToAdminModal(); // This now calls the correct, new modal
+            showFeedbackToAdminModal();
             return;
         }
         if (button.classList.contains('view-stock-take-btn')) {
             const stockTakeId = parseInt(button.dataset.id);
-            // Explicitly call the function to load the details page
             loadAndRenderStockTakeDetails(stockTakeId);
             return; 
         }
         if (button.classList.contains('sidebar-section-toggle')) {
             const sectionId = button.dataset.sectionId;
             if (sectionId) {
-                // Toggle the state for that section
                 state.sidebarSections[sectionId] = !state.sidebarSections[sectionId];
-                renderSidebar(); // Re-render just the sidebar
+                renderSidebar();
             }
             return;
         }
-        if (button.id === 'sendFeedbackBtn') {
-            showFeedbackToAdminModal(); // Changed from showMessageModal()
-            return;
-        }
+        
         const id = button.dataset.id ? parseInt(button.dataset.id) : null;
         const actions = {
             "view-asset-btn": () => showAssetDetailModal(state.cache.assets.find(a => a.id === id)),
@@ -1991,24 +1980,17 @@ function attachGlobalEventListeners() {
             "approve-pr-btn": () => handlePartRequestAction(id, 'Approved'),
             "reject-pr-btn": () => handlePartRequestAction(id, 'Rejected'),
             "delete-location-btn": () => deleteLocation(button.dataset.type, id),
-
-            // **FIX for Work Order Modal Checklist**
             "addChecklistItemBtn": () => {
                 const input = document.getElementById('newChecklistItem');
                 if (input.value) { addChecklistItem(input.value, 'woChecklistContainer'); input.value = ''; }
             },
-            
-            // **FIX for removing any checklist item**
             "remove-checklist-item-btn": () => button.closest('.checklist-item').remove(),
-
-            // **FIX for PM Schedule Modal buttons**
             "addPmChecklistItemBtn": () => {
                 const input = document.getElementById('newPmChecklistItem');
                 if (input.value) { addChecklistItem(input.value, 'pmChecklistContainer'); input.value = ''; }
             },
             "addPmPartBtn": () => addPmPartRow(),
             "remove-pm-part-btn": () => button.closest('.pm-part-row').remove(),
-
             "view-pm-btn": () => showPmScheduleDetailModal(state.cache.pmSchedules.find(s => s.id === id)),
             "edit-pm-btn": () => showPmScheduleModal(state.cache.pmSchedules.find(s => s.id === id)),
             "delete-pm-btn": () => {
@@ -2024,7 +2006,7 @@ function attachGlobalEventListeners() {
                 state.showArchivedFeedback = !state.showArchivedFeedback;
                 renderMainContent();
             },
-            "feedback-status-btn": async () => { // <-- AND THIS
+            "feedback-status-btn": async () => {
                 const id = parseInt(button.dataset.id);
                 const status = button.dataset.status;
                 try {
@@ -2036,12 +2018,11 @@ function attachGlobalEventListeners() {
                     showTemporaryMessage('Could not update status.', true);
                 }
             },
-                "approve-borrow-btn": async () => {
+            "approve-borrow-btn": async () => {
                 if (confirm("Are you sure you want to approve this borrow request?")) {
                     try {
                         await api.updateBorrowRequestStatus(id, 'Approved');
                         showTemporaryMessage("Request approved successfully.");
-                        // Refresh both borrow requests and parts list (for stock update)
                         state.cache.partBorrows = await api.getBorrowRequests();
                         const partsResponse = await api.getParts(1);
                         state.cache.parts = partsResponse.data;
@@ -2068,7 +2049,6 @@ function attachGlobalEventListeners() {
                     try {
                         await api.returnBorrowedPart(id);
                         showTemporaryMessage("Part returned successfully.");
-                        // Refresh both lists
                         state.cache.partBorrows = await api.getBorrowRequests();
                         const partsResponse = await api.getParts(1);
                         state.cache.parts = partsResponse.data;
@@ -2079,18 +2059,18 @@ function attachGlobalEventListeners() {
                 }
             },
             "delete-stock-take-btn": () => {
-            if (confirm('Are you sure you want to permanently delete this session and all its counting data?')) {
-                api.deleteStockTake(id)
-                    .then(async () => {
-                        showTemporaryMessage("Session deleted successfully.");
-                        state.cache.stockTakes = await api.getStockTakes();
-                        render();
-                    })
-                    .catch(error => {
-                        showTemporaryMessage(`Failed to delete session: ${error.message}`, true);
-                    });
-            }
-        },
+                if (confirm('Are you sure you want to permanently delete this session and all its counting data?')) {
+                    api.deleteStockTake(id)
+                        .then(async () => {
+                            showTemporaryMessage("Session deleted successfully.");
+                            state.cache.stockTakes = await api.getStockTakes();
+                            render();
+                        })
+                        .catch(error => {
+                            showTemporaryMessage(`Failed to delete session: ${error.message}`, true);
+                        });
+                }
+            },
         };
         for (const cls in actions) {
             if (button.classList.contains(cls) || button.id === cls) {
@@ -2101,11 +2081,7 @@ function attachGlobalEventListeners() {
     });
     document.getElementById('notificationBellBtn').addEventListener('click', async () => {
         const badge = document.getElementById('notificationBadge');
-        
-        // Show the modal first
         showNotificationModal();
-        
-        // Then, mark notifications as read
         const unreadCount = parseInt(badge.textContent);
         if (unreadCount > 0) {
             const notifications = await api.getNotifications();
@@ -2162,21 +2138,16 @@ function attachGlobalEventListeners() {
         const message = document.getElementById("messageBody").value;
         const targetRole = document.getElementById("messageTargetRole").value;
         const targetDept = document.getElementById("messageTargetDept").value;
-
         const parentId = document.getElementById("messageParentId").value;
-        
-        const payload = { message, parentId }; // Add parentId to payload
-        
-        // Only add targeting info if it's a new message, not a reply
+        const payload = { message, parentId }; 
         if (!parentId) {
             payload.target_role = targetRole;
             if (state.currentUser.role === 'Admin' && targetDept) {
                 payload.department_id = targetDept;
             }
         }
-
         try {
-            await api.submitFeedback(payload); // The API endpoint is the same
+            await api.submitFeedback(payload);
             showTemporaryMessage("Message sent successfully!");
             document.getElementById("messageModal").style.display = "none";
             state.cache.feedback = await api.getFeedback();
@@ -2189,7 +2160,6 @@ function attachGlobalEventListeners() {
         e.preventDefault();
         const message = document.getElementById("feedbackToAdminBody").value;
         try {
-            // We use the existing submitFeedback API, but send our special 'action'
             await api.submitFeedback({ message, action: 'send_to_admin' });
             showTemporaryMessage("Your feedback has been sent to the administrator. Thank you!");
             document.getElementById("feedbackToAdminModal").style.display = "none";
