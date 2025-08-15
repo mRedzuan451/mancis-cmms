@@ -1,12 +1,10 @@
 // js/app.js
 
-import Papa from 'https://cdn.skypack.dev/papaparse'; // <-- 1. ADD THIS NEW LINE AT THE TOP
+import Papa from 'https://cdn.skypack.dev/papaparse';
 import { state } from './config.js';
 import { api } from './api.js';
 import { handleLogin, handleLogout, handleRegistration, can } from './auth.js';
 import { logActivity, showTemporaryMessage, printReport, getFullLocationName, calculateNextPmDate, getUserDepartment } from './utils.js';
-// --- START: MODIFICATION ---
-// Ensure the import list matches the corrected export list from ui.js
 import {
     renderSidebar,
     renderDashboard,
@@ -58,6 +56,7 @@ import {
     renderInventoryTrendChart,
     renderCostChart,
     showNotificationModal,
+    renderPagination // Ensure renderPagination is imported
 } from './ui.js';
 
 
@@ -85,7 +84,7 @@ function renderMainContent() {
         case "pmSchedules":         content = renderPmSchedulesPage(); break;
         case "stockTake":           content = renderStockTakePage(); break;
         case "feedback":            content = renderTeamMessagesPage(); break;
-        case "partBorrows":         content = renderBorrowRequestsPage(); break; // Add this
+        case "partBorrows":         content = renderBorrowRequestsPage(); break;
         default:                    content = renderDashboard();
     }
     mainContent.innerHTML = content;
@@ -118,14 +117,12 @@ async function loadInitialData() {
 
         const dataPromises = [];
 
-        // Paginated Data
         if (permissions.asset_view) dataPromises.push(api.getAssets(1).then(res => processPaginatedResponse('assets', res)));
         if (permissions.part_view) dataPromises.push(api.getParts(1).then(res => processPaginatedResponse('parts', res)));
         if (permissions.wo_view) dataPromises.push(api.getWorkOrders(1).then(res => processPaginatedResponse('workOrders', res)));
         if (permissions.part_request_view) dataPromises.push(api.getPartRequests(1).then(res => processPaginatedResponse('partRequests', res)));
         if (permissions.user_view) dataPromises.push(api.getUsers(1).then(res => processPaginatedResponse('users', res)));
 
-        // --- NEW: Fetch all users and assets for lookups ---
         if (permissions.user_view) {
             dataPromises.push(api.getAllUsers().then(res => state.lookupCache.users = res.data));
         }
@@ -133,7 +130,6 @@ async function loadInitialData() {
             dataPromises.push(api.getAllAssets().then(res => state.lookupCache.assets = res.data));
         }
         
-        // Non-Paginated Data
         if (permissions.location_management) {
             dataPromises.push(api.getLocations().then(res => state.cache.locations = res));
         } else {
@@ -143,7 +139,7 @@ async function loadInitialData() {
         if (permissions.pm_schedule_view) dataPromises.push(api.getPmSchedules().then(res => state.cache.pmSchedules = res));
         if (permissions.stock_take_create) dataPromises.push(api.getStockTakes().then(res => state.cache.stockTakes = res));
         if (permissions.feedback_view) dataPromises.push(api.getFeedback().then(res => state.cache.feedback = res));
-        if (permissions.part_borrow_request || permissions.part_borrow_approve) { // Add this block
+        if (permissions.part_borrow_request || permissions.part_borrow_approve) {
             dataPromises.push(api.getBorrowRequests().then(res => state.cache.partBorrows = res));
         }
 
@@ -157,8 +153,6 @@ async function loadInitialData() {
         console.error("Error during initial data load:", error);
     }
 }
-
-
 
 async function loadAndRender() {
     await loadInitialData();
@@ -185,14 +179,13 @@ async function loadAndRender() {
 async function handlePageChange(module, page) {
     try {
         let response;
-        // Get the current search term from the input box, if it exists
         const searchInput = document.getElementById(`${module.slice(0, -1)}Search`);
         const searchTerm = searchInput ? searchInput.value : '';
 
         if (module === 'assets') {
-            response = await api.getAssets(page); // Asset search not implemented yet
+            response = await api.getAssets(page);
         } else if (module === 'parts') {
-            response = await api.getParts(page, 20, searchTerm); // Pass search term
+            response = await api.getParts(page, 20, searchTerm);
         } else if (module === 'workOrders') {
             response = await api.getWorkOrders(page);
         } else if (module === 'partRequests') {
@@ -219,18 +212,17 @@ async function refreshAllDataAndRender() {
     if (!state.currentUser) {
         return;
     }
-    // Check if any modal is currently displayed by looking for the 'flex' style.
     const isModalOpen = !!document.querySelector('.modal[style*="display: flex"]');
     if (isModalOpen) {
         console.log("Auto-refresh skipped: a modal is open.");
-        return; // Abort the refresh if a modal is open to not interrupt the user.
+        return;
     }
 
     console.log("Refreshing application data...");
     showTemporaryMessage("Refreshing data...");
     try {
-        await loadInitialData(); // Reload all data from the backend
-        renderMainContent(); // Re-render only the main content area with the new data
+        await loadInitialData();
+        renderMainContent();
         console.log("Data refreshed successfully.");
     } catch (error) {
         showTemporaryMessage("Failed to refresh data.", true);
@@ -262,14 +254,11 @@ async function checkForLowStockAndCreateRequests() {
                 console.error(`Failed to create request for part ${part.name}:`, error);
             }
         }
-        // --- START: MODIFICATION ---
-        // This is the corrected block. It correctly handles the paginated response.
         const prResponse = await api.getPartRequests(1);
         state.cache.partRequests = prResponse.data;
         state.pagination.partRequests.currentPage = prResponse.page;
         state.pagination.partRequests.totalPages = Math.ceil(prResponse.total / prResponse.limit);
         state.pagination.partRequests.totalRecords = prResponse.total;
-        // --- END: MODIFICATION ---
         if(state.currentPage === 'partRequests') renderMainContent();
     }
 }
@@ -278,11 +267,8 @@ async function handleAssetFormSubmit(e) {
     e.preventDefault();
     const assetIdValue = document.getElementById("assetId").value;
     const isEditing = !!assetIdValue;
-
-    // Get the current list of related parts from the form
     const newRelatedParts = Array.from(document.getElementById("assetRelatedParts").selectedOptions).map(opt => parseInt(opt.value));
     
-    // Get the old list of related parts from the cache
     let oldRelatedParts = [];
     if (isEditing) {
         const existingAsset = state.cache.assets.find(a => a.id === parseInt(assetIdValue));
@@ -297,7 +283,7 @@ async function handleAssetFormSubmit(e) {
       purchaseDate: document.getElementById("assetPurchaseDate").value,
       cost: parseFloat(document.getElementById("assetCost").value),
       currency: document.getElementById("assetCurrency").value,
-      relatedParts: newRelatedParts, // Use the numeric array
+      relatedParts: newRelatedParts,
     };
     
     try {
@@ -315,10 +301,8 @@ async function handleAssetFormSubmit(e) {
       
       const partsToAdd = newRelatedParts.filter(pId => !oldRelatedParts.includes(pId));
       const partsToRemove = oldRelatedParts.filter(pId => !newRelatedParts.includes(pId));
-
       const partUpdatePromises = [];
       
-      // Update parts that were newly added to the asset
       partsToAdd.forEach(partId => {
           const part = state.cache.parts.find(p => p.id === partId);
           if (part) {
@@ -327,7 +311,6 @@ async function handleAssetFormSubmit(e) {
           }
       });
       
-      // Update parts that were removed from the asset
       partsToRemove.forEach(partId => {
           const part = state.cache.parts.find(p => p.id === partId);
           if (part) {
@@ -337,8 +320,6 @@ async function handleAssetFormSubmit(e) {
       });
 
       await Promise.all(partUpdatePromises);
-      
-      // Re-fetch all data to ensure cache is fully synchronized
       await loadInitialData();
       
       document.getElementById("assetModal").style.display = "none";
@@ -348,7 +329,6 @@ async function handleAssetFormSubmit(e) {
       showTemporaryMessage('Failed to save asset or update relationships.', true);
     }
 }
-// --- END: MODIFICATION ---
 
 async function deleteItem(type, id) {
     const typeName = type.slice(0, -1);
@@ -445,7 +425,6 @@ async function handlePartFormSubmit(e) {
         const currentPartsPage = state.pagination.parts.currentPage || 1;
         const response = await api.getParts(currentPartsPage);
 
-        // Use the helper function to ensure all pagination data is updated
         const processPaginatedResponse = (module, response) => {
             state.cache[module] = response.data;
             state.pagination[module].currentPage = response.page;
@@ -473,7 +452,7 @@ async function handleWorkOrderFormSubmit(e) {
 
     if (new Date(startDate) > new Date(dueDate)) {
         showTemporaryMessage("Error: Start Date cannot be after the Due Date.", true);
-        return; // Stop the function here
+        return;
     }
     const checklistItems = Array.from(document.querySelectorAll("#woChecklistContainer .checklist-item span")).map(span => ({ text: span.textContent, completed: false }));
     const requiredParts = Array.from(document.querySelectorAll("#woPartsContainer .wo-part-row")).map(row => ({
@@ -487,13 +466,12 @@ async function handleWorkOrderFormSubmit(e) {
         assetId: parseInt(document.getElementById("woAsset").value),
         assignedTo: parseInt(document.getElementById("woAssignedTo").value),
         task: document.getElementById("woTask").value,
-        start_date: startDate, // Use the variable from validation
+        start_date: startDate,
         dueDate: dueDate,
         breakdownTimestamp: document.getElementById("woBreakdownTime").value || null,
         priority: document.getElementById("woPriority").value,
-        frequency: document.getElementById("woFrequency").value,
-        status: document.getElementById("woStatus").value,
         frequency: "One-Time",
+        status: document.getElementById("woStatus").value,
         checklist: checklistItems,
         requiredParts: requiredParts,
         wo_type: 'CM' 
@@ -540,7 +518,6 @@ async function handleEditUserFormSubmit(e) {
 
         await logActivity("User Permissions Updated", `Updated roles and permissions for user ID ${userId}`);
         
-        // Refresh data and UI
         const usersResponse = await api.getUsers();
         state.cache.users = usersResponse.data;
         document.getElementById('editUserModal').style.display = 'none';
@@ -559,7 +536,8 @@ async function handleDisposeAsset(assetId) {
             const updatedData = { ...asset, status: 'Decommissioned' };
             await api.updateAsset(assetId, updatedData);
             await logActivity("Asset Disposed", `Disposed asset: ${asset.name} (ID: ${assetId})`);
-            state.cache.assets = await api.getAssets();
+            const assetResponse = await api.getAssets();
+            state.cache.assets = assetResponse.data;
             renderMainContent();
             showTemporaryMessage('Asset has been decommissioned.');
         } catch (error) {
@@ -579,7 +557,8 @@ async function handleTransferAssetFormSubmit(e) {
         const updatedData = { ...asset, locationId: newLocationId };
         await api.updateAsset(assetId, updatedData);
         await logActivity("Asset Transferred", `Transferred ${asset.name} to new location. Notes: ${notes}`);
-        state.cache.assets = await api.getAssets();
+        const assetResponse = await api.getAssets();
+        state.cache.assets = assetResponse.data;
         document.getElementById('transferAssetModal').style.display = 'none';
         renderMainContent();
         showTemporaryMessage('Asset transferred successfully!');
@@ -614,23 +593,16 @@ async function handleCompleteWorkOrderFormSubmit(e) {
         showTemporaryMessage("Work Order marked as complete!");
 
     } catch (error) {
-        console.error("Completion Error:", error); // Log the full error for debugging
+        console.error("Completion Error:", error);
 
         if (error.message.includes("INSUFFICIENT_STOCK")) {
-            // Case 1: Specific "Not Enough Stock" error from our backend
             const friendlyMessage = error.message.replace('INSUFFICIENT_STOCK:', '').trim();
             showTemporaryMessage(friendlyMessage, true);
-
         } else if (error.message.includes("Failed to fetch")) {
-            // Case 2: Network error (e.g., server is down, no internet)
             showTemporaryMessage("Network Error: Could not connect to the server. Please check your connection.", true);
-
         } else if (error.message.includes("HTTP error")) {
-            // Case 3: Other server-side error (e.g., 500 Internal Server Error, 404 Not Found)
             showTemporaryMessage("Server Error: The server responded with an error. Please try again later.", true);
-
         } else {
-            // Case 4: A generic fallback for any other unexpected errors
             showTemporaryMessage(`An unexpected error occurred: ${error.message}`, true);
         }
     }
@@ -640,21 +612,16 @@ async function handlePartRequestFormSubmit(e) {
     e.preventDefault();
     const requestId = document.getElementById('partRequestId').value;
     const isEditing = !!requestId;
-
-    // --- START: MODIFICATION ---
     const assetId = document.getElementById('requestAssetId').value;
     const purposeText = document.getElementById('requestPurpose').value;
     let finalPurpose = purposeText;
 
-    // Only add asset info on creation, not when editing an existing request.
     if (assetId && !isEditing) {
         const asset = state.cache.assets.find(a => a.id === parseInt(assetId));
         if (asset) {
-            // Prepend the asset information to the purpose
             finalPurpose = `For asset "${asset.name}": ${purposeText}`;
         }
     }
-    // --- END: MODIFICATION ---
 
     try {
         if (isEditing) {
@@ -670,7 +637,7 @@ async function handlePartRequestFormSubmit(e) {
             let requestData = {
                 partId: isNewPart ? null : parseInt(document.getElementById('requestPartId').value),
                 quantity: parseInt(document.getElementById('requestQuantity').value),
-                purpose: finalPurpose, // Use the modified purpose string
+                purpose: finalPurpose,
                 requesterId: state.currentUser.id,
                 requestDate: new Date().toISOString().slice(0, 19).replace('T', ' '),
                 status: 'Requested',
@@ -683,7 +650,6 @@ async function handlePartRequestFormSubmit(e) {
             await logActivity("Part Request Submitted", `User requested ${requestData.quantity} x ${isNewPart ? requestData.newPartName : 'existing part'}`);
         }
         
-        // Correctly handle the paginated response
         const prResponse = await api.getPartRequests(1);
         state.cache.partRequests = prResponse.data;
         state.pagination.partRequests.currentPage = prResponse.page;
@@ -706,14 +672,13 @@ async function handleStorageRequestFormSubmit(e) {
     if (assetId) {
         const asset = state.cache.assets.find(a => a.id === parseInt(assetId));
         if (asset) {
-            // Prepend the asset information to the purpose
             finalPurpose = `For asset "${asset.name}": ${purposeText}`;
         }
     }
     let requestData = {
         partId: parseInt(document.getElementById('storageRequestPartId').value),
         quantity: parseInt(document.getElementById('storageRequestQuantity').value),
-        purpose: finalPurpose, // Use the modified purpose string
+        purpose: finalPurpose,
         requesterId: state.currentUser.id,
         requestDate: new Date().toISOString().slice(0, 19).replace('T', ' '),
         status: 'Requested from Storage',
@@ -722,11 +687,9 @@ async function handleStorageRequestFormSubmit(e) {
         await api.createPartRequest(requestData);
         await logActivity("Storage Request Submitted", `User requested ${requestData.quantity} x part ID ${requestData.partId} from storage`);
         
-        // --- START: MODIFICATION ---
         const prResponse = await api.getPartRequests(1);
         state.cache.partRequests = prResponse.data;
         state.pagination.partRequests.currentPage = prResponse.page;
-        // --- END: MODIFICATION ---
 
         document.getElementById('storageRequestModal').style.display = 'none';
         renderMainContent();
@@ -748,10 +711,8 @@ async function handlePartRequestAction(id, newStatus) {
         await api.updatePartRequestStatus({ id, status: newStatus, approverId: state.currentUser.id, rejectionReason });
         await logActivity(`Part Request ${newStatus}`, `Request ID ${id} was marked as ${newStatus}`);
         
-        // --- START: MODIFICATION ---
         const prResponse = await api.getPartRequests(1);
         state.cache.partRequests = prResponse.data;
-        // --- END: MODIFICATION ---
 
         if (newStatus === 'Approved') {
             const partsResponse = await api.getParts(1);
@@ -771,10 +732,8 @@ async function handleReceivePartsFormSubmit(e) {
         await api.receiveParts({ requestId, receiverId: state.currentUser.id });
         await logActivity("Parts Received", `Marked approved request ID ${requestId} as received.`);
 
-        // --- START: MODIFICATION ---
         const prResponse = await api.getPartRequests(1);
         state.cache.partRequests = prResponse.data;
-        // --- END: MODIFICATION ---
 
         state.cache.receivedParts = await api.getReceivedParts();
         document.getElementById('receivePartsModal').style.display = 'none';
@@ -784,8 +743,6 @@ async function handleReceivePartsFormSubmit(e) {
         showTemporaryMessage(`Failed to receive parts. ${error.message}`, true);
     }
 }
-
-// js/app.js
 
 async function handleRestockPartsFormSubmit(e) {
     e.preventDefault();
@@ -809,10 +766,9 @@ async function handleRestockPartsFormSubmit(e) {
                 payload.newPartCategory = document.getElementById('newPartCategory').value;
                 logMessage = `Direct restock (new part): ${payload.quantity} x ${payload.newPartName}`;
             } else {
-                const receivedId = parseInt(document.getElementById('restockPartId').value);
-                const locationId = document.getElementById('restockLocationId').value;
-                await api.restockParts({ receivedId, locationId });
-                logMessage = `Restocked parts from received request ID: ${receivedId}`;
+                payload.partId = parseInt(document.getElementById('directStockPartId').value);
+                const part = state.cache.parts.find(p => p.id === payload.partId);
+                logMessage = `Direct restock: ${payload.quantity} x ${part?.name}`;
             }
             await api.directRestockPart(payload);
         } else {
@@ -822,6 +778,8 @@ async function handleRestockPartsFormSubmit(e) {
             logMessage = `Restocked parts from received request ID: ${receivedId}`;
         }
         
+        await logActivity(logMessage);
+
         const processPaginatedResponse = (module, response) => {
             state.cache[module] = response.data;
             state.pagination[module].currentPage = response.page;
@@ -855,7 +813,7 @@ async function handleRestockPartsFormSubmit(e) {
 }
 
 async function handleLocationFormSubmit(e) {
-    e.preventDefault(); // Prevent default form submission
+    e.preventDefault();
     const form = e.target;
     const isAdmin = state.currentUser.role === 'Admin';
     let type, name, parentId;
@@ -912,7 +870,6 @@ async function handleLocationFormSubmit(e) {
     }
 }
 
-
 async function deleteLocation(type, id) {
     if (!confirm(`Are you sure you want to delete this ${type}? This can affect assets, parts, and other locations.`)) return;
     try {
@@ -942,14 +899,11 @@ async function handlePmScheduleFormSubmit(e) {
 
     const scheduleId = document.getElementById("pmScheduleId").value;
     const isEditing = !!scheduleId;
-
-    // --- START: NEW DATA GATHERING LOGIC ---
     const checklistItems = Array.from(document.querySelectorAll("#pmChecklistContainer .checklist-item span")).map(span => ({ text: span.textContent, completed: false }));
     const requiredParts = Array.from(document.querySelectorAll("#pmPartsContainer .pm-part-row")).map(row => ({
         partId: parseInt(row.querySelector('.pm-part-select').value),
         quantity: parseInt(row.querySelector('.pm-part-qty').value)
     })).filter(p => p.partId && p.quantity > 0);
-    // --- END: NEW DATA GATHERING LOGIC ---
 
     const scheduleData = {
         title: title,
@@ -962,8 +916,8 @@ async function handlePmScheduleFormSubmit(e) {
         due_date_buffer: document.getElementById("pmDueDateBuffer").value ? parseInt(document.getElementById("pmDueDateBuffer").value) : null,
         assignedTo: parseInt(assignedTo),
         is_active: document.getElementById('pmIsActive').checked ? 1 : 0,
-        checklist: checklistItems, // Add new data to payload
-        requiredParts: requiredParts // Add new data to payload
+        checklist: checklistItems,
+        requiredParts: requiredParts
     };
 
     try {
@@ -1004,7 +958,6 @@ async function handleMassDelete(type) {
             switch (type) {
                 case 'assets': return api.deleteAsset(id);
                 case 'parts': return api.deletePart(id);
-                // Add other types here as you implement them
                 default: return Promise.reject(new Error("Invalid type for mass delete."));
             }
         });
@@ -1013,7 +966,6 @@ async function handleMassDelete(type) {
 
         await logActivity(`Mass Delete Executed`, `Deleted ${idsToDelete.length} item(s) of type: ${type}`);
         
-        // Refresh data after deletion
         await refreshAllDataAndRender();
         showTemporaryMessage(`${idsToDelete.length} item(s) deleted successfully.`);
         
@@ -1022,11 +974,7 @@ async function handleMassDelete(type) {
     }
 }
 
-
-// --- EVENT LISTENER ATTACHMENT ---
-
 function attachPageSpecificEventListeners(page) {
-    // This helper function sets up the checkbox and "Delete Selected" button logic for a given page
     const setupCheckboxLogic = (pageType) => {
         const selectAllCheckbox = document.getElementById('selectAllCheckbox');
         const rowCheckboxes = document.querySelectorAll('.row-checkbox');
@@ -1061,13 +1009,11 @@ function attachPageSpecificEventListeners(page) {
         renderStatusChart(statusCounts);
     }
 
-    // Apply the checkbox logic to all pages that have a table list
     if (['assets', 'parts', 'workOrders', 'userManagement'].includes(page)) {
         const itemType = page === 'userManagement' ? 'users' : page;
         setupCheckboxLogic(itemType);
     }
     
-    // Attach any other event listeners that are specific to a certain page
     if (page === 'assets') {
         document.getElementById("uploadAssetsBtn")?.addEventListener("click", () => {
             showUploadModal('assets');
@@ -1088,7 +1034,6 @@ function attachPageSpecificEventListeners(page) {
             document.getElementById("assetTableBody").innerHTML = generateTableRows("assets", filtered);
         });
         
-        // --- Print Logic for Assets ---
         document.getElementById("printAssetListBtn")?.addEventListener("click", () => {
             const assetsToPrint = state.cache.assets.filter(can.view);
             const title = "Asset List Report";
@@ -1142,14 +1087,10 @@ function attachPageSpecificEventListeners(page) {
                     state.pagination.parts.totalPages = Math.ceil(response.total / response.limit);
                     state.pagination.parts.totalRecords = response.total;
 
-                    // --- START: MODIFICATION ---
-                    // Added optional chaining (?.) for safety and improved the catch block.
                     document.getElementById("partTableBody")?.innerHTML = generateTableRows("parts", response.data);
                     document.getElementById("partPagination")?.innerHTML = renderPagination('parts');
-                    // --- END: MODIFICATION ---
 
                 } catch (error) {
-                    // This will now log the specific error to the console for better debugging.
                     console.error("Error during search UI update:", error); 
                     showTemporaryMessage('Search failed.', true);
                 }
@@ -1194,7 +1135,6 @@ function attachPageSpecificEventListeners(page) {
                 const allWorkOrders = state.cache.workOrders.filter(can.view);
                 const filteredWOs = selectedType === 'All' 
                     ? allWorkOrders
-                    // Corrected to include wo_type in search logic as well.
                     : allWorkOrders.filter(wo => wo.wo_type === selectedType);
                 document.getElementById('workOrderTableBody').innerHTML = generateTableRows("workOrders", filteredWOs);
             });
@@ -1214,7 +1154,8 @@ function attachPageSpecificEventListeners(page) {
         document.getElementById('storageRequestBtn')?.addEventListener('click', async () => {
             try {
                 showTemporaryMessage("Loading latest part quantities...");
-                state.cache.parts = await api.getParts();
+                const allPartsResponse = await api.getAllParts();
+                state.cache.parts = allPartsResponse.data;
                 showStorageRequestModal();
             } catch (error) {
                 showTemporaryMessage("Could not load latest parts list.", true);
@@ -1239,10 +1180,8 @@ function attachPageSpecificEventListeners(page) {
                        requesterName.toLowerCase().includes(searchTerm);
             });
             
-            // Note the new ID for the table body
             document.getElementById("partRequestTableBody").innerHTML = generateTableRows("partRequests", filtered);
         });
-        // --- END: ADDED SEARCH LOGIC ---
 
         document.getElementById('printPurchaseListBtn')?.addEventListener('click', () => {
             const requestsToPrint = state.cache.partRequests.filter(req => req.status === 'Approved');
@@ -1253,7 +1192,6 @@ function attachPageSpecificEventListeners(page) {
             }
 
             const groupedByDept = requestsToPrint.reduce((acc, req) => {
-                // Use the department name provided directly by the API.
                 const departmentName = req.departmentName || 'Unassigned';
                 
                 if (!acc[departmentName]) {
@@ -1284,9 +1222,7 @@ function attachPageSpecificEventListeners(page) {
 
                 groupedByDept[department].forEach(req => {
                     const part = req.partId ? state.cache.parts.find(p => p.id === req.partId) : null;
-                    // Use the requester name provided directly by the API.
                     const requesterName = req.requesterName || 'N/A';
-
                     const partName = part ? part.name : (req.newPartName || 'N/A');
                     const partNumber = part ? part.sku : (req.newPartNumber || 'N/A');
                     const maker = part ? part.maker : (req.newPartMaker || '');
@@ -1304,7 +1240,6 @@ function attachPageSpecificEventListeners(page) {
 
                 content += `</tbody></table>`;
             }
-            // --- END: MODIFICATION ---
 
             printReport(title, content);
         });
@@ -1324,57 +1259,78 @@ function attachPageSpecificEventListeners(page) {
         document.getElementById("pmScheduleSearch")?.addEventListener("input", (e) => {
             const searchTerm = e.target.value.toLowerCase();
             const openWorkOrders = state.cache.workOrders.filter(wo => wo.status === 'Open' && wo.wo_type === 'PM');
-
             const filtered = (state.cache.pmSchedules || []).filter(s => {
                 const assetName = state.cache.assets.find(a => a.id === s.assetId)?.name || '';
                 return s.title.toLowerCase().includes(searchTerm) ||
                        assetName.toLowerCase().includes(searchTerm);
             });
-
             const tableBody = document.getElementById("pmSchedulesTableBody");
-            tableBody.innerHTML = filtered.map(s => {
-                const assetName = state.cache.assets.find(a => a.id === s.assetId)?.name || 'N/A';
-                const openWoForSchedule = openWorkOrders.find(wo => wo.pm_schedule_id === s.id);
-                let nextStartDate = s.last_generated_date || s.schedule_start_date;
-                if (openWoForSchedule) {
-                    nextStartDate = openWoForSchedule.start_date;
-                }
-                const followingPmDate = calculateNextPmDate(s);
-                const frequencyText = `${s.frequency_interval} ${s.frequency_unit}(s)`;
-                return `<tr class="border-b hover:bg-gray-50">
-                    <td class="p-2">${s.title}</td>
-                    <td class="p-2">${assetName}</td>
-                    <td class="p-2">${frequencyText}</td>
-                    <td class="p-2 font-semibold">${nextStartDate || 'N/A'}</td>
-                    <td class="p-2 font-semibold">${followingPmDate}</td>
-                    <td class="p-2">${s.is_active ? '<span class="text-green-600">Active</span>' : '<span class="text-gray-500">Inactive</span>'}</td>
-                    <td class="p-2 space-x-2">
-                        <button class="view-pm-btn text-blue-500 hover:text-blue-700" data-id="${s.id}" title="View Details"><i class="fas fa-eye"></i></button>
-                        <button class="edit-pm-btn text-yellow-500 hover:text-yellow-700" data-id="${s.id}" title="Edit"><i class="fas fa-edit"></i></button>
-                        <button class="delete-pm-btn text-red-500 hover:text-red-700" data-id="${s.id}" title="Delete"><i class="fas fa-trash"></i></button>
-                    </td>
-                </tr>`
-            }).join('');
+            if (tableBody) {
+                tableBody.innerHTML = filtered.map(s => {
+                    const assetName = state.cache.assets.find(a => a.id === s.assetId)?.name || 'N/A';
+                    const openWoForSchedule = openWorkOrders.find(wo => wo.pm_schedule_id === s.id);
+                    let nextStartDateStr = calculateNextPmDate(s);
+                    let nextDueDateStr = 'N/A';
+                    let status = s.is_active ? 'Active' : 'Inactive';
+                    
+                    if (openWoForSchedule) {
+                        nextStartDateStr = openWoForSchedule.start_date;
+                        nextDueDateStr = openWoForSchedule.dueDate;
+                        status = openWoForSchedule.status;
+                    } else if (s.is_active) {
+                        const nextStartDate = new Date(nextStartDateStr + 'T00:00:00');
+                        if (!isNaN(nextStartDate.getTime())) {
+                            const bufferDays = s.due_date_buffer || 7;
+                            nextStartDate.setDate(nextStartDate.getDate() + bufferDays);
+                            nextDueDateStr = nextStartDate.toISOString().split('T')[0];
+                        }
+                    }
+                    
+                    const followingPmDate = calculateNextPmDate({ ...s, last_generated_date: nextStartDateStr });
+                    const statusColors = { 
+                        "Active": "bg-green-200 text-green-800",
+                        "Inactive": "bg-gray-200 text-gray-800",
+                        "Open": "bg-blue-200 text-blue-800", 
+                        "In Progress": "bg-yellow-200 text-yellow-800", 
+                        "On Hold": "bg-orange-200 text-orange-800", 
+                        "Delay": "bg-red-200 text-red-800", 
+                    };
+                    const statusColorClass = statusColors[status] || 'bg-gray-200';
+                    const frequencyText = `${s.frequency_interval} ${s.frequency_unit}(s)`;
+                    const canCreate = state.currentUser.permissions.pm_schedule_create;
+                    const canDelete = state.currentUser.permissions.pm_schedule_delete;
+                    return `<tr class="border-b hover:bg-gray-50">
+                        <td class="p-2">${s.title}</td>
+                        <td class="p-2">${assetName}</td>
+                        <td class="p-2">${frequencyText}</td>
+                        <td class="p-2 font-semibold">${nextStartDateStr || 'N/A'}</td>
+                        <td class="p-2 font-semibold">${nextDueDateStr}</td>
+                        <td class="p-2">${followingPmDate}</td>
+                        <td class="p-2"><span class="px-2 py-1 text-xs font-semibold rounded-full ${statusColorClass}">${status}</span></td>
+                        <td class="p-2 space-x-2">
+                            <button class="view-pm-btn text-blue-500 hover:text-blue-700" data-id="${s.id}" title="View Details"><i class="fas fa-eye"></i></button>
+                            ${canCreate ? `<button class="edit-pm-btn text-yellow-500 hover:text-yellow-700" data-id="${s.id}" title="Edit"><i class="fas fa-edit"></i></button>` : ''}
+                            ${canDelete ? `<button class="delete-pm-btn text-red-500 hover:text-red-700" data-id="${s.id}" title="Delete"><i class="fas fa-trash"></i></button>` : ''}
+                        </td>
+                    </tr>`;
+                }).join('');
+            }
         });
     } else if (page === 'locations') {
         document.querySelector('#addCabinetForm')?.addEventListener('submit', async (e) => {
-            e.preventDefault(); // This 'e' is the correct browser event object
+            e.preventDefault();
             const form = e.target;
             const isAdmin = state.currentUser.role === 'Admin';
             
             const locationData = {
                 type: 'cabinet',
                 name: form.querySelector('input[type="text"]').value,
-                // The parentId is the department. For Admins, it's from the select box.
-                // For others, it's their own department ID.
                 parentId: isAdmin ? form.querySelector('select').value : state.currentUser.departmentId
             };
             
-            // Call the reusable action function
             await createLocationAction(locationData);
         });
         
-        // All other location forms now use the simplified handler.
         document.getElementById('downloadLocationsBtn')?.addEventListener('click', handleDownloadLocations);
         document.querySelector('#addDivisionForm')?.addEventListener('submit', handleSimpleLocationFormSubmit);
         document.querySelector('#addDepartmentForm')?.addEventListener('submit', handleSimpleLocationFormSubmit);
@@ -1405,10 +1361,8 @@ function attachPageSpecificEventListeners(page) {
                 const response = await api.getInventoryReport({ startDate, endDate });
                 const reportData = response.summary;
                 const trendData = response.trend;
-
                 let grandTotalValue = 0;
 
-                // --- START: MODIFICATION ---
                 let tableHTML = `
                     <div class="flex justify-between items-center mb-4">
                         <h2 class="text-xl font-bold">Report for ${startDate} to ${endDate}</h2>
@@ -1423,7 +1377,6 @@ function attachPageSpecificEventListeners(page) {
                             <th class="p-2 text-right font-bold">Ending Qty</th>
                             <th class="p-2 text-right">Total Value</th>
                         </tr></thead><tbody>`;
-                // --- END: MODIFICATION ---
                 
                 reportData.forEach(item => {
                     grandTotalValue += item.total_value;
@@ -1470,7 +1423,6 @@ function attachPageSpecificEventListeners(page) {
                 const reportData = await api.getCostReport({ startDate, endDate });
                 let grandTotalCost = 0;
                 
-                // --- START: MODIFICATION ---
                 let tableHTML = `
                     <div class="flex justify-between items-center mb-4">
                         <h2 class="text-xl font-bold">Report for ${startDate} to ${endDate}</h2>
@@ -1482,7 +1434,6 @@ function attachPageSpecificEventListeners(page) {
                             <th class="p-2 text-left">Department</th>
                             <th class="p-2 text-right">Total Parts Cost</th>
                         </tr></thead><tbody>`;
-                // --- END: MODIFICATION ---
                 
                 reportData.forEach(item => {
                     grandTotalCost += item.totalCost;
@@ -1502,15 +1453,11 @@ function attachPageSpecificEventListeners(page) {
                     </tfoot></table>`;
                 
                 tableContainer.innerHTML = tableHTML;
-
                 renderCostChart(reportData);
                 
-                // --- START: MODIFICATION ---
-                // Add the event listener for the newly created print button
                 document.getElementById('printReportBtn').addEventListener('click', () => {
                     printReport(`Maintenance Cost Report: ${startDate} to ${endDate}`, tableContainer.innerHTML);
                 });
-                // --- END: MODIFICATION ---
 
             } catch (error) {
                 tableContainer.innerHTML = `<p class="text-red-500">Error generating report: ${error.message}</p>`;
@@ -1652,7 +1599,7 @@ function attachPageSpecificEventListeners(page) {
         });
         document.getElementById("addUserBtn")?.addEventListener("click", () => {
             document.getElementById("registrationModalTitle").textContent = 'Add New User';
-            document.getElementById("regRole").classList.remove('hidden'); // SHOW role selector
+            document.getElementById("regRole").classList.remove('hidden');
             document.getElementById("registrationModal").style.display = "flex";
             const divisionSelect = document.getElementById('regDivision');
             const departmentSelect = document.getElementById('regDepartment');
@@ -1662,13 +1609,11 @@ function attachPageSpecificEventListeners(page) {
         });
     }
     if (page === 'feedback') {
-        // Listener for the "Send New Message" button
         document.getElementById('newMessageBtn')?.addEventListener('click', () => {
             if (state.settings.is_messaging_enabled !== '1' && state.currentUser.role !== 'Admin') {
                 showTemporaryMessage('The messaging feature is currently disabled by the administrator.', true);
                 return;
             }
-            // Reset the modal for a new top-level message
             document.getElementById('messageModalTitle').textContent = 'Send Team Message';
             document.getElementById('messageParentId').value = '';
             document.getElementById('messageForm').reset();
@@ -1687,13 +1632,11 @@ function attachPageSpecificEventListeners(page) {
             showMessageModal();
         });
 
-        // Listener for the "Show Archived" button
         document.getElementById('toggleArchivedFeedbackBtn')?.addEventListener('click', () => {
             state.showArchivedFeedback = !state.showArchivedFeedback;
             renderMainContent();
         });
 
-        // Listener for the main message container to handle all clicks inside it
         const messageListContainer = document.getElementById('message-list-container');
         if (messageListContainer) {
             messageListContainer.addEventListener('click', async (e) => {
@@ -1701,7 +1644,6 @@ function attachPageSpecificEventListeners(page) {
                 const statusButton = e.target.closest('.feedback-status-btn');
                 const deleteButton = e.target.closest('.feedback-delete-btn');
 
-                // Logic to expand/collapse a message
                 if (header) {
                     const messageItem = header.closest('.message-item');
                     const body = messageItem.querySelector('.message-body');
@@ -1727,7 +1669,6 @@ function attachPageSpecificEventListeners(page) {
                     }
                 }
 
-                // Logic for the 'Archive' or 'Mark as Read' buttons
                 if (statusButton) {
                     const id = parseInt(statusButton.dataset.id);
                     const status = statusButton.dataset.status;
@@ -1741,26 +1682,21 @@ function attachPageSpecificEventListeners(page) {
                     }
                 }
 
-                // --- START: MODIFIED DELETE LOGIC ---
-                // Logic for the 'Delete' button with double-click prevention
                 if (deleteButton) {
-                    // Disable button immediately and show spinner
                     deleteButton.disabled = true;
                     deleteButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
 
                     const id = parseInt(deleteButton.dataset.id);
 
-                    // Use a small timeout to let the UI update before the confirm dialog appears
                     setTimeout(async () => {
                         if (confirm('Are you sure you want to permanently delete this message?')) {
                             try {
                                 await api.deleteFeedback(id);
                                 showTemporaryMessage("Message deleted.");
                                 state.cache.feedback = await api.getFeedback();
-                                renderMainContent(); // Re-renders the page, so no need to re-enable the button
+                                renderMainContent();
                             } catch (error) {
                                 showTemporaryMessage(`Could not delete message: ${error.message}`, true);
-                                // If the delete fails, find the button again and re-enable it
                                 const buttonStillExists = document.querySelector(`.feedback-delete-btn[data-id="${id}"]`);
                                 if (buttonStillExists) {
                                     buttonStillExists.disabled = false;
@@ -1768,13 +1704,11 @@ function attachPageSpecificEventListeners(page) {
                                 }
                             }
                         } else {
-                            // If user cancels, re-enable the button
                             deleteButton.disabled = false;
                             deleteButton.innerHTML = 'Delete';
                         }
                     }, 10);
                 }
-                // --- END: MODIFIED DELETE LOGIC ---
             });
         }
         const toggle = document.getElementById('messagingToggle');
@@ -1793,16 +1727,13 @@ function attachPageSpecificEventListeners(page) {
     } 
 }
 
-// js/app.js
-
-// --------------------- START: REPLACE THIS ENTIRE FUNCTION ---------------------
 function attachGlobalEventListeners() {
     // Authentication
     document.getElementById("loginForm").addEventListener("submit", (e) => handleLogin(e, loadAndRender));
     document.getElementById("logoutBtn").addEventListener("click", () => handleLogout(render));
     document.getElementById("createAccountBtn").addEventListener("click", () => {
         document.getElementById("registrationModalTitle").textContent = 'Create New Account';
-        document.getElementById("regRole").classList.add('hidden'); // Hide role selector
+        document.getElementById("regRole").classList.add('hidden');
         document.getElementById("registrationModal").style.display = "flex";
         const divisionSelect = document.getElementById('regDivision');
         const departmentSelect = document.getElementById('regDepartment');
@@ -1888,11 +1819,10 @@ function attachGlobalEventListeners() {
 
         const button = target.closest('button');
 
-        // THIS IS THE CORRECTED LINE: Changed '=' to '===' for comparison
         if (e.target.id === "refreshDataBtn") {
             refreshAllDataAndRender();
         }
-
+        
         if (target.closest("[data-close-modal]")) {
             target.closest(".modal").style.display = "none";
             return;
@@ -1914,7 +1844,6 @@ function attachGlobalEventListeners() {
             const messageId = button.dataset.id;
             
             document.getElementById('messageParentId').value = messageId;
-            
             document.getElementById('messageModalTitle').textContent = 'Post a Reply';
             document.getElementById('messageTargetRoleContainer').style.display = 'none';
             document.getElementById('messageTargetDeptContainer').style.display = 'none';
@@ -2100,7 +2029,6 @@ function attachGlobalEventListeners() {
         }
     });
 
-
     // Form Submissions
     document.getElementById("assetForm").addEventListener("submit", handleAssetFormSubmit);
     document.getElementById("partForm").addEventListener("submit", handlePartFormSubmit);
@@ -2175,55 +2103,6 @@ function attachGlobalEventListeners() {
         }
     });
 }
-// --------------------- END: REPLACE THIS ENTIRE FUNCTION ---------------------
-async function checkForNotifications() {
-    try {
-        const notifications = await api.getNotifications();
-        if (notifications && notifications.length > 0) {
-            const idsToMarkAsRead = [];
-            
-            notifications.forEach((req, index) => {
-                const partName = req.newPartName || `request #${req.id}`;
-                const isError = req.status === 'Rejected';
-                const message = `Update: Your request for "${partName}" has been ${req.status}.`;
-                
-                // Use a timeout to stagger the notifications
-                setTimeout(() => {
-                    showTemporaryMessage(message, isError);
-                }, index * 1500);
-
-                idsToMarkAsRead.push(req.id);
-            });
-
-            // After showing all notifications, mark them as read
-            if (idsToMarkAsRead.length > 0) {
-                await api.markNotificationsRead({ ids: idsToMarkAsRead });
-            }
-        }
-    } catch (error) {
-        console.error("Failed to check for notifications:", error);
-    }
-}
-
-async function deletePartRequest(id) {
-    if (confirm("Are you sure you want to permanently delete this part request?")) {
-        try {
-            await api.deletePartRequest(id);
-            await logActivity("Part Request Deleted", `Deleted request ID: ${id}`);
-            
-            // --- START: MODIFICATION ---
-            // Ensure the cache is updated correctly after deletion
-            const prResponse = await api.getPartRequests(1);
-            state.cache.partRequests = prResponse.data;
-            // --- END: MODIFICATION ---
-
-            renderMainContent();
-            showTemporaryMessage("Request deleted successfully.");
-        } catch (error) {
-            showTemporaryMessage(`Failed to delete request. ${error.message}`, true);
-        }
-    }
-}
 
 async function handleFileUpload(file, type) {
     if (!file) return;
@@ -2240,13 +2119,11 @@ async function handleFileUpload(file, type) {
     let processedRowCount = 0;
     
     Papa.parse(file, {
-        header: true, // Automatically uses the first row as keys
+        header: true,
         skipEmptyLines: true,
-        worker: false, // Use a separate thread for performance
+        worker: false,
         
-        // 'chunk' is called for each batch of rows
         chunk: async (results, parser) => {
-            // Pause the parser to wait for the API call to complete
             parser.pause(); 
             
             const chunkData = results.data;
@@ -2262,7 +2139,6 @@ async function handleFileUpload(file, type) {
                 }
 
                 if (response.failed > 0) {
-                    // If any part of a chunk fails, stop the entire upload
                     parser.abort();
                     let errorHTML = `<p class="font-bold text-red-600">Upload failed at row ~${processedRowCount}. No changes were saved.</p>`;
                     if(response.errors && response.errors.length > 0) {
@@ -2271,35 +2147,28 @@ async function handleFileUpload(file, type) {
                          errorHTML += `</ul>`;
                     }
                     resultDiv.innerHTML = errorHTML;
-                    return; // Stop processing
+                    return;
                 }
 
             } catch (error) {
-                // Handle network or server errors
                 parser.abort();
                 resultDiv.innerHTML = `<p class="text-red-500">A critical error occurred: ${error.message}</p>`;
-                return; // Stop processing
+                return;
             }
 
-            // Resume parsing the next chunk
             parser.resume();
         },
 
-        // 'complete' is called when the entire file is done
         complete: async () => {
             resultDiv.innerHTML = `<p class="font-bold text-green-600">Upload complete! Successfully processed ${processedRowCount} rows.</p>`;
-            // Perform a full refresh to show the new/updated data
             await refreshAllDataAndRender();
         },
         
-        // 'error' is called if Papa Parse encounters an issue
         error: (error) => {
             resultDiv.innerHTML = `<p class="text-red-500">Failed to parse CSV file: ${error.message}</p>`;
         }
     });
 }
-
-// js/app.js
 
 function handleDownloadLocations() {
     const { 
@@ -2307,16 +2176,13 @@ function handleDownloadLocations() {
         cabinets = [], shelves = [], boxes = [] 
     } = state.cache.locations || {};
     
-    // Define CSV header
     let csvContent = "data:text/csv;charset=utf-8,locationId,fullLocationName\r\n";
     
     const appendToCsv = (id, fullName) => {
-        // Sanitize name in case it contains commas
         const sanitizedName = `"${fullName.replace(/"/g, '""')}"`;
         csvContent += `${id},${sanitizedName}\r\n`;
     };
 
-    // --- START: FIX - Iterate through ALL location types ---
     divisions.forEach(loc => appendToCsv(`div-${loc.id}`, getFullLocationName(`div-${loc.id}`)));
     departments.forEach(loc => appendToCsv(`dept-${loc.id}`, getFullLocationName(`dept-${loc.id}`)));
     subLines.forEach(loc => appendToCsv(`sl-${loc.id}`, getFullLocationName(`sl-${loc.id}`)));
@@ -2324,9 +2190,7 @@ function handleDownloadLocations() {
     cabinets.forEach(loc => appendToCsv(`cab-${loc.id}`, getFullLocationName(`cab-${loc.id}`)));
     shelves.forEach(loc => appendToCsv(`sh-${loc.id}`, getFullLocationName(`sh-${loc.id}`)));
     boxes.forEach(loc => appendToCsv(`box-${loc.id}`, getFullLocationName(`box-${loc.id}`)));
-    // --- END: FIX ---
 
-    // Create a link and trigger the download
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
@@ -2338,21 +2202,15 @@ function handleDownloadLocations() {
     showTemporaryMessage("Complete location list download started.");
 }
 
-// js/app.js
-
 async function loadAndRenderStockTakeDetails(stockTakeId) {
     const mainContent = document.getElementById("mainContent");
     try {
         mainContent.innerHTML = "<p>Loading stock take details...</p>";
 
-        // --- START: FIX ---
-        // Use Promise.all to fetch both the session details and the items list directly.
-        // This is more reliable than using the cache.
         const [details, items] = await Promise.all([
             api.getStockTakeSession(stockTakeId),
             api.getStockTakeDetails(stockTakeId)
         ]);
-        // --- END: FIX ---
 
         if (!details || !items) {
             throw new Error("Could not load all required data for the stock take session.");
@@ -2364,7 +2222,7 @@ async function loadAndRenderStockTakeDetails(stockTakeId) {
     } catch(error) {
         showTemporaryMessage(error.message, true);
         state.currentPage = 'stockTake';
-        render(); // Go back to the list view on failure
+        render();
     }
 }
 
@@ -2406,7 +2264,6 @@ async function handleSimpleLocationFormSubmit(e) {
     const form = e.target;
     let type, name, parentId;
 
-    // A map to correctly identify the location type from the form's ID
     const typeMap = {
         'addDivisionForm': { type: 'division', hasParent: false },
         'addDepartmentForm': { type: 'department', hasParent: true },
@@ -2428,8 +2285,6 @@ async function handleSimpleLocationFormSubmit(e) {
     
     await createLocationAction({ type, name, parentId });
 }
-
-// js/app.js
 
 // --- APPLICATION INITIALIZATION ---
 document.addEventListener("DOMContentLoaded", () => {
