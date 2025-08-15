@@ -1793,6 +1793,7 @@ function attachPageSpecificEventListeners(page) {
     } 
 }
 
+// --------------------- START: REPLACE THIS ENTIRE FUNCTION ---------------------
 function attachGlobalEventListeners() {
     // Authentication
     document.getElementById("loginForm").addEventListener("submit", (e) => handleLogin(e, loadAndRender));
@@ -2168,6 +2169,7 @@ function attachGlobalEventListeners() {
         }
     });
 }
+// --------------------- END: REPLACE THIS ENTIRE FUNCTION ---------------------
 
 async function checkForNotifications() {
     try {
